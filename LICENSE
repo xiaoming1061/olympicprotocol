@@ -1,0 +1,45 @@
+MIT License
+
+Copyright (c) 2026 xm
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+--------------------------------------------------------------------------
+
+第三方内容说明（不属于本许可证的授权范围）
+
+本许可证只覆盖本仓库作者自己编写的源代码。下面这些内容的版权不属于本项目，
+也没有随本许可证一并授权，公开或再分发前请自行确认你是否有权这么做：
+
+1. 背景视频 bg-loop.mp4 —— 来自 Steam 创意工坊的他人作品。
+2. 背景图 voaf_ga09.jpg —— 来源与授权状态不明。
+3. 香港中文大学的名称、标识与课程数据、校巴时刻表、校园地图，以及
+   Shuttle.pdf / NH.pdf / Meet-Class.pdf 等校方发布的文件，版权归香港中文大学。
+4. 通过 OpenStreetMap、Overpass、Nominatim、Open-Meteo、Tesseract.js 等
+   第三方服务取得的资料，分别适用各自的数据许可（OpenStreetMap 为 ODbL）。
+
+关于课表接口
+
+worker/ 目录里复刻的是港中文官方 App（Student Class Timetable）与 CUSIS 之间
+的通信方式，该方式最早由公开项目 AnsonCheng03/CUHK_Timetable_fetch 披露
+（该项目未声明开源许可证）。本项目的相关实现参考自该项目，特此致谢。
+
+本项目与香港中文大学无隶属关系，未获校方背书。
+
+--------------------------------------------------------------------------

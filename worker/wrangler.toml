@@ -1,0 +1,25 @@
+# Cloudflare Worker：CUHK 课表代理
+#
+# 部署（二选一）：
+#   1) 命令行：npx wrangler deploy
+#   2) 控制台：Workers & Pages → Create → 粘贴 timetable-proxy.js → Deploy
+#
+# 口令用 secret 配（不要写进这个文件、更不要提交进仓库）：
+#   npx wrangler secret put PROXY_TOKEN
+# 控制台里对应 Variables and Secrets → Add → 类型选 Secret。
+
+name = "cuhk-timetable-proxy"
+main = "timetable-proxy.js"
+compatibility_date = "2026-09-01"
+
+[vars]
+# 允许哪些网页来调它。只有这里列出的来源才拿得到 CORS 头。
+ALLOWED_ORIGINS = "https://rhythmhill.com,http://localhost:5173,http://127.0.0.1:5173"
+
+# 默认走官方 App 那套（SOAP），凭据用 AES 加密——2026-10 实测只有加密的两种
+# 能读到课，明文那两种返回空数组。另外三种留给"哪天 ITSC 又改回去"：
+#   soap-plain / form-plain / form-aes（请求体里带 "mode" 就能指定）
+UPSTREAM_MODE = "soap-aes"
+
+# 想看状态码和耗时（永远不含请求体）就打开
+DEBUG = "0"

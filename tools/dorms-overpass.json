@@ -1,0 +1,900 @@
+{
+ "elements": [
+  {
+   "type": "way",
+   "id": 107139028,
+   "center": {
+    "lat": 22.4185428,
+    "lon": 114.2092892
+   },
+   "tags": {
+    "alt_name": "五高",
+    "alt_name:zh": "五高",
+    "building": "dormitory",
+    "name": "五旬節會樓高座 Pentecostal Mission Hall Complex (High Block)",
+    "name:en": "Pentecostal Mission Hall Complex (High Block)",
+    "name:zh": "五旬節會樓高座",
+    "operator": "Chung Chi College"
+   }
+  },
+  {
+   "type": "way",
+   "id": 107139029,
+   "center": {
+    "lat": 22.4188375,
+    "lon": 114.2098396
+   },
+   "tags": {
+    "alt_name": "五低",
+    "alt_name:zh": "五低",
+    "building": "dormitory",
+    "name": "五旬節會樓低座 Pentecostal Mission Hall Complex (Low Block)",
+    "name:en": "Pentecostal Mission Hall Complex (Low Block)",
+    "name:zh": "五旬節會樓低座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 134408687,
+   "center": {
+    "lat": 22.4213078,
+    "lon": 114.2101273
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "知行樓 Chih Hsing Hall",
+    "name:en": "Chih Hsing Hall",
+    "name:zh": "知行樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 134408693,
+   "center": {
+    "lat": 22.4219563,
+    "lon": 114.2087732
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "會友樓 Friendship Lodge",
+    "name:en": "Friendship Lodge",
+    "name:zh": "會友樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 134409111,
+   "center": {
+    "lat": 22.4212023,
+    "lon": 114.2106759
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "紫霞樓 Daisy Li Hall",
+    "name:en": "Daisy Li Hall",
+    "name:zh": "紫霞樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 134409115,
+   "center": {
+    "lat": 22.4216525,
+    "lon": 114.2106283
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "志文樓 Grace Tien Hall",
+    "name:en": "Grace Tien Hall",
+    "name:zh": "志文樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 134819423,
+   "center": {
+    "lat": 22.4131061,
+    "lon": 114.2095602
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "7",
+    "name": "研究生宿舍第三座(博文苑) Postgraduate Hall No.3 (Inter-university Hall)",
+    "name:en": "Postgraduate Hall No.3",
+    "name:zh": "研究生宿舍第三座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135018845,
+   "center": {
+    "lat": 22.4174431,
+    "lon": 114.2116653
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "6",
+    "name": "文質堂 Wen Chih Tang",
+    "name:en": "Wen Chih Tang",
+    "name:zh": "文質堂",
+    "nohousenumber": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135018848,
+   "center": {
+    "lat": 22.4174159,
+    "lon": 114.2104063
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "4",
+    "name": "明華堂 Ming Hua Tang",
+    "name:en": "Ming Hua Tang",
+    "name:zh": "明華堂"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135018852,
+   "center": {
+    "lat": 22.4166136,
+    "lon": 114.2107304
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "3",
+    "name": "應林堂 Ying Lin Tang",
+    "name:en": "Ying Lin Tang",
+    "name:zh": "應林堂"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135018853,
+   "center": {
+    "lat": 22.4175074,
+    "lon": 114.2112595
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "9",
+    "name": "何善衡夫人宿舍 Madam S.H.Ho Hall",
+    "name:en": "Madam S.H.Ho Hall",
+    "name:zh": "何善衡夫人宿舍",
+    "nohousenumber": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135021152,
+   "center": {
+    "lat": 22.4172099,
+    "lon": 114.2096159
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "3",
+    "name": "華連堂 Hua Lien Tang",
+    "name:en": "Hua Lien Tang",
+    "name:zh": "華連堂"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135021153,
+   "center": {
+    "lat": 22.4169402,
+    "lon": 114.211413
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "3",
+    "name": "崇基學院教職員宿舍S座 C.C. Staff Quarters S",
+    "name:en": "C.C. Staff Quarters S",
+    "name:zh": "崇基學院教職員宿舍S座",
+    "nohousenumber": "yes",
+    "roof:shape": "flat"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135021155,
+   "center": {
+    "lat": 22.4170196,
+    "lon": 114.2110556
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "8",
+    "name": "利樹培堂 Lee Shu Pui Hall",
+    "name:en": "Lee Shu Pui Hall",
+    "name:zh": "利樹培堂",
+    "nohousenumber": "yes",
+    "wikidata": "Q6515058"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135190718,
+   "center": {
+    "lat": 22.4200481,
+    "lon": 114.2101255
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "國際生舍堂三座 International House 3",
+    "name:en": "International House 3",
+    "name:zh": "國際生舍堂三座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135190721,
+   "center": {
+    "lat": 22.4198947,
+    "lon": 114.2107473
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "昆棟樓 Chan Kwan Tung Inter-university Hall",
+    "name:en": "Chan Kwan Tung Inter-university Hall",
+    "name:zh": "昆棟樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135190722,
+   "center": {
+    "lat": 22.4203187,
+    "lon": 114.2102653
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "芝苑 Panacea Lodge",
+    "name:en": "Panacea Lodge",
+    "name:zh": "芝苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135190723,
+   "center": {
+    "lat": 22.4197876,
+    "lon": 114.2097432
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "職工宿舍第三座 Minor Staff Quarters 3",
+    "name:en": "Minor Staff Quarters 3",
+    "name:zh": "職工宿舍第三座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135190724,
+   "center": {
+    "lat": 22.419708,
+    "lon": 114.2095653
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "職工宿舍第二座 Minor Staff Quarters 2",
+    "name:en": "Minor Staff Quarters 2",
+    "name:zh": "職工宿舍第二座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135191897,
+   "center": {
+    "lat": 22.4214757,
+    "lon": 114.2061808
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "6",
+    "name": "伯利衡宿舍 Bethlehem Hall",
+    "name:en": "Bethlehem Hall",
+    "name:zh": "伯利衡宿舍",
+    "name:zh-Hans": "伯利衡宿舍",
+    "name:zh-Hant": "伯利衡宿舍"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135193165,
+   "center": {
+    "lat": 22.422032,
+    "lon": 114.2049555
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "陳震夏宿舍 Chan Chun Ha Hostel",
+    "name:en": "Chan Chun Ha Hostel",
+    "name:zh": "陳震夏宿舍",
+    "name:zh-Hans": "陈震夏宿舍",
+    "name:zh-Hant": "陳震夏宿舍"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135193917,
+   "center": {
+    "lat": 22.4228112,
+    "lon": 114.2049902
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "恒生樓 Hang Seng Hall",
+    "name:en": "Hang Seng Hall",
+    "name:zh": "恒生樓",
+    "name:zh-Hans": "恒生楼",
+    "name:zh-Hant": "恒生樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264056,
+   "center": {
+    "lat": 22.4232079,
+    "lon": 114.2043186
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "國際生舍堂一座 International House 1",
+    "name:en": "International House 1",
+    "name:zh": "國際生舍堂一座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264058,
+   "center": {
+    "lat": 22.4233007,
+    "lon": 114.2054349
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "聯合苑 U.C. Staff Residence",
+    "name:en": "U.C. Staff Residence",
+    "name:zh": "聯合苑",
+    "name:zh-Hans": "联合苑",
+    "name:zh-Hant": "聯合苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264060,
+   "center": {
+    "lat": 22.4243014,
+    "lon": 114.2050192
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "研究生宿舍五座 Postgraduate Hall No. 5",
+    "name:en": "Postgraduate Hall No. 5",
+    "name:zh": "研究生宿舍五座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264063,
+   "center": {
+    "lat": 22.4244561,
+    "lon": 114.2046893
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "研究生宿舍六座 Postgraduate Hall No. 6",
+    "name:en": "Postgraduate Hall No. 6",
+    "name:zh": "研究生宿舍六座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264066,
+   "center": {
+    "lat": 22.423825,
+    "lon": 114.2048751
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "研究生宿舍四座 Postgraduate Hall No. 4",
+    "name:en": "Postgraduate Hall No. 4",
+    "name:zh": "研究生宿舍四座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264069,
+   "center": {
+    "lat": 22.4236494,
+    "lon": 114.2044152
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "國際生舍堂二座 International House 2",
+    "name:en": "International House 2",
+    "name:zh": "國際生舍堂二座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264402,
+   "center": {
+    "lat": 22.4244952,
+    "lon": 114.2073668
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十三苑 University Residence No. 13",
+    "name:en": "University Residence No. 13",
+    "name:zh": "第十三苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264404,
+   "center": {
+    "lat": 22.4235427,
+    "lon": 114.2067813
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十五苑 University Residence No. 15",
+    "name:en": "University Residence No. 15",
+    "name:zh": "第十五苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264405,
+   "center": {
+    "lat": 22.4245237,
+    "lon": 114.2069885
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十二苑 University Residence No. 12",
+    "name:en": "University Residence No. 12",
+    "name:zh": "第十二苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264901,
+   "center": {
+    "lat": 22.4248833,
+    "lon": 114.2080841
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十苑 University Residence No. 10",
+    "name:en": "University Residence No. 10",
+    "name:zh": "第十苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135264904,
+   "center": {
+    "lat": 22.4243287,
+    "lon": 114.2083138
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十一苑 University Residence No. 11",
+    "name:en": "University Residence No. 11",
+    "name:zh": "第十一苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135265375,
+   "center": {
+    "lat": 22.4234989,
+    "lon": 114.2083354
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十七苑 University Residence No. 17",
+    "name:en": "University Residence No. 17",
+    "name:zh": "第十七苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135265376,
+   "center": {
+    "lat": 22.4237563,
+    "lon": 114.207966
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十六苑 University Residence No. 16",
+    "name:en": "University Residence No. 16",
+    "name:zh": "第十六苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135265382,
+   "center": {
+    "lat": 22.4240359,
+    "lon": 114.2071765
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "第十四苑 University Residence No. 14",
+    "name:en": "University Residence No. 14",
+    "name:zh": "第十四苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135311798,
+   "center": {
+    "lat": 22.4170288,
+    "lon": 114.208067
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "崇基教職員宿舍C座 C.C. Staff Quarters C",
+    "name:en": "C.C. Staff Quarters C",
+    "name:zh": "崇基教職員宿舍C座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135311803,
+   "center": {
+    "lat": 22.4168435,
+    "lon": 114.2077512
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "崇基教職員宿舍B座 C.C. Staff Quarters B",
+    "name:en": "C.C. Staff Quarters B",
+    "name:zh": "崇基教職員宿舍B座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135311810,
+   "center": {
+    "lat": 22.4173404,
+    "lon": 114.2064029
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "4",
+    "name": "神學樓 Theology Building",
+    "name:en": "Theology Building",
+    "name:zh": "神學樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135311814,
+   "center": {
+    "lat": 22.4168437,
+    "lon": 114.2073877
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "崇基教職員宿舍A座 C.C. Staff Quarters A",
+    "name:en": "C.C. Staff Quarters A",
+    "name:zh": "崇基教職員宿舍A座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135313705,
+   "center": {
+    "lat": 22.4132844,
+    "lon": 114.2077655
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "3",
+    "name": "文林堂 Wen Lin Tang",
+    "name:en": "Wen Lin Tang",
+    "name:zh": "文林堂"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135315191,
+   "center": {
+    "lat": 22.4214654,
+    "lon": 114.2030324
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "三苑 University Residence Nos. 3",
+    "name:en": "University Residence Nos. 3",
+    "name:zh": "三苑",
+    "name:zh-Hans": "三苑",
+    "name:zh-Hant": "三苑"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135904004,
+   "center": {
+    "lat": 22.4232521,
+    "lon": 114.201152
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "逸仙樓 Yat Sen Hall",
+    "name:en": "Yat Sen Hall",
+    "name:zh": "逸仙樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135904006,
+   "center": {
+    "lat": 22.4237244,
+    "lon": 114.2010839
+   },
+   "tags": {
+    "alt_name": "二宿低座 Student Hostel 2 (Low Block)",
+    "alt_name:zh": "二宿低座",
+    "building": "dormitory",
+    "name": "第二學生宿舍（低座）Student Hostel 2 (Low Block)",
+    "name:en": "Student Hostel 2 (Low Block)",
+    "name:zh": "第二學生宿舍（低座）"
+   }
+  },
+  {
+   "type": "way",
+   "id": 135904508,
+   "center": {
+    "lat": 22.4225439,
+    "lon": 114.2010565
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "國楙樓 Kuo Mou Hall",
+    "name:en": "Kuo Mou Hall",
+    "name:zh": "國楙樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 136637847,
+   "center": {
+    "lat": 22.4167555,
+    "lon": 114.2028136
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "漢園 Vice-Chancellor Residence",
+    "name:en": "Vice-Chancellor Residence",
+    "name:zh": "漢園",
+    "region": "Others"
+   }
+  },
+  {
+   "type": "way",
+   "id": 174133698,
+   "center": {
+    "lat": 22.4185449,
+    "lon": 114.2101883
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "14",
+    "name": "何添堂 Ho Tim Hall",
+    "name:en": "Ho Tim Hall",
+    "name:zh": "何添堂",
+    "nohousenumber": "yes",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 174133703,
+   "center": {
+    "lat": 22.4182657,
+    "lon": 114.2098345
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "9",
+    "name": "利國偉堂 Lee Quo Wei Hall",
+    "name:en": "Lee Quo Wei Hall",
+    "name:zh": "利國偉堂",
+    "nohousenumber": "yes",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 174133712,
+   "center": {
+    "lat": 22.4215485,
+    "lon": 114.2095973
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "學思樓 Xuesi Hall",
+    "name:en": "Xuesi Hall",
+    "name:zh": "學思樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 193128663,
+   "center": {
+    "lat": 22.4191611,
+    "lon": 114.2104473
+   },
+   "tags": {
+    "building": "dormitory",
+    "layer": "1",
+    "name": "格林伯格樓 Maurice R. Greenberg Building",
+    "name:en": "Maurice R. Greenberg Building",
+    "name:zh": "格林伯格樓",
+    "nohousenumber": "yes",
+    "wheelchair": "yes"
+   }
+  },
+  {
+   "type": "way",
+   "id": 194547400,
+   "center": {
+    "lat": 22.4226226,
+    "lon": 114.2044246
+   },
+   "tags": {
+    "building": "dormitory",
+    "layer": "2",
+    "name": "和聲書院北座 North Block, Lee Woo Sing College",
+    "name:en": "North Block, Lee Woo Sing College",
+    "name:zh": "和聲書院北座",
+    "name:zh-Hans": "和声书院北座",
+    "name:zh-Hant": "和聲書院北座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 194547402,
+   "center": {
+    "lat": 22.4222095,
+    "lon": 114.2041259
+   },
+   "tags": {
+    "alt_name": "和聲書院南座 South Block, Lee Woo Sing College",
+    "alt_name:en": "South Block, Lee Woo Sing College",
+    "alt_name:zh": "和聲書院南座",
+    "building": "dormitory",
+    "layer": "2",
+    "name": "顧鐵華費肇芬伉儷樓 Dorothy and Ti-Hua Koo Building",
+    "name:en": "Dorothy and Ti-Hua Koo Building",
+    "name:zh": "顧鐵華費肇芬伉儷樓",
+    "name:zh-Hans": "顾铁华费肇芬伉俪楼",
+    "name:zh-Hant": "顧鐵華費肇芬伉儷樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 545778814,
+   "center": {
+    "lat": 22.4228979,
+    "lon": 114.2019301
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "雅群樓 Ya Qun Lodge",
+    "name:en": "Ya Qun Lodge",
+    "name:zh": "雅群樓"
+   }
+  },
+  {
+   "type": "way",
+   "id": 667717925,
+   "center": {
+    "lat": 22.4260176,
+    "lon": 114.2062705
+   },
+   "tags": {
+    "building": "dormitory",
+    "height": "39.5",
+    "layer": "2",
+    "name": "賽馬會研究生宿舍二座 Jockey Club Postgraduate Hall 2",
+    "name:en": "CUHK Jockey Club Postgraduate Hall 2",
+    "name:zh": "香港中文大學賽馬會研究生宿舍二座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 667717927,
+   "center": {
+    "lat": 22.4262397,
+    "lon": 114.2059139
+   },
+   "tags": {
+    "building": "dormitory",
+    "height": "36.4",
+    "layer": "2",
+    "name": "賽馬會研究生宿舍三座 Jockey Club Postgraduate Hall 3",
+    "name:en": "CUHK Jockey Club Postgraduate Hall 3",
+    "name:zh": "香港中文大學賽馬會研究生宿舍三座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 696387742,
+   "center": {
+    "lat": 22.4204186,
+    "lon": 114.2120516
+   },
+   "tags": {
+    "building": "dormitory",
+    "building:levels": "10",
+    "name": "賽馬會研究生宿舍一座 Jockey Club Postgraduate Hall No. 1",
+    "name:en": "Jockey Club Postgraduate Hall No. 1",
+    "name:zh": "賽馬會研究生宿舍一座"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1243363293,
+   "center": {
+    "lat": 22.4203002,
+    "lon": 114.2084019
+   },
+   "tags": {
+    "addr:housename": "香港中文大學 The Chinese University of Hong Kong",
+    "addr:housename:en": "The Chinese University of Hong Kong",
+    "addr:housename:zh": "香港中文大學",
+    "building": "dormitory",
+    "building:levels": "7",
+    "name": "梅雲堂 Mei Yun Tang",
+    "name:en": "Mei Yun Tang",
+    "name:zh": "梅雲堂"
+   }
+  },
+  {
+   "type": "way",
+   "id": 1344748884,
+   "center": {
+    "lat": 22.4205067,
+    "lon": 114.2039982
+   },
+   "tags": {
+    "building": "dormitory",
+    "construction": "residential",
+    "landuse": "construction",
+    "name": "蔡繼有宿舍 Choi Kai Yau Residence",
+    "name:en": "Choi Kai Yau Residence",
+    "name:zh": "蔡繼有宿舍",
+    "region": "United College",
+    "type": "multipolygon"
+   }
+  },
+  {
+   "type": "relation",
+   "id": 2325105,
+   "center": {
+    "lat": 22.4217869,
+    "lon": 114.2056484
+   },
+   "tags": {
+    "building": "dormitory",
+    "name": "湯若望宿舍 Adam Schall Residence",
+    "name:en": "Adam Schall Residence",
+    "name:zh": "湯若望宿舍",
+    "name:zh-Hans": "汤若望宿舍",
+    "name:zh-Hant": "湯若望宿舍",
+    "region": "United College",
+    "type": "multipolygon"
+   }
+  }
+ ]
+}

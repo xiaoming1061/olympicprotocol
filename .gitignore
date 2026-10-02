@@ -1,0 +1,60 @@
+# 依赖与构建产物
+node_modules/
+dist/
+*.log
+
+# 部署目标仓库：这是另一个独立的 Git 仓库，不能嵌套进来
+# （源文件改了用 node tools/deploy.js --push 同步过去）
+clubwebsite/
+
+# 导出示例图里是真实课表，含个人选课信息，暂不公开
+# 换成用假数据生成的示例图后再删掉这一行
+docs/timetable-export.png
+
+# 本地密钥：严禁提交
+.env
+.env.*
+.dev.vars
+.dev.vars.*
+*.pem
+*.key
+
+# Cloudflare Worker 的本地状态
+.wrangler/
+
+# 临时调试文件
+_drive.html
+_probe.js
+_ocr-test.png
+_probe*
+_tmp*
+*.tmp
+
+# 系统垃圾
+.DS_Store
+Thumbs.db
+desktop.ini
+nul
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+
+# ─────────────────────────────────────────────────────────────
+# 第三方版权素材：公开仓库默认不收录
+#
+# 下面这些不是本项目的原创内容，公开或再分发前请先确认授权。
+# 如果你已取得授权、或本来就打算随仓库一起发布，删掉对应行即可。
+# 注意：删掉不影响本地文件，只是不再阻止它们被提交。
+# ─────────────────────────────────────────────────────────────
+
+# 背景视频，来自 Steam 创意工坊的他人作品
+bg-loop.mp4
+# 背景图，来源与授权状态不明
+voaf_ga09.jpg
+# 校方发布的文件，版权归香港中文大学
+Shuttle.pdf
+NH.pdf
+Meet-Class.pdf
+voex_pr_com.png

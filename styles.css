@@ -1,0 +1,1738 @@
+/* Hallmark · macrostructure: Workbench（app 界面，不是落地页）· tone: soft-cute · anchor hue: 350（粉）
+ * Hallmark · pre-emit critique: P4 H4 E5 S4 R5 V3
+ * 这次是「只改 critical」的一轮：卡片里套卡片 · 提示条的单边竖条 · hero 装饰光斑 · 整页只有一个字体。
+ * 改掉的两条轴：分隔语言（带色块盒子 → 发丝线）· 字体（单级 → display + body 两级）。
+ * 没动的：文案、四视图结构、交互与数据、粉色品牌色、背景视频。
+ */
+
+/* Olympic Protocol — 校园通行指挥台 */
+
+:root {
+  /* 告诉浏览器这是浅色页面：不然系统开了深色模式时，
+     滚动条、滑块、日期选择器这些原生控件还是黑的 */
+  color-scheme: light;
+  --bg: #fff2f7;
+  /* 卡片、按钮这些都做成半透明的，底下的背景视频才透得出来。
+     字是深色的，靠「白色半透明底 + 背景模糊」保证还看得清。 */
+  --bg-soft: rgba(255, 244, 249, 0.62);
+  --card: rgba(255, 251, 253, 0.74);
+  --card-2: rgba(255, 250, 252, 0.58);
+  --line: #ffd3e4;
+  --text: #4a2b3a;
+  --text-dim: #8c6a7c;
+  --text-faint: #a98b9a;
+  --accent: #ff5fa2;
+  --accent-2: #b98cff;
+
+  /* ---- 字体：两级，不再"一个字体走天下" ----
+   * display 面给**数字读数**用（时钟、倒计时、距离、时间、班次号）——
+   * 等宽数字让成列的数字对齐，也正好对上这个产品"通行指挥台"的身份：
+   * 柔和的外壳 + 精确的仪表读数。
+   * body 面给中文正文用，走系统黑体（中文本来就得靠系统字体，引外链字体不划算）。
+   * 等宽面没有汉字字形，中英混排时汉字会自动回落到 body 面。 */
+  --font-display: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --font-body: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei",
+    "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+
+  /* 字号阶梯：以前最大 26px、其余全挤在 11–15px，没有 display 这一档 */
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 26px;
+  --text-display: clamp(26px, 7vw, 34px);
+  --ok: #2fae76;
+  --warn: #e08a00;
+  --err: #ef4a63;
+  /* 语义色的浅底 / 描边两档（原来这三种透明度是散在规则里的字面值） */
+  --ok-soft: rgba(53, 208, 127, 0.1);
+  --ok-line: rgba(53, 208, 127, 0.42);
+  --warn-soft: rgba(255, 176, 32, 0.1);
+  --warn-line: rgba(255, 176, 32, 0.45);
+  --err-soft: rgba(255, 95, 109, 0.1);
+  --err-line: rgba(255, 95, 109, 0.42);
+  /* 提示条标题用的"加深版"同色系。
+     这几个是**文字色**，跟上面那组"点缀色"不是一回事：
+     --accent/--ok/--warn 直接拿来写字对比度都不够（粉字在白底上只有 2.8:1），
+     下面这几个全部 ≥ 4.5:1（自检里是算出来验的，不是看着差不多就行）。 */
+  --accent-ink: #c9256c;
+  --ok-ink: #177a4f;
+  --warn-ink: #9a5a00;
+  --err-ink: #c62236;
+  --radius: 18px;
+  --radius-sm: 12px;
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+  /* 页尾留白：底部导航是固定定位的，会盖住页尾内容。
+     具体数值由脚本实测写入，这里给一个偏大的兜底值。 */
+  --bottom-space: 140px;
+
+  /* ---- 表面：四档（次级 → 卡片 → 抬升 → 实心）---- */
+  --surface-0: rgba(255, 255, 255, 0.46);
+  --surface-1: rgba(255, 255, 255, 0.55);
+  --surface-2: rgba(255, 255, 255, 0.78);
+  --surface-3: rgba(255, 255, 255, 0.97);
+  --surface-4: rgba(255, 255, 255, 0.90);
+  --surface-warm: rgba(255, 236, 246, 0.88);
+  --surface-input: rgba(255, 255, 255, 0.62);
+  --topbar-bg: rgba(255, 255, 255, 0.66);
+  --panel: rgba(255, 250, 253, 0.95);
+  --panel-soft: rgba(255, 250, 253, 0.88);
+  --panel-faint: rgba(255, 250, 253, 0.68);
+  --paper-warm: #fff6fa;
+
+  /* ---- 纱与地图底 ---- */
+  --veil-1: rgba(255, 236, 246, 0.40);
+  --veil-2: rgba(255, 228, 241, 0.50);
+  --map-a: rgba(255, 234, 244, 0.55);
+  --map-b: rgba(255, 246, 250, 0.45);
+  --stop-fill: rgba(255, 197, 90, 0.22);
+
+  /* ---- 描边 ---- */
+  --line-strong: #f5a8c8;
+  --accent-disabled: #ffc2dd;
+
+  /* ---- 强调色的几档透明度（原来散着十几种，收敛成四档）---- */
+  --accent-soft: rgba(255, 95, 162, 0.08);
+  --accent-soft-2: rgba(255, 95, 162, 0.16);
+  --accent-line-weak: rgba(255, 95, 162, 0.22);
+  --accent-line: rgba(255, 95, 162, 0.34);
+  --accent-line-strong: rgba(255, 95, 162, 0.50);
+  --accent-2-soft: rgba(185, 140, 255, 0.18);
+
+  /* ---- 强调色底上的字：技能要求主题必须定义这个（--color-accent-ink 契约）----
+     粉底 #ff5fa2 上写白字只有 2.8:1、写 #92174d 只有 3.0:1，都不够；
+     深梅色 #4a0f2b 是 5.3:1，所以它就是"强调色底上的文字色"。 */
+  --on-accent: #4a0f2b;
+
+  /* ---- 阴影与遮罩 ---- */
+  --shadow-text: 0 3px 10px rgba(74, 43, 58, 0.16);
+  --shadow-strong: 0 18px 40px rgba(0, 0, 0, 0.45);
+  --shadow-mid: 0 6px 18px rgba(0, 0, 0, 0.5);
+  --shadow-soft: 0 2px 8px rgba(0, 0, 0, 0.5);
+  --shadow-thumb: 0 1px 4px rgba(214, 122, 166, 0.55);
+  --scrim: rgba(74, 43, 58, 0.34);
+
+  /* ---- 圆角：四档（小控件 / 按钮与输入 / 卡片 / 全圆）---- */
+  --radius-xs: 8px;
+  --radius-pill: 999px;
+
+  /* ---- 缓动与时长（技能的三档具名缓动 + 时长档）---- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --dur-press: 90ms;
+  --dur-hover: 180ms;
+  --dur-panel: 260ms;
+  --dur-toast: 420ms;
+
+  /* ---- 间距：4pt 命名阶梯 ---- */
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 28px;
+
+  /* 强调色的按压态（比 --accent 深一档，白/梅字都能站住） */
+  --accent-active: #e64f8f;
+
+  /* ---- 焦点环（与粉底、白底都 ≥3:1）---- */
+  --focus: #7a2b4d;
+}
+
+* { box-sizing: border-box; }
+
+/* 系统开了「减少动态效果」就把动画关掉：
+   对晕动症友好，截图工具也不会拍在淡入的一半 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* hidden 属性必须真的能藏住元素。
+   浏览器默认样式里 [hidden] 就是 display: none，但作者样式里
+   .form { display: flex } 这类规则优先级更高，会把 hidden 顶掉——
+   结果"点了「新增楼栋」才出现的表单"一直挂在页面上。
+   补这一条，让 hidden 在任何元素上都算数。 */
+[hidden] { display: none !important; }
+
+/* 键盘聚焦：2px 环 + 2px 偏移。**不参与任何过渡**——聚焦必须瞬时可见。
+   鼠标点击不显示（:focus-visible 的语义），所以点按钮不会留下一圈环。 */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* 输入框：预留 2px 环的位置，聚焦时只换颜色，几何不变（不跳版） */
+.field input,
+.field select,
+.ocr-row input,
+.ocr-row select {
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  min-height: 100vh;
+  /* 背景交给下面那层 .bg-layer（视频 + 粉色纱），这里只兜个底色 */
+  background: var(--bg);
+}
+
+/* ---------- 背景层（循环视频） ---------- */
+
+/* 固定铺满窗口，不参与交互。视频没播起来时看到的是底下的静态图。 */
+.bg-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: url("voaf_ga09.jpg") center / cover no-repeat;
+}
+
+.bg-video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* 铺满：宁可裁掉边界，也不留黑边、不变形 */
+  object-fit: cover;
+}
+
+/* 粉色纱：图要看得见，字也要看得清 */
+.bg-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(var(--veil-1), var(--veil-2));
+}
+
+.app {
+  /* 压在背景层上面。也顺便成为一个独立的层叠上下文，
+     免得里面那些 z-index 很高的浮层跟背景层互相打架 */
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  margin: 0 auto;
+  /* 底部导航是固定定位的，会盖住页尾内容，所以页尾要留出它的高度。
+     具体数值由脚本实测写入 --bottom-space，并在每次渲染后核对一次。 */
+  padding-bottom: var(--bottom-space);
+}
+
+/* ---------- 顶栏 ---------- */
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: calc(14px + env(safe-area-inset-top)) 18px 14px;
+  background: var(--topbar-bg);
+  /* 浮在内容之上：糊得比卡片（8px）厚，层级才分得开 */
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand { display: flex; align-items: center; gap: 11px; min-width: 0; }
+
+.brand-mark {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--on-accent);
+  background: var(--accent);
+}
+
+.brand-text { display: flex; flex-direction: column; min-width: 0; }
+.brand-text strong { font-size: 15px; letter-spacing: 0.4px; }
+.brand-text span { font-size: 12px; color: var(--text-dim); }
+
+.topbar-right { display: flex; align-items: center; gap: 10px; flex: none; }
+
+.clock {
+  font-variant-numeric: tabular-nums;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.pill {
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+
+.pill-ok { color: var(--ok); border-color: var(--ok-line); background: var(--ok-soft); }
+.pill-warn { color: var(--warn); border-color: var(--warn-line); background: var(--warn-soft); }
+.pill-err { color: var(--err); border-color: var(--err-line); background: var(--err-line); }
+
+/* ---------- 视图 ---------- */
+
+.views { padding: 16px 16px 8px; }
+.view { display: none; }
+.view.is-active { display: block; animation: fade var(--dur-panel) var(--ease-out); }
+
+@keyframes fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 卡片 ---------- */
+
+.card {
+  background: linear-gradient(180deg, var(--card), var(--bg-soft));
+  /* 卡片底是**在动的视频**：完全不糊的话，画面里的形体会跟文字抢，可读性反而掉。
+     所以这里留一层**轻糊**（8px），把厚玻璃（16–22px）让给真正浮在内容之上的层——
+     层级靠"糊的程度"区分，而不是到处都是同一种厚玻璃。 */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* 主卡更松、密集卡片更紧，间距分两档——所有区块等距正是"模板感"的来源 */
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  box-shadow: var(--shadow);
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.card-head h3 { margin: 0; font-size: var(--text-lg); font-weight: 600; letter-spacing: 0; }
+.card-head-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.muted { color: var(--text-dim); font-size: var(--text-sm); }
+
+/* ---------- 主卡 ---------- */
+
+/* 这里原本有一个 320×320 的粉色径向光斑（.hero::after），纯装饰、没有语义，
+   是典型"AI 生成的 hero"痕迹，删掉。主卡靠字重和留白立住。
+   紧急状态那层琥珀色光斑同理删掉，只留一条边框色做状态提示。 */
+.hero {
+  position: relative;
+  overflow: hidden;
+  padding: var(--space-xl);
+  margin-bottom: var(--space-lg);
+  background: var(--card);
+}
+
+.hero.is-imminent { border-color: var(--warn-line); }
+
+/* 主卡的上半部分：窄屏是"徽标 → 课名 → 地点 → 倒计时"一条竖排；
+   宽屏（≥560px）拆成不对称两栏——左边课程信息，右边一个大的时间读数。
+   这是审计里"四个视图都是同一种卡片堆、零不对称"那条的修法：
+   Two-column asymmetric（宽体 + 窄读数栏）。 */
+.hero-main { min-width: 0; }
+.hero-readout { margin-top: var(--space-sm); }
+
+@media (min-width: 560px) {
+  .hero-top {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-lg);
+    align-items: start;
+  }
+  .hero-readout { margin-top: 18px; text-align: right; }
+}
+
+.tag {
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent-line);
+  background: var(--accent-soft-2);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+}
+
+.hero.is-imminent .tag {
+  color: var(--warn);
+  border-color: var(--warn-line);
+  background: var(--warn-soft);
+}
+
+.countdown {
+  font-variant-numeric: tabular-nums;
+  /* 倒计时是页面上最重要的一个数：走 display 面（等宽）+ 负字距，
+     不再靠 800 字重硬撑 */
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.hero-title {
+  margin: var(--space-md) 0 var(--space-2xs);
+  /* display 这一档以前不存在（最大 26px、其余 11–15px）；
+     用 clamp 让它跟着屏宽走，字重从 800 降到 650——层级靠"大"和"松"，
+     不靠加粗 */
+  font-size: var(--text-display);
+  line-height: 1.18;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+  min-width: 0;
+}
+
+.hero-sub { margin: 0; color: var(--text-dim); font-size: var(--text-md); }
+
+.hero-stats {
+  display: grid;
+  /* 一行读数：靠竖直发丝线分栏，不再每个数一个盒子。
+   *
+   * 列数**显式写死**，不用 auto-fit 自动换列。原因：格子上的分隔线是
+   * "每格一条左边线、只豁免行首那一格"，这套规则只在列数固定时才成立。
+   * 用 auto-fit 自动换列时，窄屏换成 2 列、第 3 格变成行首却没被豁免，
+   * 就会在手机屏幕上看到一条条游离的竖线，而且行与行之间没有横线。
+   * 格数（3 格 / 4 格）由脚本写在 data-cells 上。 */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: var(--space-md) 0 var(--space-2xs);
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+/* 有「爬升」那一格时是 4 格 */
+.hero-stats[data-cells="4"] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+
+.hero-stats-tight { margin: var(--space-sm) 0 var(--space-md); }
+
+.stat {
+  background: none;
+  border: 0;
+  border-left: 1px solid var(--line);
+  border-radius: 0;
+  padding: var(--space-sm) var(--space-sm);
+  min-width: 0;
+}
+
+/* 行首那一格不画左边线（宽屏 3 格 3 列、4 格 4 列，都是一行，
+   所以只要豁免第 1 格就够了；换行的情况全交给下面窄屏那套规则） */
+.stat:first-child { border-left: 0; padding-left: 0; }
+
+/* 窄屏（手机上）：两列排。
+ *
+ * 这里**不能靠 :nth-child(odd/even) 判断**——「爬升」那一格没有数据时是 `hidden`，
+ * 但它仍然是 DOM 里的兄弟节点，奇偶位就整体错开了（"最后一个可见格"实际是
+ * 第 4 个兄弟，偶数）。所以两套排法按 data-cells 分开写，条件都是确定的：
+ *   4 格 → 完整 2×2；3 格 → 第一行两格 + 第二行整行。 */
+@media (max-width: 620px) {
+  .stat { padding: var(--space-sm) 0; }
+
+  /* 4 格：2×2，竖线只留在行内第二格，第 2 行起补横线 */
+  .hero-stats[data-cells="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-stats[data-cells="4"] .stat:nth-child(even) {
+    border-left: 1px solid var(--line);
+    padding-left: var(--space-sm);
+  }
+  /* 4 格时第二行行首是「爬升」那格（第 3 个兄弟）。它 x=0 贴在容器左边缘，
+     再给它一条左竖线就成了游离在所有格子之外的"鬼线"——
+     竖线只该留在行内两格之间。 */
+  .hero-stats[data-cells="4"] .stat:nth-child(3) {
+    border-left: 0;
+    padding-left: 0;
+  }
+  .hero-stats[data-cells="4"] .stat:nth-child(n + 3) { border-top: 1px solid var(--line); }
+
+  /* 3 格：第一行两格，最后那格横跨整行（否则右边空半格、横线只画一半，
+     网格"缺一块"就是手机上看着诡异的根源）。 */
+  .hero-stats[data-cells="3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .hero-stats[data-cells="3"] .stat:nth-child(2) {
+    border-left: 1px solid var(--line);
+    padding-left: var(--space-sm);
+  }
+  .hero-stats[data-cells="3"] .stat:last-child {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+  }
+  .hero-stats[data-cells="3"] .stat:last-child .stat-label { margin-bottom: 0; }
+
+  /* 定位卡片那三格（坐标 / 精度 / 最近楼栋）：坐标是一串长文本，
+     三格并排会把它硬折成几行，看着很挤。改成两行——
+     坐标独占第一行，下面两格并排。 */
+  .stats-lead-wide,
+  .stats-lead-wide[data-cells="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .stats-lead-wide .stat:first-child {
+    grid-column: 1 / -1;
+    border-left: 0;
+    padding-left: 0;
+  }
+  /* 第二行起补横线；行内第一格不画竖线、第二格画 */
+  .stats-lead-wide .stat:nth-child(n + 2) { border-top: 1px solid var(--line); }
+  .stats-lead-wide .stat:nth-child(2) { border-left: 0; padding-left: 0; }
+  .stats-lead-wide .stat:nth-child(3) {
+    border-left: 1px solid var(--line);
+    padding-left: var(--space-sm);
+  }
+}
+
+.stat-label { display: block; font-size: var(--text-xs); color: var(--text-faint); margin-bottom: 4px; }
+.stat-value {
+  display: block;
+  /* 读数字用 display 面（等宽）：成列的数字才对得齐 */
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; position: relative; }
+
+/* ---------- 按钮 ---------- */
+
+.btn {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  color: var(--text);
+  font-size: var(--text-md);
+  font-family: inherit;
+  font-weight: 600;
+  /* 44px 触摸目标 + 文案不折行（窄屏下按钮高度不齐是最明显的"没测过"痕迹） */
+  min-height: 44px;
+  padding: 0 var(--space-md);
+  white-space: nowrap;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out),
+    color var(--dur-hover) var(--ease-out),
+    transform var(--dur-press) var(--ease-out);
+}
+
+/* 悬停只在真有指针的设备上生效：触屏按一下不会留下"卡住的"悬停态 */
+@media (hover: hover) {
+  .btn:hover { border-color: var(--line-strong); }
+}
+.btn:active { transform: translateY(1px); }
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--on-accent);
+  /* 平的强调色填充：不再用渐变，也不再叠一层彩色光晕（都是"AI 味"的来源）。
+     字色走 --on-accent，粉底上 5.3:1，符合技能的 accent-ink 契约。 */
+  background: var(--accent);
+}
+
+.btn-ghost { background: transparent; color: var(--text-dim); }
+
+
+.btn-small { min-height: 36px; padding: 0 var(--space-sm); font-size: var(--text-sm); }
+.btn-danger { color: var(--err); border-color: var(--err-line); background: var(--err-soft); }
+
+/* ---------- 时间轴 ---------- */
+
+.timeline { list-style: none; margin: 0; padding: 0; }
+
+.tl-item {
+  display: grid;
+  grid-template-columns: 64px 1fr auto;
+  gap: 12px;
+  align-items: start;
+  padding: 13px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.tl-item + .tl-item { margin-top: 6px; }
+.tl-item.is-past { opacity: 0.45; }
+
+.tl-item.is-next {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+}
+
+.tl-item.is-now {
+  background: var(--ok-soft);
+  border-color: var(--ok-line);
+}
+
+.tl-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text);
+  padding-top: 2px;
+}
+
+.tl-time small { display: block; font-weight: 500; font-size: 11px; color: var(--text-faint); }
+
+.tl-name { font-size: var(--text-lg); font-weight: 600; margin-bottom: 3px; }
+.tl-meta { font-size: var(--text-sm); color: var(--text-dim); }
+.tl-badge {
+  font-size: 11px;
+  padding: 3px 9px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.tl-badge.is-now { color: var(--ok); border-color: var(--ok-line); }
+
+/* ---------- 地图 ---------- */
+
+.map-wrap {
+  /* 给 Leaflet 单独开一个层叠上下文。
+     不加这个，Leaflet 内部那些 z-index（图层面板 400、控件 1000）会直接跟
+     整页比高低，于是往下滑时地图会盖在顶栏「Olympic Protocol」和底部导航上面。
+     有了这一层，地图再高也只是在自己这块地盘里排。 */
+  position: relative;
+  z-index: 0;
+  isolation: isolate;
+  border-radius: var(--radius-sm);
+  background: radial-gradient(circle at 50% 40%, var(--map-a), var(--map-b) 72%);
+  border: 1px solid var(--line);
+  padding: 8px;
+  overflow: hidden;
+}
+
+/* 只针对简图那个 SVG。写成 .map-wrap svg 会连 Leaflet 版权栏里
+   那面内置的国旗 SVG 一起拉伸成巨大的色块——踩过。 */
+#mapSvg { display: block; width: 100%; height: auto; }
+
+/* 真实地图：Leaflet 需要容器有明确高度 */
+
+#mapReal { height: 420px; border-radius: var(--radius-xs); background: var(--paper-warm); }
+
+.map-modes { display: flex; gap: 4px; }
+
+.map-mode {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 12px;
+  padding: 5px 10px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+}
+
+
+.map-mode.is-active {
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft-2);
+}
+
+/* 地图上的编号圆点 */
+.rm-icon { background: none; border: 0; }
+
+.rm-pin {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--accent-disabled);
+  border: 2px solid var(--accent);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  box-shadow: var(--shadow-soft);
+}
+
+.rm-pin.is-next { background: var(--accent); color: var(--on-accent); border-color: var(--accent-disabled); }
+
+/* 常驻标签（楼名 + 时间） */
+.leaflet-tooltip.rm-tip {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.5;
+  padding: 4px 7px;
+  box-shadow: var(--shadow-mid);
+  white-space: nowrap;
+}
+
+.leaflet-tooltip.rm-tip::before { display: none; }
+.leaflet-tooltip.rm-tip.is-next { border-color: var(--accent-line-strong); color: var(--accent); }
+.leaflet-tooltip.rm-tip.is-me { border-color: var(--accent-line); }
+
+.leaflet-container { background: var(--paper-warm); font-family: inherit; }
+.leaflet-control-attribution {
+  background: var(--panel-soft) !important;
+  color: var(--text-faint) !important;
+  font-size: 10px !important;
+}
+.leaflet-control-attribution a { color: var(--text-dim) !important; }
+
+.svg-grid line { stroke: var(--line); stroke-width: 1; }
+
+.bld { fill: var(--accent-disabled); stroke: var(--line-strong); stroke-width: 2; }
+.bld.is-active { fill: var(--accent); stroke: var(--accent-disabled); }
+
+/* 今天要去的楼栋 */
+.bld.is-today { fill: var(--accent-disabled); stroke: var(--accent); stroke-width: 3; }
+/* 下一节课所在的那栋 */
+.bld.is-next { fill: var(--accent); stroke: var(--accent-disabled); stroke-width: 3; }
+
+.bld-order {
+  fill: var(--text);
+  font-size: 17px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: inherit;
+}
+.bld-order.is-next { fill: var(--on-accent); font-weight: 800; }
+
+.bld-time {
+  fill: var(--text-dim);
+  font-size: 13px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.bld-flag {
+  fill: var(--accent);
+  font-size: 15px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.map-note {
+  fill: var(--text-dim);
+  font-size: 15px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+.bld-label {
+  fill: var(--text);
+  font-size: 17px;
+  font-weight: 600;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+/* 地图上的文字都加一层描边光晕：楼名、时间和距离经常挨得很近，
+   没有光晕时叠在一起就看不清了。
+   opacity 写死 1：简图上的字要看得清，不能被别处的透明度影响。 */
+/* 白描边让字在任何底色上都能看清。这里**不统一指定透明度**：
+   地名要半透明（做底衬、少抢眼），圆点编号和「下一节」要实心。 */
+.bld-label, .bld-time, .bld-flag, .dist-label, .me-label, .map-note {
+  paint-order: stroke;
+  stroke: var(--paper-warm);
+  stroke-width: 3.5px;
+  stroke-linejoin: round;
+}
+
+/* 地名要"看得见但不抢戏"：字小一号、透明度压下去 */
+.bld-label { opacity: 0.72; }
+.bld-time { opacity: 0.6; }
+.bus-stop-label { opacity: 0.68; }
+.map-note { opacity: 0.55; }
+
+/* 下面这些是"要看清楚"的，保持不透明 */
+.bld-order, .bld-flag, .me-label { opacity: 1; }
+
+.bld-label.is-active { fill: var(--on-accent); font-weight: 800; }
+.bld-label.is-next { fill: var(--accent); font-weight: 700; }
+
+/* 「我去车站 / 车站去教室」这两截连线 */
+.bus-link {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-dasharray: 10 8;
+  animation: dash 1.1s linear infinite;
+  opacity: 0.85;
+}
+
+/* 上车站 → 下车站这一段：这一截是坐车，不是走路。
+   画粗一点、换成紫色，一眼能跟走路的两截分开。
+   虚线周期 3+6=9，动画走 -18 刚好两个周期，接得上不会跳。 */
+.bus-link.is-ride {
+  stroke: var(--accent-2);
+  stroke-width: 5;
+  stroke-dasharray: 3 6;
+  opacity: 0.9;
+}
+
+@keyframes dash {
+  to { stroke-dashoffset: -18; }
+}
+
+.me-ring {
+  fill: var(--accent-soft-2);
+  animation: pulse 2s var(--ease-out) infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.me-dot { fill: var(--accent); stroke: var(--on-accent); stroke-width: 3; }
+.me-label { fill: var(--accent); font-size: 19px; font-weight: 700; text-anchor: middle; font-family: inherit; }
+
+.dist-label {
+  fill: var(--text);
+  font-size: 21px;
+  text-anchor: middle;
+  font-family: inherit;
+}
+
+/* 校巴站：菱形 + 站名，和编号圆圈区分开 */
+.bus-stop {
+  fill: var(--stop-fill);
+  stroke: var(--accent-ink);
+  stroke-width: 2.5;
+}
+
+.bus-stop-label {
+  fill: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 600;
+  text-anchor: middle;
+  font-family: inherit;
+  paint-order: stroke;
+  stroke: var(--paper-warm);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+}
+
+/* 原来动的是 SVG 的 r（几何属性 = 动了布局）。改成 transform: scale()——
+   合成层上的动画，便宜得多。13 → 36 换算成 scale 就是 2.77。 */
+@keyframes pulse {
+  0% { transform: scale(1); opacity: 0.9; }
+  70% { transform: scale(2.77); opacity: 0; }
+  100% { transform: scale(2.77); opacity: 0; }
+}
+
+.map-empty { color: var(--text-faint); font-size: 12px; text-align: center; padding: 26px 10px; }
+
+.legend { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+.legend-item { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text-dim); }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot-me { background: var(--accent); }
+.dot-next { background: var(--accent); box-shadow: 0 0 0 3px var(--accent-line); }
+.dot-today { background: var(--accent-disabled); box-shadow: inset 0 0 0 2px var(--accent); }
+
+/* 图例里的两种线：走路（细虚线）/ 坐车（粗点线） */
+.line { width: 22px; height: 0; display: inline-block; border-top: 3px dashed var(--accent); }
+.line-ride { border-top-style: dotted; border-top-width: 4px; border-top-color: var(--accent-2); }
+
+/* ---------- 路线 ---------- */
+
+.route-list { display: flex; flex-direction: column; }
+
+/* 行程块以前是"卡片里再放一个带边框的盒子"，校巴块又是盒子里第三个盒子。
+   现在只保留卡片这一层容器，块与块之间用一条发丝线分隔（分隔语言：
+   色块盒子 → 细线），层级靠留白和字重表达。 */
+.leg {
+  border: 0;
+  border-radius: 0;
+  padding: 16px 0;
+}
+
+.leg + .leg { border-top: 1px solid var(--line); }
+.leg:first-child { padding-top: 0; }
+.leg:last-child { padding-bottom: 0; }
+
+.leg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+.leg-title { font-size: var(--text-lg); font-weight: 600; }
+.leg-title .idx {
+  display: inline-grid;
+  place-items: center;
+  width: 20px; height: 20px;
+  margin-right: 8px;
+  border-radius: var(--radius-xs);
+  font-size: 11px;
+  background: var(--accent-soft-2);
+  color: var(--accent);
+}
+
+.leg-time { font-family: var(--font-display); font-size: 12px; color: var(--text-dim); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.leg-meta { font-variant-numeric: tabular-nums; margin-top: 8px; font-size: 12.5px; color: var(--text-dim); display: flex; gap: 12px; flex-wrap: wrap; }
+.leg-meta b { color: var(--text); font-weight: 650; }
+.leg-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+.leg-warn { margin-top: 9px; font-size: 12px; color: var(--warn); }
+
+/* ---------- 返回宿舍 / 自定义路线 ---------- */
+
+.dorm-plan, .custom-plan { margin-top: 12px; }
+
+.dorm-plan .empty, .custom-plan .empty { margin: 0; }
+
+/* 可搜索输入框下面的候选列表（宿舍、自定义路线的起点/终点都用它）。
+   不用浏览器原生 <datalist>：它只认字面值，不认繁简和拼音首字母 */
+.picker {
+  margin: -4px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.picker-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.picker-item:last-of-type { border-bottom: 0; }
+.picker-item:active { background: var(--accent-soft-2); }
+
+.picker-meta { font-size: 11px; color: var(--text-dim); white-space: nowrap; }
+
+.picker-note {
+  margin: 0;
+  padding: 10px 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+/* 卡片里的小字说明（回宿舍的起点、自定义路线的提示等） */
+.plan-note {
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.dorm-leg .idx { background: var(--accent-2-soft); color: var(--accent-2); }
+.custom-leg .idx { background: var(--accent-soft-2); color: var(--accent); }
+
+/* ---------- 路线页：三张卡片左右滑动 ---------- */
+
+/* 上面那条切换条（也是"当前在看哪张"的指示） */
+.route-nav {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.route-tab {
+  flex: 1;
+  appearance: none;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 9px 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: var(--card-2);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-out), color var(--dur-hover) var(--ease-out);
+}
+
+.route-tab.is-active {
+  background: var(--accent);
+  border-color: transparent;
+  color: var(--on-accent);
+}
+
+/* 滑动容器：靠 scroll-snap，手指一划就翻页，不用写手势代码 */
+.route-slides {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.route-slides::-webkit-scrollbar { display: none; }
+
+.route-track { display: flex; align-items: flex-start; }
+
+.route-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+/* 路线页这几张卡片本来就信息密，留白收紧一档——
+   所有卡片同一个内边距，正是审计里"每个区块留白都一样"那条 minor。 */
+.route-slide .card { padding: var(--space-md); }
+
+/* ---------- 校巴方案 ---------- */
+
+.leg-bus {
+  /* 校巴这块原来是行程块里的第二个盒子（带底色的框），现在只是一条
+     发丝线 + 留白分出来的段落 */
+  margin-top: 14px;
+  padding-top: 12px;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-radius: 0;
+  background: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.leg-bus-head {
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+.bus-group { display: flex; flex-direction: column; gap: 4px; }
+.bus-group + .bus-group { border-top: 1px solid var(--line); padding-top: 10px; }
+
+.bus-where {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  font-size: 13.5px;
+  font-weight: 620;
+}
+
+.bus-tag {
+  display: inline-grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: var(--radius-xs);
+  background: var(--accent);
+  color: var(--on-accent);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.bus-stops { font-size: var(--text-sm); font-weight: 500; color: var(--text-dim); }
+
+.bus-ride {
+  /* 班次时长是成列的数字，走 display（等宽）面 */
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  padding-left: 2px;
+}
+
+.bus-ride b { color: var(--text); font-weight: 650; }
+.bus-ride.is-faster b:last-of-type { color: var(--accent); }
+.bus-ride.is-late { opacity: 0.72; }
+.bus-late { color: var(--warn); font-weight: 700; }
+.bus-verdict { color: var(--ok); font-weight: 700; }
+
+.bus-breakdown { font-variant-numeric: tabular-nums; font-size: 11.5px; color: var(--text-dim); line-height: 1.6; }
+
+/* 没有方案 / 模块没加载：说清楚是哪种情况 */
+.bus-none { font-size: 12.5px; color: var(--text-dim); line-height: 1.7; }
+/* 没有方案 / 模块没加载：只换那条分隔线和标签颜色，不再铺一层底色盒子 */
+.leg-bus.is-none .leg-bus-head { color: var(--text-dim); }
+.leg-bus.is-missing { border-top-color: var(--warn-line); }
+.leg-bus.is-missing .leg-bus-head { color: var(--warn); }
+.leg-bus.is-missing .bus-none { color: var(--warn); }
+
+/* 「现在停运的线路」折叠块 */
+.bus-off {
+  margin-top: 2px;
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+
+.bus-off > summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-dim);
+  /* 原来这里是 outline: none 且没有替代——可访问性上的硬伤。
+     现在靠全局的 :focus-visible 环。 */
+  list-style: none;
+}
+
+.bus-off > summary::before { content: "▸ "; }
+.bus-off[open] > summary::before { content: "▾ "; }
+.bus-off > summary::-webkit-details-marker { display: none; }
+.bus-off[open] > summary { margin-bottom: 8px; }
+.bus-off .bus-group { opacity: 0.72; }
+
+/* 地图入口：链接和「复制坐标」按钮长得一样，所以用类选择器 */
+.nav-link {
+  appearance: none;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text);
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  padding: 7px 12px;
+  border-radius: var(--radius-xs);
+}
+
+.nav-link:active { transform: translateY(1px); }
+
+
+/* ---------- 课表列表 ---------- */
+
+.course-list { display: flex; flex-direction: column; gap: 9px; }
+
+.course-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  justify-content: space-between;
+  background: var(--accent-soft);
+}
+
+.ci-main { min-width: 0; }
+.ci-title { font-size: 14px; font-weight: 650; margin-bottom: 4px; }
+.ci-meta { font-size: 12px; color: var(--text-dim); line-height: 1.6; }
+.ci-actions { display: flex; gap: 6px; flex: none; }
+
+.day-group { margin-bottom: 14px; }
+.day-group:last-child { margin-bottom: 0; }
+.day-title {
+  font-size: 12px;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin: 0 0 8px;
+  font-weight: 700;
+}
+
+/* ---------- 从学校接口拉课表：结果预览 ---------- */
+
+/* 一节课一个小格子，跟「全部课程」那边同一套视觉（发丝线 + 圆角 + 淡底） */
+.pull-list {
+  display: grid;
+  gap: 8px;
+  margin-top: var(--space-sm);
+}
+
+.pull-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  background: var(--accent-soft);
+  min-width: 0;
+}
+
+.pull-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+  color: var(--text-faint);
+}
+
+.pull-day { font-weight: 700; color: var(--accent); }
+.pull-time { font-variant-numeric: tabular-nums; }
+
+.pull-name {
+  margin-top: 2px;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.pull-place,
+.pull-weeks {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  overflow-wrap: anywhere;
+}
+
+/* 隐私说明那行小字：跟着输入框/虚线框走 */
+.field-note {
+  /* 正的上边距。**不能给负值**——上面那行是 .field-row（输入框），
+     负 margin 会把这行字压到输入框上（用户报的"重叠"就是这个）。 */
+  margin: var(--space-xs) 0 var(--space-sm);
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+}
+
+/* ---------- 表单 ---------- */
+
+.form { display: flex; flex-direction: column; gap: 14px; }
+.field { display: flex; flex-direction: column; gap: 7px; min-width: 0; border: 0; padding: 0; margin: 0; }
+.field > span, .field > legend {
+  font-size: 12px;
+  color: var(--text-dim);
+  padding: 0;
+  margin-bottom: 7px;
+}
+
+.field input[type="text"],
+.field input[type="search"],
+.field input[type="number"],
+.field input[type="time"],
+.field input[type="date"],
+.field input[type="password"],
+.field select {
+  width: 100%;
+  font-family: inherit;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--surface-input);
+  border: 1px solid var(--line);
+  /* 边框宽度在所有状态下都不变（聚焦不跳版）；
+     `outline: none` 却不给替代方案是最常见的可访问性 bug，这里改成
+     预留 2px 环的位置，聚焦时只换颜色 */
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+}
+
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field input:focus-visible, .field select:focus-visible { outline-color: var(--focus); }
+.field input[type="range"] {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-line);
+}
+
+.field input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface-3);
+  box-shadow: var(--shadow-thumb);
+  cursor: pointer;
+}
+
+.field input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--surface-3);
+  cursor: pointer;
+}
+
+.field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+.weekday-picker { display: flex; gap: 6px; flex-wrap: wrap; }
+.wd {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  padding: 6px 11px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.wd input { accent-color: var(--accent); margin: 0; }
+.wd:has(input:checked) { border-color: var(--accent-line-strong); background: var(--accent-soft-2); color: var(--accent); }
+
+.form-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 4px; }
+
+.switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+  cursor: pointer;
+}
+
+.switch input { accent-color: var(--accent); width: 18px; height: 18px; }
+
+.form-card { border-color: var(--accent-line); }
+
+/* ---------- 楼栋列表 ---------- */
+
+.building-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+
+.building-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 11px 13px;
+}
+
+.bi-name { font-size: 13.5px; font-weight: 620; }
+.bi-meta { font-size: 11.5px; color: var(--text-faint); font-variant-numeric: tabular-nums; }
+
+.building-more {
+  width: 100%;
+  justify-content: center;
+}
+
+.empty { color: var(--text-faint); font-size: 12.5px; padding: 18px 4px; text-align: center; }
+
+/* 数量、进度这类状态文字：比正文弱，但不再是「淡灰小字」 */
+.count-line,
+.progress-text,
+.debug-summary {
+  font-size: 12px;
+  color: var(--text-dim);
+  line-height: 1.6;
+  margin: 10px 0 0;
+}
+
+.debug-summary { margin: 10px 0 0; }
+
+/* ---------- 地图读取的建筑列表 ---------- */
+
+.places-list { display: flex; flex-direction: column; gap: 7px; margin-top: 14px; }
+
+.place-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: border-color var(--dur-hover) var(--ease-out), background var(--dur-hover) var(--ease-out);
+}
+
+
+.place-item:has(input:checked) { border-color: var(--accent-line); background: var(--accent-soft); }
+.place-item input { accent-color: var(--accent); width: 16px; height: 16px; margin: 2px 0 0; flex: none; }
+
+.pi-main { min-width: 0; }
+.pi-name {
+  font-size: 13.5px;
+  font-weight: 620;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.pi-meta { font-size: 11.5px; color: var(--text-faint); margin-top: 4px; overflow-wrap: anywhere; }
+
+.pi-alias { font-size: 11.5px; color: var(--text-dim); margin-top: 4px; overflow-wrap: anywhere; }
+
+.place-merge {
+  margin-top: 9px;
+  font-size: 11.5px;
+  padding: 6px 10px;
+  color: var(--accent);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+
+.pi-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+}
+
+.pi-badge.is-muted { border-color: var(--line); color: var(--text-faint); }
+
+.btn:disabled { opacity: 0.55; cursor: default; }
+
+/* ---------- 课表截图导入 ---------- */
+
+.drop-zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  padding: 26px 16px;
+  margin: 4px 0 14px;
+  border: 1.5px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--accent-soft);
+  cursor: pointer;
+  transition: border-color var(--dur-hover) var(--ease-out), background var(--dur-hover) var(--ease-out);
+}
+
+.drop-zone.is-over {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+@media (hover: hover) {
+  .drop-zone:hover { border-color: var(--accent); }
+}
+
+.drop-zone strong { font-size: 14px; }
+.drop-zone span { font-size: 11.5px; color: var(--text-dim); line-height: 1.6; }
+
+.progress {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft-2);
+  overflow: hidden;
+  margin: 12px 0 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  /* 动 transform 不动 width（技能：只 animate transform / opacity） */
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left center;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+
+.ocr-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+
+.sep {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 18px 0;
+}
+
+/* 顶部那两个按钮：只在下拉预览出现时显示，别占着地方 */
+.ocr-actions-top {
+  margin-top: 0;
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ocr-row {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  background: var(--accent-soft);
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.ocr-row.is-bad { border-color: var(--warn-line); }
+
+.ocr-row-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ocr-dash { color: var(--text-faint); }
+
+.ocr-row input[type="text"],
+.ocr-row input[type="time"],
+.ocr-row select {
+  font-family: inherit;
+  font-size: 13px;
+  color: var(--text);
+  background: var(--surface-input);
+  border: 1px solid var(--line);
+  outline: 2px solid transparent;
+  outline-offset: 1px;
+  border-radius: var(--radius-xs);
+  padding: 8px 10px;
+  min-width: 0;
+}
+
+.ocr-row input:focus, .ocr-row select:focus { border-color: var(--accent); }
+.ocr-row input:focus-visible, .ocr-row select:focus-visible { outline-color: var(--focus); }
+.ocr-row-head select { flex: none; }
+.ocr-row-head .btn { margin-left: auto; }
+
+.ocr-note { font-size: 11.5px; color: var(--warn); line-height: 1.6; }
+.ocr-note.is-ok { color: var(--text-faint); }
+
+.bi-missing { color: var(--warn); }
+
+.ocr-debug {
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-1);
+  padding: 10px 12px;
+}
+
+.ocr-debug summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-dim);
+}
+
+
+
+.ocr-debug pre {
+  margin: 10px 0 0;
+  max-height: 260px;
+  overflow: auto;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--text-dim);
+  white-space: pre-wrap;
+  word-break: break-all;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ---------- 底部导航 ---------- */
+
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 30;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+  background: var(--panel-faint);
+  backdrop-filter: blur(22px);
+  -webkit-backdrop-filter: blur(22px);
+  border-top: 1px solid var(--line);
+}
+
+.tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--text-faint);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 4px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex: 1 1 0;
+  max-width: 120px;
+  transition: color var(--dur-hover) var(--ease-out), background var(--dur-hover) var(--ease-out);
+}
+
+.tab-ico { font-size: 11px; letter-spacing: 0.5px; opacity: 0.75; }
+.tab.is-active { color: var(--accent); background: var(--accent-soft-2); }
+.tab.is-active .tab-ico { opacity: 1; }
+
+/* ---------- 提示条 ---------- */
+
+.toasts {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(92vw, 520px);
+  pointer-events: none;
+}
+
+/* 提示条：跟页面同色系（粉白底 + 圆角 + 左侧一条语气色），字用深色。
+ *
+ * 之前这里是深蓝底（旧暗色主题留下的），字号色又是继承来的深褐，
+ * 深字配深底，对比度只有 1.34:1 —— 播报之后弹出来的那条基本看不见。
+ * 现在：底是 var(--surface-3)（透一点点出来跟背景呼应），
+ * 正文用 --text（约 11.6:1），标题用对应语气的"加深色"（约 5:1 上下）。
+ */
+.toast {
+  /* 文字在左、撤销按钮在右（按钮用 margin-left:auto 顶到最右边） */
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  background: var(--surface-3);
+  border: 1px solid var(--line);
+  /* 圆角走 token，不再另写一个 12px */
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--text);
+  box-shadow: 0 14px 34px var(--accent-line), var(--shadow-text);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  animation: toast-in var(--dur-toast) var(--ease-out);
+}
+
+.toast-text { flex: 1; min-width: 0; }
+
+/* 语气：**不再用左边那条 4px 竖条**（单边粗竖条是最典型的 AI 卡片签名），
+   改成"标题色 + 标题前一个小圆点"——底色全部统一，一圈发丝线。 */
+.toast.is-ok strong { color: var(--ok-ink); }
+.toast.is-warn strong { color: var(--warn-ink); }
+.toast.is-err strong { color: var(--err-ink); }
+
+.toast strong { display: block; margin-bottom: 3px; font-size: 13.5px; color: var(--accent-ink); }
+
+/* 小圆点继承标题色（currentColor），六种语气都不用手写颜色 */
+.toast strong::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  margin-right: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  vertical-align: 2px;
+}
+
+/* 提示条上的操作按钮（撤销用）。容器本身是 pointer-events: none，
+   所以这里要单独打开——否则按钮点不到。 */
+.toast-action {
+  appearance: none;
+  /* 顶到右边、跟文字垂直居中；原来在下面占一整行，看着像"另一个提示" */
+  margin-left: auto;
+  align-self: center;
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  background: var(--surface-3);
+  color: var(--text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.toast-action:active { transform: translateY(1px); }
+
+@media (hover: hover) {
+  .toast-action:hover { border-color: var(--line-strong); }
+}
+
+/* ---------- 页面内确认弹窗 ----------
+   不用 window.confirm()：内置浏览器 / WebView 常把它静默屏蔽掉，
+   点了按钮会像"没反应"一样。 */
+
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: var(--scrim);
+  /* 遮罩本身不糊：它只要压暗，糊留给里面的对话框 */
+}
+
+.modal[hidden] { display: none; }
+
+.modal-card {
+  width: min(92vw, 420px);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* 确认框要看得清，所以比普通卡片厚一点，不走那套半透明变量 */
+  background: linear-gradient(180deg, var(--surface-4), var(--surface-warm));
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  box-shadow: var(--shadow);
+}
+
+.modal-text {
+  margin: 0 0 18px;
+  font-size: 14px;
+  line-height: 1.75;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.modal-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+
+/* 课表图片的预览：整张图缩进对话框里，浅底衬托，四周留白 */
+.image-shot {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* 上边距是给"图片比例"那个下拉框留的——原来贴在一起，看着挤 */
+  margin: var(--space-md) 0 var(--space-sm);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--surface-input);
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* ---------- 窄屏 ---------- */
+
+@media (max-width: 430px) {
+  .hero-title { font-size: 22px; }
+  .countdown { font-size: 19px; }
+  /* 读数行的列数与分隔线在 620px 那一段里按 data-cells 精确处理了，
+     这里不要再插手——两套规则同时存在时，4 格也会被拉成"最后一行整行"，
+     手机上就出现"半格空着 + 横线只画一半"的错位。 */
+  .field-row { grid-template-columns: 1fr; }
+  .tl-item { grid-template-columns: 56px 1fr; }
+  .tl-item .tl-badge { grid-column: 2; justify-self: start; margin-top: 6px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-line, .me-ring, .view.is-active, .toast { animation: none; }
+  /* 系统开了「减少动态效果」就别放视频了，退回底下那张静态图 */
+  .bg-video { display: none; }
+}

@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#080c18" />
+  <!-- 部署脚本会把这里换成这次的构建号；本地打开时是 dev，不做版本检查 -->
+  <meta name="build" content="dev" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Olympic Protocol · 校园通行指挥台</title>
+  <script>
+    /* 部署后自动换新版本。
+     *
+     * GitHub Pages 给 HTML 也是 10 分钟缓存，所以光给 js/css 加版本号不够——
+     * 浏览器手里那份旧 HTML 里指的还是旧资源，刷新也还是旧的。
+     * 这里拿一份「不缓存」的 build.json 跟自己的构建号比，不一样就带参数重载一次；
+     * 参数一变，HTML 就必须重新取，新 HTML 里指的就是新资源了。
+     */
+    (function () {
+      var meta = document.querySelector('meta[name="build"]');
+      var mine = meta ? meta.getAttribute("content") : "";
+      if (!mine || mine === "dev") return;
+
+      fetch("build.json", { cache: "no-store" }).then(function (res) {
+        return res.ok ? res.json() : null;
+      }).then(function (info) {
+        if (!info || !info.stamp || info.stamp === mine) return;
+        var url = new URL(location.href);
+        /* 已经为这个版本重载过一次还不一致，就不再重载，免得来回死循环 */
+        if (url.searchParams.get("t") === info.stamp) return;
+        url.searchParams.set("t", info.stamp);
+        location.replace(url.toString());
+      }).catch(function () { /* 拿不到就算了，不影响页面 */ });
+    })();
+  </script>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 背景层：一段 16 秒的视频循环（原片是个 4 分钟的长 mv，画面本身就是
+       16 秒一循环，所以只截了前 16 秒、去掉音轨，压到几 MB 以内）。
+       视频下面垫着原来那张静态图：视频还没播起来（或者系统开了「减少动态效果」）
+       的时候，看到的是这张图，不会白屏。 -->
+  <div class="bg-layer" aria-hidden="true">
+    <video id="bgVideo" class="bg-video" autoplay muted loop playsinline preload="auto"
+      poster="voaf_ga09.jpg">
+      <source src="bg-loop.mp4" type="video/mp4" />
+    </video>
+    <div class="bg-veil"></div>
+  </div>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">OP</span>
+        <div class="brand-text">
+          <strong>Olympic Protocol</strong>
+          <span id="todayLabel">--</span>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span id="clock" class="clock">--:--:--</span>
+        <span id="geoStatus" class="pill pill-idle">定位未启用</span>
+      </div>
+    </header>
+
+    <main class="views">
+      <section class="view is-active" data-view="today">
+        <article class="card hero" id="nextCard">
+          <!-- 宽屏时是"左边课程、右边读数"的两栏（不对称），窄屏自然叠起来 -->
+          <div class="hero-top">
+            <div class="hero-main">
+              <span class="tag" id="nextTag">下一节课</span>
+              <h2 class="hero-title" id="nextName">正在加载…</h2>
+              <p class="hero-sub" id="nextMeta">--</p>
+            </div>
+            <div class="hero-readout">
+              <span class="countdown" id="nextCountdown">--:--</span>
+            </div>
+          </div>
+          <!-- data-cells 由脚本写：3 格还是 4 格（有海拔数据时才多一格「爬升」）。
+               列数是按格数定的，不用 auto-fit 自动换列——自动换列时
+               "每格一条左竖线"的规则会在换行处错位。 -->
+          <div class="hero-stats" id="nextStats" data-cells="3">
+            <div class="stat">
+              <span class="stat-label">距离</span>
+              <span class="stat-value" id="nextDistance">--</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">步行</span>
+              <span class="stat-value" id="nextWalk">--</span>
+            </div>
+            <div class="stat" id="nextClimbWrap" hidden>
+              <span class="stat-label">爬升</span>
+              <span class="stat-value" id="nextClimb">--</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">建议出发</span>
+              <span class="stat-value" id="nextLeave">--</span>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="btnSpeakNext">播报下一节</button>
+            <button class="btn" id="btnBrief">今日课表播报</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head">
+            <h3>今日课程</h3>
+            <span class="muted" id="todaySummary">--</span>
+          </div>
+          <ol class="timeline" id="todayList"></ol>
+        </article>
+      </section>
+
+      <section class="view" data-view="settings">
+        <article class="card">
+          <div class="card-head"><h3>定位</h3><span class="muted" id="locState">未开始</span></div>
+          <!-- 这三格里「当前坐标」是一串长文本（22.41830, 114.20520），
+               手机上一行塞三格会把它硬折成好几行，所以窄屏改成两行：
+               坐标独占一行，精度和最近楼栋并排一行。 -->
+          <div class="hero-stats hero-stats-tight stats-lead-wide">
+            <div class="stat"><span class="stat-label">当前坐标</span><span class="stat-value" id="locCoords">--</span></div>
+            <div class="stat"><span class="stat-label">精度</span><span class="stat-value" id="locAccuracy">--</span></div>
+            <div class="stat"><span class="stat-label">最近楼栋</span><span class="stat-value" id="locNearest">--</span></div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="btnLocate">开始实时定位</button>
+            <button class="btn" id="btnStopLocate">停止</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head"><h3>语音播报</h3></div>
+          <label class="switch">
+            <input type="checkbox" id="vEnabled" checked />
+            <span>启用语音</span>
+          </label>
+          <label class="field">
+            <span>音色</span>
+            <select id="vVoiceSelect"></select>
+          </label>
+          <label class="field">
+            <span>语速 <b id="vRateVal">1.0</b></span>
+            <input type="range" id="vRate" min="0.5" max="1.8" step="0.05" value="1" />
+          </label>
+          <label class="field">
+            <span>音量 <b id="vVolumeVal">1.0</b></span>
+            <input type="range" id="vVolume" min="0" max="1" step="0.05" value="1" />
+          </label>
+          <div class="hero-actions">
+            <button class="btn" id="btnTestVoice">试听</button>
+            <button class="btn btn-ghost" id="btnStopVoice">停止播报</button>
+          </div>
+        </article>
+
+        <article class="card">
+          <div class="card-head"><h3>提醒与步行参数</h3></div>
+          <div class="field-row">
+            <label class="field">
+              <span>课前提醒（分钟）</span>
+              <input type="number" id="sLead" min="0" max="60" step="1" />
+            </label>
+            <label class="field">
+              <span>到楼缓冲（分钟）</span>
+              <input type="number" id="sBuffer" min="0" max="30" step="1" />
+            </label>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span>步行速度（米/分钟）</span>
+              <input type="number" id="sSpeed" min="30" max="140" step="1" />
+            </label>
+            <label class="field">
+              <span>校巴速度（米/分钟）</span>
+              <input type="number" id="sBusSpeed" min="120" max="800" step="10" />
+            </label>
+          </div>
+          <label class="field">
+            <span>路程系数</span>
+            <input type="number" id="sDetour" min="1" max="2" step="0.05" />
+          </label>
+          <label class="field">
+            <span>学期开始日期（用于计算教学周）</span>
+            <input type="date" id="sTermStart" />
+          </label>
+          <label class="field">
+            <span>爬升折算：1 米爬升 ≈ 几米平路</span>
+            <input type="number" id="sClimb" min="0" max="20" step="0.5" />
+          </label>
+          <div class="hero-actions">
+            <button class="btn" id="btnTestAlert">测试出发提醒</button>
+            <button class="btn btn-ghost" id="btnResetWalk">恢复默认配置</button>
+          </div>
+        </article>
+
+        <!-- 调试用：这张卡片（以及下面「校区楼栋」那张）默认藏起来。
+             属性和代码都还在：去掉下面的 hidden 就又能看到，
+             也可以把代码里那个 SHOW_BUILDING_TOOLS 开关改成 true。 -->
+        <article class="card" id="placesCard" hidden>
+          <div class="card-head">
+            <h3>从地图读取附近楼栋</h3>
+            <span class="muted" id="plStatus">未搜索</span>
+          </div>
+          <label class="field">
+            <span>按名字搜（找指定的楼）</span>
+            <input type="text" id="plNameQuery" placeholder="例如：Lady Shaw / 邵逸夫" />
+          </label>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="btnSearchByName">按名字搜</button>
+          </div>
+          <hr class="sep" />
+          <label class="field">
+            <span>搜索半径（米）</span>
+            <input type="number" id="plRadius" min="100" max="5000" step="50" value="800" />
+          </label>
+          <label class="field">
+            <span>名称过滤（可留空）</span>
+            <input type="text" id="plKeyword" placeholder="例如：教学楼" />
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="plMerge" checked />
+            <span>合并同一栋楼内的地点</span>
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="plEnglish" checked />
+            <span>优先用英文名（中文名会存成别名）</span>
+          </label>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="btnSearchPlaces">搜索附近建筑</button>
+            <button class="btn" id="btnAddSelectedPlaces">把勾选的加入楼栋</button>
+            <button class="btn btn-ghost" id="btnClearPlaces">清空结果</button>
+          </div>
+          <div class="places-list" id="placesList"></div>
+        </article>
+
+        <article class="card" id="buildingsCard" hidden>
+          <div class="card-head">
+            <h3>校区楼栋</h3>
+            <div class="card-head-actions">
+              <button class="btn btn-small" id="btnAddBuilding">新增楼栋</button>
+              <button class="btn btn-small" id="btnAutoFillBuildings">自动补齐</button>
+              <button class="btn btn-small" id="btnFetchElevation">获取海拔</button>
+              <button class="btn btn-small btn-danger" id="btnClearBuildings">清空全部</button>
+            </div>
+          </div>
+          <label class="field">
+            <span>校区名称</span>
+            <input type="text" id="campusName" />
+          </label>
+          <label class="field">
+            <span>搜索楼栋</span>
+            <input type="search" id="buildingSearch" placeholder="名字或别名，中英文都行" />
+          </label>
+          <label class="switch">
+            <input type="checkbox" id="buildingMissingOnly" />
+            <span>只看还没坐标的</span>
+          </label>
+          <p class="count-line" id="buildingCount"></p>
+          <div class="building-list" id="buildingList"></div>
+
+          <form id="buildingForm" class="form" hidden>
+            <input type="hidden" id="bfId" />
+            <label class="field">
+              <span>楼栋名称</span>
+              <input type="text" id="bfName" placeholder="例如：第三教学楼" required />
+            </label>
+            <label class="field">
+              <span>别名（逗号分隔）</span>
+              <input type="text" id="bfAlias" placeholder="三教, C楼" />
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>纬度</span>
+                <input type="number" id="bfLat" step="0.000001" required />
+              </label>
+              <label class="field">
+                <span>经度</span>
+                <input type="number" id="bfLng" step="0.000001" required />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn" id="bfUseHere">用我的当前位置填入</button>
+              <button type="submit" class="btn btn-primary">保存</button>
+              <button type="button" class="btn btn-ghost" id="bfCancel">取消</button>
+            </div>
+          </form>
+        </article>
+
+        <article class="card">
+          <div class="card-head"><h3>数据</h3></div>
+          <div class="hero-stats hero-stats-tight">
+            <div class="stat">
+              <span class="stat-label">应用版本</span>
+              <span class="stat-value" id="verApp">--</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">构建版本</span>
+              <span class="stat-value" id="verBuild">--</span>
+            </div>
+            <div class="stat">
+              <span class="stat-label">楼栋数据</span>
+              <span class="stat-value" id="verData">--</span>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <button class="btn btn-ghost" id="btnResetData">恢复默认数据</button>
+          </div>
+        </article>
+      </section>
+      <section class="view" data-view="route">
+        <article class="card">
+          <div class="card-head">
+            <h3>校园地图</h3>
+            <div class="map-modes" id="mapModes">
+              <button type="button" class="map-mode" data-mapmode="schematic">简图</button>
+              <button type="button" class="map-mode" data-mapmode="osm">街道图</button>
+              <button type="button" class="map-mode" data-mapmode="cuhk">港中文</button>
+            </div>
+          </div>
+          <div class="map-wrap">
+            <svg id="mapSvg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" role="img" aria-label="校园简图"></svg>
+            <div id="mapReal" style="display: none"></div>
+          </div>
+          <div class="legend" id="mapLegend">
+            <span class="legend-item"><i class="dot dot-me"></i>我的位置</span>
+            <span class="legend-item"><i class="dot dot-next"></i>下一节课</span>
+            <span class="legend-item"><i class="dot dot-today"></i>今天还要去</span>
+            <span class="legend-item"><i class="line line-walk"></i>走这一段</span>
+            <span class="legend-item"><i class="line line-ride"></i>坐车这一段</span>
+          </div>
+        </article>
+
+        <!-- 三张卡片做成左右滑动、一次只显示一张：显示哪张，上面的地图就画哪张的起终点 -->
+        <div class="route-nav" id="routeNav">
+          <button type="button" class="route-tab is-active" data-slide="plan">路线规划</button>
+          <button type="button" class="route-tab" data-slide="dorm">返回宿舍</button>
+          <button type="button" class="route-tab" data-slide="custom">自定义路线</button>
+        </div>
+
+        <div class="route-slides" id="routeSlides">
+          <div class="route-track" id="routeTrack">
+
+        <section class="route-slide" data-slide="plan">
+        <article class="card">
+          <div class="card-head">
+            <h3>路线规划</h3>
+            <span class="muted" id="routeSummary">--</span>
+          </div>
+          <div class="route-list" id="routeList"></div>
+        </article>
+        </section>
+
+        <section class="route-slide" data-slide="dorm">
+        <article class="card">
+          <div class="card-head">
+            <h3>返回宿舍</h3>
+            <span class="muted" id="dormState">未设置</span>
+          </div>
+          <label class="field">
+            <span>宿舍（中英文、简体繁体、拼音首字母都能搜）</span>
+            <input type="search" id="dormSearch" autocomplete="off"
+              placeholder="例如：汤 / 知行楼 / zxl / Chih Hsing" />
+          </label>
+          <div class="picker" id="dormSuggest" hidden></div>
+          <!-- 只剩「删除这个宿舍」这一颗（只有自己加的宿舍才显示），
+               整行在没得删时一起收起来，免得留一段空行 -->
+          <div class="hero-actions" id="dormActions" hidden>
+            <button class="btn btn-ghost" id="btnDormRemove" hidden>删除这个宿舍</button>
+          </div>
+          <div class="dorm-plan" id="dormPlan"></div>
+        </article>
+        </section>
+
+        <section class="route-slide" data-slide="custom">
+        <article class="card">
+          <div class="card-head">
+            <h3>自定义路线</h3>
+            <span class="muted" id="customState">选好起点终点自动规划</span>
+          </div>
+          <div class="field-row">
+            <label class="field">
+              <span>起点（中英文、简繁体、拼音首字母都能搜）</span>
+              <input type="search" id="customFromSearch" autocomplete="off"
+                placeholder="我的位置 / 教研楼 / jylyz" />
+            </label>
+            <label class="field">
+              <span>终点</span>
+              <input type="search" id="customToSearch" autocomplete="off"
+                placeholder="蒙民偉樓 / 蒙民伟楼 / mmwl" />
+            </label>
+          </div>
+          <div class="picker" id="customFromList" hidden></div>
+          <div class="picker" id="customToList" hidden></div>
+          <div class="hero-actions">
+            <button class="btn" id="btnCustomSwap">起点终点对调</button>
+          </div>
+          <div class="custom-plan" id="customPlan"></div>
+        </article>
+        </section>
+
+          </div>
+        </div>
+      </section>
+
+      <section class="view" data-view="course">
+        <article class="card">
+          <div class="card-head">
+            <h3>全部课程</h3>
+            <div class="card-head-actions">
+              <button class="btn btn-small" id="btnAddCourse">新增课程</button>
+              <button class="btn btn-small btn-primary" id="btnExportImage">导出课表图片</button>
+            </div>
+          </div>
+          <div class="course-list" id="courseList"></div>
+        </article>
+
+        <!-- 两种导入方式做成左右滑动的两张卡（跟路线页同一套交互），默认停在「拉取课表」 -->
+        <div class="route-nav" id="importNav">
+          <button type="button" class="route-tab is-active" data-slide="pull">从学校接口拉取</button>
+          <button type="button" class="route-tab" data-slide="ocr">从截图导入</button>
+        </div>
+
+        <div class="route-slides" id="importSlides">
+          <div class="route-track" id="importTrack">
+
+        <section class="route-slide" data-slide="pull">
+        <article class="card" id="pullCard">
+          <div class="card-head">
+            <h3>从学校接口拉取课表</h3>
+            <span class="muted" id="pullState">就绪</span>
+          </div>
+          <!-- 密码只在这一次请求里用：不存本地、不进日志，代理和学校那边也都是用完就丢 -->
+          <div class="field-row">
+            <label class="field">
+              <span>学号 SID</span>
+              <!-- 允许浏览器记住这组账号密码（用户要求）：username + current-password
+                   是标准搭配，密码管理器会认出来并问要不要保存 -->
+              <input type="text" id="pullSid" inputmode="numeric" autocomplete="username" placeholder="1155xxxxxx" />
+            </label>
+            <label class="field">
+              <span>密码</span>
+              <input type="password" id="pullPwd" autocomplete="current-password" />
+            </label>
+          </div>
+          <p class="field-note">本网站不会储存您的任何个人信息</p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="btnPull">拉取课表</button>
+            <button class="btn" id="btnPullImport" hidden>导入这些课</button>
+            <button class="btn btn-ghost" id="btnPullClear" hidden>放弃这次结果</button>
+          </div>
+          <p class="progress-text" id="pullStatus" hidden></p>
+          <div id="pullResult"></div>
+          <details class="ocr-debug" id="pullDebug" hidden>
+            <summary>原始字段</summary>
+            <p class="debug-summary" id="pullDebugSummary"></p>
+            <pre id="pullDebugText"></pre>
+          </details>
+        </article>
+        </section>
+
+        <section class="route-slide" data-slide="ocr">
+        <article class="card" id="ocrCard">
+          <div class="card-head">
+            <h3>从课表截图导入</h3>
+            <span class="muted" id="ocrStatus">未开始</span>
+          </div>
+          <!-- 这两个按钮放在卡片顶部：以前在底部，结果一多就被底部导航栏挡住 -->
+          <div class="hero-actions ocr-actions-top" id="ocrActions" hidden>
+            <button class="btn btn-primary" id="btnOcrImport">确认导入</button>
+            <button class="btn btn-ghost" id="btnOcrCancel">放弃这次识别</button>
+          </div>
+          <div class="drop-zone" id="ocrDrop">
+            <strong>粘贴 / 拖入 / 点击选择图片</strong>
+            <input type="file" id="ocrFile" accept="image/*" hidden />
+          </div>
+          <p class="field-note">本网站不会储存您的任何个人信息</p>
+          <label class="switch" id="ocrReplaceWrap" hidden>
+            <input type="checkbox" id="ocrReplace" />
+            <span>导入前清空现有课表</span>
+          </label>
+          <div class="progress" id="ocrProgress" hidden>
+            <div class="progress-bar" id="ocrProgressBar"></div>
+          </div>
+          <p class="progress-text" id="ocrProgressText" hidden></p>
+          <div id="ocrResult"></div>
+          <details class="ocr-debug" id="ocrDebug" hidden>
+            <summary>识别详情</summary>
+            <p class="debug-summary" id="ocrDebugSummary"></p>
+            <pre id="ocrDebugText"></pre>
+          </details>
+        </article>
+        </section>
+
+          </div>
+        </div>
+
+        <!-- 手动新增/编辑课程的表单：不属于上面任何一张卡，所以放在滑动组外面 -->
+        <article class="card form-card" id="courseFormCard" hidden>
+          <div class="card-head"><h3 id="courseFormTitle">新增课程</h3></div>
+          <form id="courseForm" class="form">
+            <input type="hidden" id="cfId" />
+            <label class="field">
+              <span>课程名称</span>
+              <input type="text" id="cfName" placeholder="例如：高等数学" required />
+            </label>
+            <label class="field">
+              <span>上课楼栋</span>
+              <select id="cfBuilding"></select>
+            </label>
+            <div class="field-row">
+              <label class="field">
+                <span>教室</span>
+                <input type="text" id="cfRoom" placeholder="A301" />
+              </label>
+              <label class="field">
+                <span>教师</span>
+                <input type="text" id="cfTeacher" placeholder="张老师" />
+              </label>
+            </div>
+            <div class="field-row">
+              <label class="field">
+                <span>开始时间</span>
+                <input type="time" id="cfStart" value="08:00" required />
+              </label>
+              <label class="field">
+                <span>结束时间</span>
+                <input type="time" id="cfEnd" value="09:40" required />
+              </label>
+            </div>
+            <fieldset class="field">
+              <legend>上课星期</legend>
+              <div class="weekday-picker" id="cfWeekdays"></div>
+            </fieldset>
+            <!-- 起止日期只有从学校接口拉回来的课才有；手输/截图导入的可以留空 -->
+            <div class="field-row">
+              <label class="field">
+                <span>开始日期（可留空）</span>
+                <input type="date" id="cfStartDate" />
+              </label>
+              <label class="field">
+                <span>结束日期（可留空）</span>
+                <input type="date" id="cfEndDate" />
+              </label>
+            </div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">保存</button>
+              <button type="button" class="btn btn-ghost" id="cfCancel">取消</button>
+            </div>
+          </form>
+        </article>
+      </section>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab is-active" data-tab="today"><span class="tab-ico">01</span><span>今日</span></button>
+      <button class="tab" data-tab="route"><span class="tab-ico">02</span><span>路线</span></button>
+      <button class="tab" data-tab="course"><span class="tab-ico">03</span><span>课表</span></button>
+      <button class="tab" data-tab="settings"><span class="tab-ico">04</span><span>设置</span></button>
+    </nav>
+  </div>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <div class="modal" id="confirmBox" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true">
+      <p class="modal-text" id="confirmText"></p>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="confirmCancel">取消</button>
+        <button type="button" class="btn btn-primary" id="confirmOk">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 课表图片：先给你看生成好的图，再决定存下来还是分享出去。
+       比例按用途选：自适应（就按内容）/ 手机壁纸 / 平板壁纸。 -->
+  <div class="modal" id="imageBox" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-label="课表图片">
+      <p class="modal-text" id="imageHint">课表图片已经生成。</p>
+      <label class="field">
+        <span>图片比例</span>
+        <select id="imageRatio">
+          <option value="phone" selected>手机壁纸 9 : 19.5</option>
+          <option value="tabletPortrait">平板竖屏 3 : 4</option>
+          <option value="tabletLandscape">平板横屏 4 : 3</option>
+        </select>
+      </label>
+      <img class="image-shot" id="imagePreview" alt="课表图片" />
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="imageClose">关闭</button>
+        <button type="button" class="btn" id="imageSave">保存图片</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data/buildings.js"></script>
+  <script src="data/dorms.js"></script>
+  <script src="data/shuttle.js"></script>
+  <script src="data/holidays.js"></script>
+  <script src="data/defaults.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/zh.js"></script>
+  <script src="js/dorm.js"></script>
+  <script src="js/geo.js"></script>
+  <script src="js/shuttle.js"></script>
+  <script src="js/elevation.js"></script>
+  <script src="js/speech.js"></script>
+  <script src="js/planner.js"></script>
+  <script src="js/map.js"></script>
+  <script src="js/realmaps.js"></script>
+  <script src="js/places.js"></script>
+  <script src="js/ocr.js"></script>
+  <script src="js/timetable.js"></script>
+  <script src="js/exportimage.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

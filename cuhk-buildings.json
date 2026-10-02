@@ -1,0 +1,57 @@
+{
+  "_说明": "香港中文大学课表涉及的教学楼。坐标来自 OpenStreetMap，WGS-84。在「课表」页点「导入」选择本文件即可，会按名字去重后追加到现有楼栋里，不会动课表。",
+  "campus": {
+    "name": "香港中文大学",
+    "buildings": [
+      {
+        "id": "cuhk-lsk",
+        "name": "Lee Shau Kee Building",
+        "alias": ["李兆基樓", "李兆基楼"],
+        "lat": 22.419530,
+        "lng": 114.203955
+      },
+      {
+        "id": "cuhk-ycliang",
+        "name": "Y.C. Liang Hall",
+        "alias": ["潤昌堂", "润昌堂"],
+        "lat": 22.420101,
+        "lng": 114.206546
+      },
+      {
+        "id": "cuhk-ladyshaw",
+        "name": "Lady Shaw Building",
+        "alias": ["邵逸夫夫人樓", "邵逸夫夫人楼"],
+        "lat": 22.418885,
+        "lng": 114.206690
+      },
+      {
+        "id": "cuhk-estherlee",
+        "name": "Esther Lee Building",
+        "alias": ["利黃瑤璧樓", "利黄瑶璧楼"],
+        "lat": 22.413840,
+        "lng": 114.208609
+      },
+      {
+        "id": "cuhk-whmy",
+        "name": "Wu Ho Man Yuen Building",
+        "alias": ["伍何曼原樓", "伍何曼原楼"],
+        "lat": 22.416690,
+        "lng": 114.211664
+      },
+      {
+        "id": "cuhk-yasumoto",
+        "name": "Yasumoto International Academic Park",
+        "alias": ["康本國際學術園", "康本国际学术园", "Yasumoto Int'l Acad Park"],
+        "lat": 22.416258,
+        "lng": 114.211124
+      },
+      {
+        "id": "cuhk-science",
+        "name": "Science Centre",
+        "alias": ["科學館", "科学馆", "Science Centre East Block", "科學館東座"],
+        "lat": 22.419831,
+        "lng": 114.207342
+      }
+    ]
+  }
+}

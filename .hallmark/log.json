@@ -1,0 +1,21 @@
+[
+ {
+  "date": "2026-10-01",
+  "scope": "app",
+  "macrostructure": "Workbench",
+  "theme": "soft-cute（沿用原品牌色，未换主题）",
+  "enrichment": "none",
+  "brief": "审计里的 6 major + 6 minor：令牌收敛 · 毛玻璃分档 · 提示条纪律 · 撤销优先于确认 · 焦点环 · 不对称两栏 · 留白分档 · 触摸目标 · 缓动与动画属性 · tabular-nums",
+  "axes_changed": "分隔语言（色块盒子 → 发丝线）· 字体（单级 → display + body）· 正文字形（三宫格 → 读数行）",
+  "note": "卡片保留了 8px 轻糊（审计希望卡片完全实底，但这个页面底是真在动的视频，完全不糊可读性会掉）。厚玻璃 14–22px 留给浮层。"
+ },
+ {
+  "date": "2026-10-01",
+  "scope": "app",
+  "macrostructure": "Workbench",
+  "theme": "soft-cute（沿用原品牌色，未换主题）",
+  "enrichment": "none",
+  "brief": "只改审计里的 4 条 critical：卡片套卡片 · 提示条单边竖条 · hero 装饰光斑 · 整页单一字体",
+  "axes_changed": "分隔语言（色块盒子 → 发丝线）· 字体（单级 → display + body 两级）"
+ }
+]
