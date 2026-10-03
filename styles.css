@@ -1259,7 +1259,9 @@ body {
   font-size: 12px;
   color: var(--text-dim);
   padding: 0;
-  margin-bottom: 7px;
+  /* 不要再给 margin-bottom：.field 已经是 flex + gap:7px，两边一起算
+     等于把标签推离自己的输入框 14px，而它离上面那个输入框只有 0。 */
+  margin-bottom: 0;
 }
 
 .field input[type="text"],
@@ -1316,6 +1318,16 @@ body {
 }
 
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+/* 「提醒与步行参数」那张卡片是裸的 <article class="card">，没套 .form
+   （只有 .form 有 gap:14px），所以子元素之间原本一点间距都没有。
+   给相邻的表单项补上间距，否则每个标签都贴着上面那个输入框。 */
+.card > .field-row ~ .field-row,
+.card > .field-row ~ .field,
+.card > .field ~ .field,
+.card > .field ~ .field-row {
+  margin-top: var(--space-md);
+}
 
 .weekday-picker { display: flex; gap: 6px; flex-wrap: wrap; }
 .wd {
