@@ -5375,5 +5375,25 @@ console.log("\n[56] 课表导出成图片：页面接线");
     /SHOT_RATIO_LABELS\[ratioKey\]/.test(appCode));
 }
 
+console.log("\n[57] 拉取课表卡片：接口出处署名");
+{
+  const pageHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const creditAt = pageHtml.indexOf('class="credit"');
+
+  check("卡片底部有署名，且指向原作者的仓库",
+    creditAt > 0 &&
+    pageHtml.indexOf("https://github.com/AnsonCheng03/CUHK_Timetable_fetch", creditAt) > creditAt);
+  check("署名链接新窗口打开，而且带 noopener",
+    /href="https:\/\/github\.com\/AnsonCheng03\/CUHK_Timetable_fetch"[^>]*target="_blank"[^>]*rel="noopener noreferrer"/.test(pageHtml));
+  check("图标是内联 SVG（不引外部图片，静态托管断网也不裂）",
+    /class="credit-ico"[\s\S]{0,240}?<path/.test(pageHtml) &&
+    !/<img[^>]*credit/i.test(pageHtml));
+  check("写了致谢，也点了原作者仓库的名字",
+    pageHtml.indexOf("接口调用方式参考自 CUHK_Timetable_fetch") > 0 &&
+    pageHtml.indexOf("感谢原作者") > 0);
+  check("署名文字走 --accent-ink（不是淡灰小字，也不是对比度不够的 --accent）",
+    /\.credit-link \{[\s\S]{0,220}?color: var\(--accent-ink\)/.test(css));
+}
+
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");
 process.exit(fail === 0 ? 0 : 1);

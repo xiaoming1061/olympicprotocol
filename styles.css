@@ -1205,6 +1205,48 @@ body {
   color: var(--text-dim);
 }
 
+/* 接口出处署名（拉取课表卡片底部）。
+   用户明确要求不要做成淡灰小字——那类说明文字早先已经删光了，所以这里走
+   --accent-ink 这一档：粉的 --accent 在白底上只有 2.83:1 站不住，
+   --accent-ink 实测 5.30:1（白底）/ 4.96:1（浅粉底），过 AA。
+   图标是内联 SVG，用 currentColor 跟着文字色走，不引任何外部图片。 */
+.credit {
+  /* 发丝线跟卡片里其他分隔用同一个令牌，别自己调透明度 */
+  margin: var(--space-md) 0 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--line);
+}
+
+.credit-link {
+  display: inline-flex;
+  /* 窄屏这句会折成两行，图标要贴首行，不能垂直居中到两行中间 */
+  align-items: flex-start;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--accent-ink);
+  text-decoration: none;
+}
+
+.credit-link:focus-visible { text-decoration: underline; }
+
+/* 悬停只在真有指针的设备上生效：触屏按一下不会留下"卡住的"悬停态 */
+@media (hover: hover) {
+  .credit-link:hover { text-decoration: underline; }
+}
+
+.credit-ico {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  /* 13px 文字的行高是 17px，图标 16px；上移 1px 视觉上跟首行居中 */
+  margin-top: 1px;
+}
+
+/* 手机上把可点区域撑开一点，别让这行贴着发丝线不好点 */
+@media (pointer: coarse) {
+  .credit-link { padding-block: 3px; }
+}
+
 /* ---------- 表单 ---------- */
 
 .form { display: flex; flex-direction: column; gap: 14px; }
