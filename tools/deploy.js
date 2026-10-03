@@ -1,14 +1,21 @@
-/* 把页面同步到 clubwebsite 仓库的 olympicprotocol/ 子目录
+/* 老地址的跳转页
  *
- * 为什么需要它：rhythmhill.com 由 clubwebsite 仓库托管，
- * GitHub Pages 的自定义域名只能由一个仓库占整站根路径，
- * 所以这个页面要作为子目录放进去，才能通过
+ * 页面已经搬到 https://olympicprotocol.com/ —— 由 olympicprotocol 仓库
+ * 直接托管（仓库根目录就是站点根，所以不再需要"同步副本"这一步）。
+ *
+ * 为什么还要这个脚本：rhythmhill.com 是另一个仓库（clubwebsite）的站点。
+ * GitHub Pages 的自定义域名只能由一个仓库占整站根路径，所以
  *     https://rhythmhill.com/olympicprotocol/
- * 打开。这个脚本负责把源文件同步过去，避免两边各改各的。
+ *     https://rhythmhill.com/olympicprotocal/     （当年拼错的那个）
+ * 这两个老地址只能留在 clubwebsite 里做跳转。
+ *
+ * 它做两件事：
+ *   1. 把两个老目录的 index.html 写成跳转页；
+ *   2. 清掉以前同步过去、现在已经用不上的旧页面文件。
  *
  * 用法：
- *   node tools/deploy.js            只同步文件
- *   node tools/deploy.js --push     同步 + 提交 + 推送（推送后会由 GitHub Pages 自动发布）
+ *   node tools/deploy.js            只写跳转页
+ *   node tools/deploy.js --push     写 + 提交 + 推送
  */
 
 "use strict";
@@ -21,12 +28,15 @@ const root = path.resolve(__dirname, "..");
 const repo = path.join(root, "clubwebsite");
 const target = path.join(repo, "olympicprotocol");
 
-/* 目录名以前拼错成 olympicprotocal，已改成 olympicprotocol。
-   老地址留在原地做一个跳转页，之前发出去的链接不会变成 404。 */
+/* 目录名以前拼错成 olympicprotocal，后来改成 olympicprotocol。
+   两个都得留跳转页——之前发出去的链接不能变成 404。 */
 const legacyTarget = path.join(repo, "olympicprotocal");
 
-/* 只搬运页面运行真正需要的文件，开发用的 tools/ 不上线。
-   自动扫描 js/ 和 data/，避免以后加了新模块忘了加进清单。 */
+/* 页面的正式地址。老地址一律跳到这里。 */
+const LIVE_URL = "https://olympicprotocol.com/";
+
+/* 以前搬过去的文件，现在一个都不需要了。
+   自动扫 js/ 和 data/，免得以后加了模块忘了加进清理清单。 */
 function listJs(folder) {
   const dir = path.join(root, folder);
   if (!fs.existsSync(dir)) return [];
@@ -36,44 +46,19 @@ function listJs(folder) {
     .map((name) => folder + "/" + name);
 }
 
-const FILES = ["index.html", "styles.css", "cuhk-buildings.json", "voaf_ga09.jpg", "bg-loop.mp4"]
+const STALE = ["styles.css", "cuhk-buildings.json", "voaf_ga09.jpg", "bg-loop.mp4", "README.md", "build.json"]
   .concat(listJs("data"), listJs("js"));
 
-/* 防呆：index.html 里引用到的本地文件必须都在搬运清单里，
-   否则线上会出现"少一个 js 文件、页面功能整个坏掉"的情况 */
-const html = fs.readFileSync(path.join(root, "index.html"), "utf8");
-const referenced = Array.from(html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"/g))
-  .map((m) => m[1])
-  .filter((ref) => !/^(https?:|data:|#|\/)/.test(ref));
-
-const missingFromList = referenced.filter((ref) => FILES.indexOf(ref) === -1);
-if (missingFromList.length) {
-  console.error("index.html 引用了但没在搬运清单里的文件：" + missingFromList.join(", "));
-  process.exit(1);
-}
-
-const SUB_README = `# Olympic Protocol · 校园通行指挥台
-
-课表 / 语音播报 / 定位 / 路线规划的静态页面，访问地址：
-<https://rhythmhill.com/olympicprotocol/>
-
-**这个目录是部署副本，请不要直接改这里。** 源文件在 Olympic Protocol 工程里，
-改完运行 \`node tools/deploy.js --push\` 同步过来。
-
-页面完全跑在浏览器端，没有任何后端依赖；数据存在访问者自己的浏览器里。
-读取附近楼栋用的是 OpenStreetMap，免费、免密钥，静态托管上也能正常使用。
-`;
-
-/* 老地址的跳转页。内容固定，每次部署都重写一遍，
+/* 跳转页。内容固定，每次跑都重写一遍，
    保证它不会被别的东西覆盖掉。 */
-const LEGACY_PAGE = `<!DOCTYPE html>
+const REDIRECT_PAGE = `<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Olympic Protocol · 页面已换地址</title>
-  <link rel="canonical" href="https://rhythmhill.com/olympicprotocol/" />
-  <meta http-equiv="refresh" content="0; url=https://rhythmhill.com/olympicprotocol/" />
+  <link rel="canonical" href="${LIVE_URL}" />
+  <meta http-equiv="refresh" content="0; url=${LIVE_URL}" />
   <style>
     body { margin: 0; padding: 40px 22px; background: #070b14; color: #e8eefc;
            font-family: -apple-system, "Segoe UI", system-ui, sans-serif; line-height: 1.8; }
@@ -82,9 +67,9 @@ const LEGACY_PAGE = `<!DOCTYPE html>
 </head>
 <body>
   <p>这个页面换地址了，正在跳到
-    <a href="https://rhythmhill.com/olympicprotocol/">rhythmhill.com/olympicprotocol/</a>…</p>
+    <a href="${LIVE_URL}">olympicprotocol.com</a>…</p>
   <p>如果没有自动跳转，点上面的链接。</p>
-  <script>location.replace("https://rhythmhill.com/olympicprotocol/");</script>
+  <script>location.replace("${LIVE_URL}");</script>
 </body>
 </html>
 `;
@@ -94,71 +79,31 @@ if (!fs.existsSync(repo)) {
   process.exit(1);
 }
 
-/* ---------- 同步文件 ---------- */
+/* ---------- 两个老地址：清掉旧页面，只留跳转页 ---------- */
 
-let copied = 0;
-
-/* 每次部署给资源地址加一个版本号。
-   浏览器会死抱着缓存里的旧 js/css，用户就会觉得"改了怎么没生效"——
-   地址一变，缓存自然失效。 */
-const stamp = Date.now().toString(36);
-
-FILES.forEach((file) => {
-  const from = path.join(root, file);
-  const to = path.join(target, file);
-  if (!fs.existsSync(from)) {
-    console.error("源文件不存在：" + file);
-    process.exitCode = 1;
-    return;
-  }
-  fs.mkdirSync(path.dirname(to), { recursive: true });
-
-  if (file === "index.html") {
-    const html = fs.readFileSync(from, "utf8")
-      .replace(/(href|src)="((?:styles\.css|(?:js|data)\/[^"]+\.js))"/g, '$1="$2?v=' + stamp + '"')
-      /* 把自己的构建号也写进去，页面靠它跟 build.json 对比、自动换新版本 */
-      .replace(/<meta name="build" content="[^"]*"/, '<meta name="build" content="' + stamp + '"');
-    fs.writeFileSync(to, html, "utf8");
-  } else {
-    fs.copyFileSync(from, to);
-  }
-  copied++;
-});
-
-console.log("资源版本号：" + stamp);
-
-fs.mkdirSync(target, { recursive: true });
-fs.writeFileSync(path.join(target, "README.md"), SUB_README, "utf8");
-
-/* 版本检查用的文件。必须小、而且页面是不缓存地取它——
-   HTML 有 10 分钟缓存，只能靠这个文件发现"有新版本了" */
-fs.writeFileSync(path.join(target, "build.json"), JSON.stringify({
-  stamp: stamp,
-  built: new Date().toISOString()
-}, null, 1) + "\n", "utf8");
-
-/* 老地址那边只留一张跳转页。
-   之前同步进去的页面文件要从这儿清掉，否则老地址上还挂着一整套旧页面，
-   改完新地址、老地址却还在跑旧代码，两边看起来完全不一样。
-   只删这个脚本自己搬过的文件名，不用递归删目录。 */
-fs.mkdirSync(legacyTarget, { recursive: true });
 let pruned = 0;
-FILES.concat(["README.md"]).filter((file) => file !== "index.html").forEach((file) => {
-  const stale = path.join(legacyTarget, file);
-  if (fs.existsSync(stale) && fs.statSync(stale).isFile()) {
-    fs.unlinkSync(stale);
-    pruned++;
-  }
-});
-fs.writeFileSync(path.join(legacyTarget, "index.html"), LEGACY_PAGE, "utf8");
 
-console.log("已同步 " + copied + " 个文件到 clubwebsite/olympicprotocol/");
-if (pruned) console.log("老地址清掉了 " + pruned + " 个陈旧文件，只留跳转页");
+[target, legacyTarget].forEach((dir) => {
+  fs.mkdirSync(dir, { recursive: true });
+
+  STALE.forEach((file) => {
+    const stale = path.join(dir, file);
+    if (fs.existsSync(stale) && fs.statSync(stale).isFile()) {
+      fs.unlinkSync(stale);
+      pruned++;
+    }
+  });
+
+  fs.writeFileSync(path.join(dir, "index.html"), REDIRECT_PAGE, "utf8");
+});
+
+console.log("两个老地址已写成跳转页，指向 " + LIVE_URL);
+if (pruned) console.log("清掉 " + pruned + " 个用不上的旧页面文件");
 
 /* ---------- 提交并推送 ---------- */
 
 if (process.argv.indexOf("--push") === -1) {
-  console.log("（只同步了文件。加 --push 可以顺便提交并推送）");
+  console.log("（只写了跳转页。加 --push 可以顺便提交并推送）");
   process.exit(process.exitCode || 0);
 }
 
@@ -186,10 +131,11 @@ if (!status) {
   process.exit(0);
 }
 
-git(identity.concat(["commit", "-m", "feat: 新增 Olympic Protocol 校园通行指挥台页面"]), { stdio: "inherit" });
+git(identity.concat(["commit", "-m", "chore: Olympic Protocol 换到 olympicprotocol.com，老地址留跳转"]), { stdio: "inherit" });
 
 console.log("\n正在推送…");
 git(["push", "origin", "HEAD"], { stdio: "inherit" });
 
-console.log("\n推送完成。GitHub Pages 大概一分钟后生效：");
-console.log("  https://rhythmhill.com/olympicprotocol/");
+console.log("\n推送完成。GitHub Pages 大概一分钟后生效。");
+console.log("正式地址：" + LIVE_URL);
+console.log("老地址会跳到上面那个。");

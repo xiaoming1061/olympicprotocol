@@ -1842,35 +1842,24 @@ console.log("\n[21] 播报时楼栋念中文名 + 英文简称");
     P.placeText(cuhk.courses[0], lsk));
 }
 
-console.log("\n[22] 部署时给资源加版本号");
+console.log("\n[22] 站点托管方式（独立仓库 + 自定义域名）");
 {
   const deploySource = fs.readFileSync(path.join(root, "tools/deploy.js"), "utf8");
   const srcHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 
-  /* 浏览器会死抱缓存里的旧 js/css，用户就会觉得"改了怎么没生效"。
-     每次部署换一个版本号，缓存自然失效。 */
-  check("部署脚本会给资源地址加版本号",
-    deploySource.indexOf("stamp") > 0 && deploySource.indexOf("Date.now().toString(36)") > 0);
-
-  /* 直接把脚本里的替换规则搬过来试一遍 */
-  const rule = /(href|src)="((?:styles\.css|(?:js|data)\/[^"]+\.js))"/g;
-  const transformed = srcHtml.replace(rule, '$1="$2?v=TEST"');
-
-  check("样式表会被加上版本号",
-    transformed.indexOf('href="styles.css?v=TEST"') > 0);
-  check("每个 js 都会被加上版本号",
-    transformed.indexOf('src="js/app.js?v=TEST"') > 0 &&
-    transformed.indexOf('src="js/ocr.js?v=TEST"') > 0 &&
-    transformed.indexOf('src="data/buildings.js?v=TEST"') > 0 &&
-    transformed.indexOf('src="data/defaults.js?v=TEST"') > 0);
-  check("不会误伤别的链接",
-    transformed.indexOf('cuhk-buildings.json?v=') === -1 &&
-    transformed.indexOf('href="styles.css?v=TEST?v=') === -1);
-  check("脚本引用数量没变（只是加了参数）",
-    (transformed.match(/<script/g) || []).length === (srcHtml.match(/<script/g) || []).length);
-
-  /* 源文件不该带版本号——那是部署时才生成的 */
-  check("源文件本身保持干净",
+  /* 页面从 clubwebsite 的子目录搬到了 olympicprotocol 仓库的根目录，
+     由 olympicprotocol.com 直接托管——不再有"同步副本 + 加版本号"这一步。
+     代价是失去了 ?v= 缓存失效手段，靠 Pages 自己的 10 分钟缓存自然过期。 */
+  check("仓库根目录带 CNAME，指向新域名",
+    fs.readFileSync(path.join(root, "CNAME"), "utf8").trim() === "olympicprotocol.com");
+  check("有 .nojekyll（Pages 不走 Jekyll，下划线开头的文件才不会被吞）",
+    fs.existsSync(path.join(root, ".nojekyll")));
+  check("部署脚本不再往 clubwebsite 搬整站（没有 copyFileSync 了）",
+    deploySource.indexOf("copyFileSync") === -1);
+  check("部署脚本把两个老地址都指向新域名",
+    (deploySource.match(/https:\/\/olympicprotocol\.com\//g) || []).length >= 2 &&
+    deploySource.indexOf("legacyTarget") > 0);
+  check("源文件本身不带版本号",
     srcHtml.indexOf("styles.css?v=") === -1 && srcHtml.indexOf("js/app.js?v=") === -1);
 }
 
@@ -2234,14 +2223,15 @@ console.log("\n[27] 去掉淡灰说明小字 + 拼写统一成 protocol");
     !Object.prototype.hasOwnProperty.call(memory, "olympic-protocol.data.v1") &&
     !Object.prototype.hasOwnProperty.call(memory, "olympic-protocal.data.v1"));
 
-  check("部署目录名改成新拼写",
-    deployCode.indexOf('path.join(repo, "olympicprotocol")') > 0);
-  check("老地址会留一张跳转页，旧链接不会 404",
+  check("两个老目录名都还在（新拼写 + 当年拼错的）",
+    deployCode.indexOf('path.join(repo, "olympicprotocol")') > 0 &&
+    deployCode.indexOf('path.join(repo, "olympicprotocal")') > 0);
+  check("两个老地址都留了跳转页，并指向新域名",
     deployCode.indexOf("legacyTarget") > 0 &&
-    deployCode.indexOf('path.join(repo, "olympicprotocal")') > 0 &&
-    /location\.replace\("https:\/\/rhythmhill\.com\/olympicprotocol\/"\)/.test(deployCode));
+    /location\.replace\("?\$\{?LIVE_URL/.test(deployCode) &&
+    deployCode.indexOf('const LIVE_URL = "https://olympicprotocol.com/"') > 0);
   check("跳转页每次部署都会被重写",
-    /legacyTarget[\s\S]{0,200}writeFileSync/.test(deployCode));
+    /\[target, legacyTarget\]\.forEach[\s\S]{0,700}writeFileSync/.test(deployCode));
 }
 
 console.log("\n[28] 楼栋与课表分开存");
@@ -3372,10 +3362,12 @@ console.log("\n[37] 自动更新 / 真实地图连线顺序 / 楼栋列表收起
   check("重载过一次就不再重载，避免死循环",
     pageHtml.indexOf('if (url.searchParams.get("t") === info.stamp) return;') > 0);
   check("本地打开（dev）时不检查版本", pageHtml.indexOf('mine === "dev"') > 0);
-  check("部署脚本会把构建号写进 HTML",
-    /<meta name="build" content="'\s*\+\s*stamp/.test(deployCode));
-  check("部署脚本会生成 build.json",
-    deployCode.indexOf('"build.json"') > 0 && deployCode.indexOf("stamp: stamp") > 0);
+  /* 新架构没有构建步骤，所以既没有 stamp，也没有 build.json。
+     页面里那段自动更新逻辑因此一直停在 dev 分支：不检查、不重载。
+     以后真要做构建了，再把这两样接回去。 */
+  check("部署脚本不再生成构建号和 build.json（新架构没有构建步骤）",
+    deployCode.indexOf("stamp") === -1 &&
+    deployCode.indexOf("Date.now().toString(36)") === -1);
 
   /* ---------- 真实地图的连线顺序 ---------- */
   const RealMap = OP.RealMap;
