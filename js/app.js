@@ -1423,7 +1423,12 @@
   /* 代理地址和上游写法都写死在这里（用户要求不要在界面上出现）：
      走我们自己那台 Cloudflare Worker，凭据用 AES 加密——2026-10 实测
      明文那两种读回来是空的，只有加密的能拿到课。 */
-  var PULL_PROXY = "https://cuhk-timetable-proxy.y1819400195-721.workers.dev/t/k7fq2m9x";
+  /* 走自己域名下的 Worker 自定义域名。原来的 *.workers.dev 在部分网络
+     （大陆、部分校园网）根本解析不到，换成 api.olympicprotocol.com 之后
+     请求落在 olympicprotocol.com 这个 zone 上，不再受 workers.dev 的黑名单影响。
+     旧的 workers.dev 地址还留着做参考：
+       https://cuhk-timetable-proxy.y1819400195-721.workers.dev/t/k7fq2m9x */
+  var PULL_PROXY = "https://api.olympicprotocol.com/t/k7fq2m9x";
   var PULL_MODE = "soap-aes";
 
   function renderPull() {

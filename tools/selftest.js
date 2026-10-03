@@ -5106,9 +5106,11 @@ console.log("\n[54] 从学校接口拉课表：页面接线");
     /id="pullSid"[^>]*autocomplete="username"/.test(pageHtml) &&
     /id="pullPwd"[^>]*autocomplete="current-password"/.test(pageHtml));
 
-  /* 代理地址和上游写法都写死在代码里，界面上不再出现 */
+  /* 代理地址和上游写法都写死在代码里，界面上不再出现。
+     地址走的是自己域名下的 Worker 自定义域名（api.olympicprotocol.com），
+     不再用 *.workers.dev —— 后者在部分网络解析不到。 */
   check("代理地址与写法写死，界面上没有这两个输入项",
-    /var PULL_PROXY = "https:\/\/cuhk-timetable-proxy\.y1819400195-721\.workers\.dev\/t\/k7fq2m9x";/.test(appCode) &&
+    /var PULL_PROXY = "https:\/\/api\.olympicprotocol\.com\/t\/k7fq2m9x";/.test(appCode) &&
     /var PULL_MODE = "soap-aes";/.test(appCode) &&
     pageHtml.indexOf('id="pullProxy"') === -1 && pageHtml.indexOf('id="pullMode"') === -1 &&
     pageHtml.indexOf("workers.dev") === -1 && pageHtml.indexOf("soap-aes") === -1);
