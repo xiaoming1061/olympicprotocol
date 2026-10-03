@@ -1861,6 +1861,13 @@ console.log("\n[22] 站点托管方式（独立仓库 + 自定义域名）");
     deploySource.indexOf("legacyTarget") > 0);
   check("源文件本身不带版本号",
     srcHtml.indexOf("styles.css?v=") === -1 && srcHtml.indexOf("js/app.js?v=") === -1);
+  /* 以前域名停在 Porkbun 的停车页，浏览器把 Porkbun 的图标记在了标签页上。
+     给出自己的 favicon 才会被覆盖掉。 */
+  check("有标签页图标和 iOS 主屏图标（否则标签页会显示上一家的图标）",
+    /<link rel="icon" href="favicon\.svg" type="image\/svg\+xml" \/>/.test(srcHtml) &&
+    /<link rel="apple-touch-icon" href="apple-touch-icon\.png" \/>/.test(srcHtml) &&
+    fs.existsSync(path.join(root, "favicon.svg")) &&
+    fs.existsSync(path.join(root, "apple-touch-icon.png")));
 }
 
 console.log("\n[23] 垂直距离（爬升）计算");

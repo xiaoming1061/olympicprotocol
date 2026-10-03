@@ -1,0 +1,8 @@
+<!-- 标签页图标：跟页面左上角那个「OP」品牌方块同一套样式
+     （粉底 + 白色 OP + 圆角），见 styles.css 的 .brand-mark -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <rect width="64" height="64" rx="18" fill="#ff5fa2" />
+  <text x="32" y="42" text-anchor="middle"
+        font-family="-apple-system, 'Segoe UI', system-ui, sans-serif"
+        font-size="26" font-weight="700" letter-spacing="0.5" fill="#ffffff">OP</text>
+</svg>
