@@ -292,7 +292,10 @@
 
         <article class="card">
           <div class="card-head"><h3>数据</h3></div>
-          <div class="hero-stats hero-stats-tight">
+          <!-- data-cells 是必须的：手机端那套「两列 + 第二行整行」的排布
+               只对 [data-cells="3"] 生效，缺了它 430px 下还硬撑三列，
+               字会挤到贴着发丝线。 -->
+          <div class="hero-stats hero-stats-tight" data-cells="3">
             <div class="stat">
               <span class="stat-label">应用版本</span>
               <span class="stat-value" id="verApp">--</span>

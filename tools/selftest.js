@@ -3016,6 +3016,10 @@ console.log("\n[34] 设置页里的版本号");
     pageHtml.indexOf('id="verApp"') > 0 &&
     pageHtml.indexOf('id="verBuild"') > 0 &&
     pageHtml.indexOf('id="verData"') > 0);
+  /* 少了 data-cells，620px 以下那套「两列 + 第二行整行」就不生效，
+     三格会硬撑一行，手机上看就是字贴着发丝线。 */
+  check("数据卡片的读数行带了 data-cells（否则手机端不换两列）",
+    /class="hero-stats hero-stats-tight" data-cells="3"/.test(pageHtml));
   check("这三个格子挂在「数据」卡片里",
     /<article class="card">\s*<div class="card-head"><h3>数据<\/h3><\/div>[\s\S]*?id="verData"[\s\S]*?id="btnResetData"/.test(pageHtml));
   check("渲染设置页时会把三个版本号填上",

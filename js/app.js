@@ -74,7 +74,9 @@
       if (!isNaN(t)) {
         var d = new Date(t);
         var p2 = function (n) { return (n < 10 ? "0" : "") + n; };
-        return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) +
+        /* 年份只留两位：26-10-03 16:19。
+           手机上半栏就那么宽，四位数年份会把这一格撑到贴着发丝线。 */
+        return String(d.getFullYear()).slice(-2) + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) +
           " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
       }
     }

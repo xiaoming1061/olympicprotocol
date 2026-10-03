@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1091 项检查，不联网
+node tools/selftest.js             # 1092 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1629,7 +1629,7 @@ js/timetable.js       学校接口拉回来的课表 → 我们的课程结构�
 js/exportimage.js     课表导出成图片（排版是纯计算，画图在 canvas 上手绘）
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
-tools/selftest.js     自检脚本，1091 项
+tools/selftest.js     自检脚本，1092 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

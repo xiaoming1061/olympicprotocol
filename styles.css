@@ -454,7 +454,7 @@ body {
   .hero-stats[data-cells="4"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-stats[data-cells="4"] .stat:nth-child(even) {
     border-left: 1px solid var(--line);
-    padding-left: var(--space-sm);
+    padding-left: var(--space-md);
   }
   /* 4 格时第二行行首是「爬升」那格（第 3 个兄弟）。它 x=0 贴在容器左边缘，
      再给它一条左竖线就成了游离在所有格子之外的"鬼线"——
@@ -470,7 +470,7 @@ body {
   .hero-stats[data-cells="3"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .hero-stats[data-cells="3"] .stat:nth-child(2) {
     border-left: 1px solid var(--line);
-    padding-left: var(--space-sm);
+    padding-left: var(--space-md);
   }
   .hero-stats[data-cells="3"] .stat:last-child {
     grid-column: 1 / -1;
@@ -500,7 +500,7 @@ body {
   .stats-lead-wide .stat:nth-child(2) { border-left: 0; padding-left: 0; }
   .stats-lead-wide .stat:nth-child(3) {
     border-left: 1px solid var(--line);
-    padding-left: var(--space-sm);
+    padding-left: var(--space-md);
   }
 }
 
