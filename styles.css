@@ -472,12 +472,16 @@ body {
     border-left: 1px solid var(--line);
     padding-left: var(--space-md);
   }
+  /* 第三格（楼栋数据）横跨整行。标签留在最左、值丢到最右，中间空一大片，
+     看着就像两个不相干的东西——所以这一行改成「标签 + 值」作为一组居中。
+     试过用 1fr auto 1fr 的三列网格让值单独居中，实测值落在 246px、
+     而卡片中心是 215px，仍然偏右，不如整组居中干净。 */
   .hero-stats[data-cells="3"] .stat:last-child {
     grid-column: 1 / -1;
     display: flex;
     align-items: baseline;
-    justify-content: space-between;
-    gap: var(--space-md);
+    justify-content: center;
+    gap: var(--space-sm);
     border-left: 0;
     border-top: 1px solid var(--line);
     padding-left: 0;
