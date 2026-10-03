@@ -1426,9 +1426,13 @@
   /* 走自己域名下的 Worker 自定义域名。原来的 *.workers.dev 在部分网络
      （大陆、部分校园网）根本解析不到，换成 api.olympicprotocol.com 之后
      请求落在 olympicprotocol.com 这个 zone 上，不再受 workers.dev 的黑名单影响。
-     旧的 workers.dev 地址还留着做参考：
-       https://cuhk-timetable-proxy.y1819400195-721.workers.dev/t/k7fq2m9x */
+     旧的 workers.dev 地址降级成兜底，见下面的 PULL_FALLBACK。 */
   var PULL_PROXY = "https://api.olympicprotocol.com/t/k7fq2m9x";
+
+  /* 兜底地址。新域名刚把 DNS 迁到 Cloudflare，少数网络的解析器还没更新到，
+     那些地方连不上就自动退回这个老的 workers.dev 地址。
+     它在大陆会被挡，但总比完全用不了强。 */
+  var PULL_FALLBACK = "https://cuhk-timetable-proxy.y1819400195-721.workers.dev/t/k7fq2m9x";
   var PULL_MODE = "soap-aes";
 
   function renderPull() {
@@ -1543,10 +1547,19 @@
     /* 每次都明确告诉代理用哪种写法——不依赖代理那台的默认值 */
     var body = { sid: sid, pwd: pwd, mode: PULL_MODE };
 
-    fetch(url, {
+    var opts = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
+    };
+
+    /* 先试自己的域名。只有「网络层根本连不上」才退回 workers.dev——
+       代理明确回了错（密码错、限流…）说明已经拿到响应，不回退也不重试，
+       免得把密码输错当成网络问题反复打学校接口。 */
+    fetch(url, opts).catch(function (err) {
+      if (!PULL_FALLBACK) throw err;
+      url = PULL_FALLBACK;
+      return fetch(PULL_FALLBACK, opts);
     }).then(function (res) {
       return res.json().catch(function () {
         return { ok: false, error: "bad_response" };
