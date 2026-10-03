@@ -3005,7 +3005,7 @@ console.log("\n[34] 设置页里的版本号");
   check("版本号写成 vX.Y.Z",
     /^\d+\.\d+\.\d+$/.test(String(OP.APP_VERSION || "")), String(OP.APP_VERSION));
 
-  check("设置页有三个格子：应用版本 / 构建版本 / 楼栋数据",
+  check("设置页有三个格子：应用版本 / 发布时间 / 楼栋数据",
     pageHtml.indexOf('id="verApp"') > 0 &&
     pageHtml.indexOf('id="verBuild"') > 0 &&
     pageHtml.indexOf('id="verData"') > 0);
@@ -3016,11 +3016,13 @@ console.log("\n[34] 设置页里的版本号");
     /\$\("#verBuild"\)\.textContent = buildStamp\(\)/.test(appCode) &&
     /\$\("#verData"\)\.textContent = "v" \+ \(OP\.Store\.defaultBuildingsVersion\(\)/.test(appCode));
 
-  /* 构建号不另存一份，直接从部署时加的 ?v= 上读 */
+  /* 构建号优先从部署时加的 ?v= 上读；新架构没有构建步骤，就退回 Last-Modified */
   check("构建号从 script 的 ?v= 读出来",
     /function buildStamp\(\)[\s\S]*?querySelectorAll\("script\[src\]"\)[\s\S]*?\?&\]v=/.test(appCode));
-  check("本地打开（没有 ?v=）时显示「本地」",
-    /function buildStamp\(\)[\s\S]*?return "本地";/.test(appCode));
+  check("没有 ?v= 时退回用页面自身的 Last-Modified（页面直接托管时才有值）",
+    /function buildStamp\(\)[\s\S]*?document\.lastModified[\s\S]*?return "本地";/.test(appCode));
+  check("本地直接打开源码时显示「本地」",
+    /function buildStamp\(\)[\s\S]*?location\.protocol !== "file:"[\s\S]*?return "本地";/.test(appCode));
 }
 
 console.log("\n[35] 校巴数据（路线、站序、站点坐标）");

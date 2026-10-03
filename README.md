@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1089 项检查，不联网
+node tools/selftest.js             # 1090 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1154,11 +1154,12 @@ YC. Liana Hall                  →  Y.C. Liang Hall
 | 格子 | 含义 | 例子 |
 |---|---|---|
 | 应用版本 | `OP.APP_VERSION`，手写在 `data/defaults.js` | `v1.0.0` |
-| 构建版本 | 部署时给 js/css 加的 `?v=` 时间戳，页面直接从 script 标签读回来 | `mumk3i0c` |
+| 发布时间 | 页面自身的 `Last-Modified`（GitHub Pages 给的真实发布时间） | `2026-10-03 16:16` |
 | 楼栋数据 | `data/buildings.js` 里的 `version`，靠它判断要不要把新补的楼并进本地 | `v2` |
 
-「构建版本」显示**本地**说明是在直接打开源码（没有部署脚本加的 `?v=`），
-不是线上那一份——刷新后还是「本地」的话，多半是打开方式不对。
+「发布时间」显示**本地**说明是在直接打开源码（`file://`），拿不到发布头。
+线上（`olympicprotocol.com`）会显示那次部署的真实时间。
+老架构留下的 `?v=` 参数仍然优先——只要页面上有，就直接用它当构建号。
 
 全部存在浏览器本地的 localStorage 里，不上传任何服务器。**楼栋、课表、设置
 分开存**，各用各的键：
@@ -1628,7 +1629,7 @@ js/timetable.js       学校接口拉回来的课表 → 我们的课程结构�
 js/exportimage.js     课表导出成图片（排版是纯计算，画图在 canvas 上手绘）
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
-tools/selftest.js     自检脚本，1089 项
+tools/selftest.js     自检脚本，1090 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

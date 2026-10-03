@@ -64,6 +64,21 @@
       var hit = /[?&]v=([^&"']+)/.exec(tags[i].getAttribute("src") || "");
       if (hit) return hit[1];
     }
+
+    /* 新架构：页面由本仓库直接托管在 olympicprotocol.com，没有构建步骤，
+       也就没有 ?v=。退回用**页面自身的 Last-Modified**——GitHub Pages 会返回
+       真实的发布时间（实测 2026-10-03 08:16:32 GMT），零维护，
+       而且不会像写死一个版本号那样悄悄过期。 */
+    if (location.protocol !== "file:") {
+      var t = Date.parse(document.lastModified);
+      if (!isNaN(t)) {
+        var d = new Date(t);
+        var p2 = function (n) { return (n < 10 ? "0" : "") + n; };
+        return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) +
+          " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
+      }
+    }
+
     return "本地";
   }
 
