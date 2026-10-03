@@ -1504,7 +1504,7 @@
     var pwd = $("#pullPwd").value;
 
     if (!sid || !pwd) {
-      toast("学号和密码都要填", "密码只用于这一次请求，不保存", "warn");
+      toast("SID/密码缺失", "本网站不会储存您的任何个人信息", "warn");
       return;
     }
 
