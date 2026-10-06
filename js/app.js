@@ -3445,6 +3445,31 @@
       });
     });
 
+    /* --- 界面语言 ---
+       语言名本身不翻译（用各自的写法），选中的那颗用 aria-checked 标出来；
+       真正生效的是 OP.I18N.set：它写 localStorage、换 <html lang>、
+       跑一遍 data-i18n 的静态文案，然后回调里重渲染动态部分。 */
+    function paintLangPicker() {
+      var btns = document.querySelectorAll("#langPicker .lang-btn");
+      var now = OP.I18N.lang();
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].setAttribute("aria-checked",
+          btns[i].getAttribute("data-lang") === now ? "true" : "false");
+      }
+    }
+
+    paintLangPicker();
+
+    OP.I18N.onChange(function () {
+      paintLangPicker();
+      render();
+    });
+
+    $("#langPicker").addEventListener("click", function (ev) {
+      var btn = ev.target && ev.target.closest ? ev.target.closest(".lang-btn") : null;
+      if (btn) OP.I18N.set(btn.getAttribute("data-lang"));
+    });
+
     /* --- 切回前台立刻刷新 --- */
     document.addEventListener("visibilitychange", function () {
       if (!document.hidden) {

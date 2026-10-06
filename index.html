@@ -314,6 +314,21 @@
             <button class="btn btn-ghost" id="btnResetData">恢复默认数据</button>
           </div>
         </article>
+
+        <article class="card">
+          <div class="card-head"><h3 data-i18n="lang.title">界面语言</h3></div>
+          <div class="field">
+            <span data-i18n="lang.label">语言</span>
+            <!-- 语言名用各自的写法（endonym），不跟着界面翻译——
+                 用英文界面的人也得能认出「简体中文」这一项 -->
+            <div class="lang-picker" id="langPicker" role="radiogroup">
+              <button type="button" class="lang-btn" data-lang="zh-Hans">简体中文</button>
+              <button type="button" class="lang-btn" data-lang="zh-Hant">繁體中文</button>
+              <button type="button" class="lang-btn" data-lang="en">English</button>
+            </div>
+          </div>
+          <p class="field-note" data-i18n="lang.note">切换后立刻生效，并记在这台设备上</p>
+        </article>
       </section>
       <section class="view" data-view="route">
         <article class="card">
@@ -571,10 +586,10 @@
     </main>
 
     <nav class="tabbar">
-      <button class="tab is-active" data-tab="today"><span class="tab-ico">01</span><span>今日</span></button>
-      <button class="tab" data-tab="route"><span class="tab-ico">02</span><span>路线</span></button>
-      <button class="tab" data-tab="course"><span class="tab-ico">03</span><span>课表</span></button>
-      <button class="tab" data-tab="settings"><span class="tab-ico">04</span><span>设置</span></button>
+      <button class="tab is-active" data-tab="today"><span class="tab-ico">01</span><span data-i18n="nav.today">今日</span></button>
+      <button class="tab" data-tab="route"><span class="tab-ico">02</span><span data-i18n="nav.route">路线</span></button>
+      <button class="tab" data-tab="course"><span class="tab-ico">03</span><span data-i18n="nav.course">课表</span></button>
+      <button class="tab" data-tab="settings"><span class="tab-ico">04</span><span data-i18n="nav.settings">设置</span></button>
     </nav>
   </div>
 
@@ -616,6 +631,8 @@
   <script src="data/shuttle.js"></script>
   <script src="data/holidays.js"></script>
   <script src="data/defaults.js"></script>
+  <script src="data/i18n.js"></script>
+  <script src="js/i18n.js"></script>
   <script src="js/store.js"></script>
   <script src="js/zh.js"></script>
   <script src="js/dorm.js"></script>

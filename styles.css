@@ -1319,6 +1319,28 @@ body {
 
 .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
 
+/* 语言选择器：三个并排的胶囊按钮，选中的用主色实底 */
+.lang-picker { display: flex; flex-wrap: wrap; gap: 8px; }
+.lang-btn {
+  font: inherit;
+  font-size: var(--text-sm);
+  padding: 8px 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+.lang-btn[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--on-accent);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .lang-btn:hover { border-color: var(--line-strong); }
+}
+
 /* 「提醒与步行参数」那张卡片是裸的 <article class="card">，没套 .form
    （只有 .form 有 gap:14px），所以子元素之间原本一点间距都没有。
    给相邻的表单项补上间距，否则每个标签都贴着上面那个输入框。 */
