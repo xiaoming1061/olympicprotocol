@@ -1331,7 +1331,14 @@ body {
   color: inherit;
   cursor: pointer;
 }
-.lang-btn[aria-checked="true"] {
+/* 选中态直接看 <html lang>——它由 i18n.js 在切换时写入，永远是对的。
+   一开始靠 JS 给按钮加 aria-checked，但实测 paintPicker() 跑的时候
+   选择器还没进 DOM，属性始终是 null，选中态根本画不出来。
+   aria-checked 仍然保留，那是给读屏软件的，不是给样式的。 */
+.lang-btn[aria-checked="true"],
+html[lang="zh-Hans"] .lang-btn[data-lang="zh-Hans"],
+html[lang="zh-Hant"] .lang-btn[data-lang="zh-Hant"],
+html[lang="en"] .lang-btn[data-lang="en"] {
   background: var(--accent);
   border-color: var(--accent);
   color: var(--on-accent);
