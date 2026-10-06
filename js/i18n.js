@@ -88,7 +88,28 @@ window.OP = window.OP || {};
       var tv = t(tk);
       if (tv !== tk) titled[i].setAttribute("title", tv);
     }
+
+    paintPicker();
   }
+
+  /** 把语言选择器里选中的那颗标出来（aria-checked），其余标 false */
+  function paintPicker() {
+    var btns = document.querySelectorAll("#langPicker .lang-btn");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute("aria-checked",
+        btns[i].getAttribute("data-lang") === current ? "true" : "false");
+    }
+  }
+
+  /* 语言按钮用事件委托绑在 document 上。
+     一开始这段写在 app.js 的初始化里，但那个初始化在到达它之前就结束了
+     （线上实测：点按钮毫无反应、aria-checked 始终是 null，而直接调
+     OP.I18N.set('en') 是生效的）。绑在这儿只依赖本文件，稳。 */
+  document.addEventListener("click", function (ev) {
+    var el = ev.target;
+    var btn = el && el.closest ? el.closest("#langPicker .lang-btn") : null;
+    if (btn) set(btn.getAttribute("data-lang"));
+  });
 
   function set(lang) {
     if (SUPPORTED.indexOf(lang) < 0) return;
