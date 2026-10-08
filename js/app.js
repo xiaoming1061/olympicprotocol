@@ -639,10 +639,17 @@
         warn = '<div class="leg-warn">余量只有 ' + Math.max(0, Math.round(leg.slackMin)) + " 分钟，别拖了</div>";
       }
 
+      /* 已经不该按它出发的那一段（正在上 / 已下课）：靠标题旁边这枚标说明状态。
+         之前铺一整块灰底，跟"选中某条校巴方案"的高亮撞在一起，
+         而且要在 .leg 上补内边距再用负外边距拉回来，换屏宽容易看出不齐。 */
+      var doneTag = leg.status === "ongoing" ? "上课中"
+        : (leg.status === "past" ? "已下课" : "");
+
       return '<div class="leg' + (isPast ? " is-past" : "") + '">' +
         '<div class="leg-head">' +
           '<div class="leg-title"><span class="idx">' + (i + 1) + "</span>" +
-            esc((leg.fromName || "起点") + " → " + (b ? b.name : "未知地点")) + "</div>" +
+            esc((leg.fromName || "起点") + " → " + (b ? b.name : "未知地点")) +
+            (doneTag ? '<span class="tl-badge is-done">' + doneTag + "</span>" : "") + "</div>" +
           '<div class="leg-time">' + esc(c.start) + " – " + esc(c.end) + "</div>" +
         "</div>" +
         '<div class="leg-meta"><span>' + esc(c.name) +

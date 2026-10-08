@@ -898,14 +898,15 @@ body {
 /* 已经开课的那一段：底色置灰，跟还没到的行程区分开。
    .leg 原本没有左右内边距，直接填灰底会让文字贴着边缘，
    所以补一层左右内边距、再用负外边距把文字拉回原来的对齐位置。 */
-.leg.is-past {
-  background: rgba(116, 114, 124, 0.10);
-  border-radius: var(--radius-sm);
-  padding-left: var(--space-sm);
-  padding-right: var(--space-sm);
-  margin-left: calc(-1 * var(--space-sm));
-  margin-right: calc(-1 * var(--space-sm));
-}
+/* 已经不该按它出发的那一段（正在上 / 已下课）：整段往后退，
+   状态交给标题旁边那枚标去说，不铺底色。
+   今天页的时间线是 0.45，这里稍微留一点——路线卡里文字多得多，
+   压到 0.45 就看不清"刚才该几点走"了。 */
+.leg.is-past { opacity: 0.55; }
+
+/* 状态标复用时间线的 .tl-badge，只换个低调的颜色 */
+.tl-badge.is-done { color: var(--text-dim); border-color: var(--line-strong); }
+.leg-title .tl-badge { margin-left: 8px; vertical-align: middle; }
 
 .leg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .leg-title { font-size: var(--text-lg); font-weight: 600; }

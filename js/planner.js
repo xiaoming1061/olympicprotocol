@@ -292,9 +292,11 @@ window.OP = window.OP || {};
    */
   function buildLegs(data, position, date) {
     var list = todayCourses(data, date);
-    var remaining = list.filter(function (c) {
-      return at(date, c.end).getTime() > date.getTime();
-    });
+    /* 已经下课的也留着：用户要求"即使课程结束也要显示"。
+       以前这里会用 c.end > now 把下课的先滤掉，于是已下课的课
+       根本生不出行程——下游再怎么按状态排序、置灰都没用。
+       留着之后它们会被排到最后并淡化，状态标写「已下课」。 */
+    var remaining = list;
 
     var legs = [];
     var fromPoint = position || null;

@@ -181,6 +181,14 @@ check("没有定位时后续段按上一节课的楼栋估算",
 check("没有定位时也能算出出发时间",
   midRoute[0].departAt instanceof Date, String(midRoute[0].departAt));
 
+/* 已经下课的课也要留在行程里——用户要求"即使课程结束也要显示"。
+   以前 buildLegs 开头有一句 c.end > now 的过滤，把下课的课直接滤掉了，
+   下游再怎么按状态排序、置灰都救不回来。 */
+const afterFirst = P.buildLegs(data, null, new Date(2026, 8, 28, 10, 30, 0));
+check("已下课的课仍然生成行程（不再被上游滤掉）",
+  afterFirst.length === 3 && afterFirst.some((l) => l.status === "past"),
+  afterFirst.length + " 段：" + afterFirst.map((l) => l.status).join(","));
+
 console.log("\n[5] 播报文案");
 const brief = P.briefingText(data, monday, { lat: 31.2300, lng: 121.4710 });
 check("课表播报包含课程名", brief.indexOf("高等数学") >= 0);
