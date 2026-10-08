@@ -282,12 +282,23 @@
   function nextInfo() {
     var pos = effectivePosition();
     var legs = P.buildLegs(data, pos, state.now);
-    var route = legs.filter(function (l) { return l.status === "upcoming"; });
+    /* 不只要"还没开始"的那几段。课已经上了、甚至已经下了，那一段仍然有用
+       （教室在哪、刚才该几点走），用户要求继续显示。顺序：
+       未开始 → 正在上 → 已下课，过去的一律沉到最后。
+       sort 是稳定的，同类之间保持 buildLegs 给的先后。 */
+    var ORDER = { upcoming: 0, ongoing: 1, past: 2 };
+    var route = legs.filter(function (l) {
+      return ORDER[l.status] !== undefined;
+    }).sort(function (a, b) {
+      return ORDER[a.status] - ORDER[b.status];
+    });
     return {
       found: P.nextCourse(data, state.now),
       legs: legs,
       route: route,
-      leg: route.length ? route[0] : null,
+      /* 「下一节课」仍然只看还没开始的那一节——课已经上了就不再是"下一节"。
+         保持和以前一样，不受上面排序影响。 */
+      leg: route.filter(function (l) { return l.status === "upcoming"; })[0] || null,
       position: pos
     };
   }
@@ -568,15 +579,10 @@
       collectBus(leg.busPlan, leg.fromPoint, leg.toPoint, bus);
     });
 
-    /* 已经开课的那几段压到最后。
-       上课时间一到，「建议出发」就没意义了，但这一段仍然是有用的参考
-       （课还没下、或者想回头看），所以不删，只是沉到底下、底色置灰。
-       sort 在现代引擎里是稳定的，同类之间保持原有先后。 */
-    var nowMin = state.now.getHours() * 60 + state.now.getMinutes();
-    var isPastLeg = function (leg) { return P.hm(leg.course.start) <= nowMin; };
-    route = route.slice().sort(function (a, b) {
-      return (isPastLeg(a) ? 1 : 0) - (isPastLeg(b) ? 1 : 0);
-    });
+    /* 排序已经在 nextInfo() 里做完了（未开始 → 正在上 → 已下课）。
+       这里只负责标出哪些该置灰：以 planner 判好的状态为准，
+       不再自己拿开始时间比一遍——两边标准必须一致。 */
+    var isPastLeg = function (leg) { return leg.status !== "upcoming"; };
 
     /* 「路线规划」这张卡片对应的地图数据（今天要去的教室） */
     todayMap = {
@@ -1121,16 +1127,45 @@
       if (ev.key === "Escape") hide();
     });
 
-    /* 点候选用 pointerdown 而不是 click：等 click 的话输入框会先失焦、
-       触发 change 把列表收掉，就点不着了 */
+    /* 候选用 pointerdown/pointerup 而不是 click：等 click 的话输入框会先失焦、
+       触发 change 把列表收掉，就点不着了。
+       但只认 pointerdown 也不行——触摸屏上想滑动列表时，手指刚落下就被当成
+       "选中"，列表根本滚不动。所以记住按下位置，抬手时才判断：
+        位移超过 8px  → 当成滚动，不选
+        基本没动      → 当成点选
+       另外这里**不能**对 pointerdown 调 preventDefault，
+       那会把浏览器的滚动也一起挡掉。 */
+    var touch = null;
+    var lastPickAt = 0;
+
     box.addEventListener("pointerdown", function (ev) {
       var btn = ev.target.closest("[data-pick]");
-      if (!btn) return;
-      ev.preventDefault();
-      pickFrom(btn);
+      touch = btn ? { x: ev.clientX, y: ev.clientY, btn: btn } : null;
     });
-    /* 键盘选中（Tab 到候选上按回车）走的是 click，补一个 */
+
+    box.addEventListener("pointermove", function (ev) {
+      if (!touch) return;
+      if (Math.abs(ev.clientX - touch.x) > 8 || Math.abs(ev.clientY - touch.y) > 8) {
+        touch.moved = true;
+      }
+    });
+
+    box.addEventListener("pointerup", function (ev) {
+      var t = touch;
+      touch = null;
+      if (!t || t.moved || !t.btn.isConnected) return;
+      ev.preventDefault();
+      lastPickAt = Date.now();
+      pickFrom(t.btn);
+    });
+
+    /* 系统把滚动接管走时会发 pointercancel，这时不该当点选 */
+    box.addEventListener("pointercancel", function () { touch = null; });
+
+    /* 键盘选中（Tab 到候选上按回车）走的是 click，补一个。
+       刚被 pointerup 处理过的就别重复触发，否则 onPick 会跑两次。 */
     box.addEventListener("click", function (ev) {
+      if (Date.now() - lastPickAt < 400) return;
       var btn = ev.target.closest("[data-pick]");
       if (btn) pickFrom(btn);
     });
