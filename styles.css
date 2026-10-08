@@ -77,7 +77,10 @@
   --surface-warm: rgba(255, 236, 246, 0.88);
   --surface-input: rgba(255, 255, 255, 0.62);
   --topbar-bg: rgba(255, 255, 255, 0.66);
-  --panel: rgba(255, 250, 253, 0.95);
+  /* 地图浮标的底色。原来 0.95 几乎是实心，压在街道图上像贴了张纸；
+     降到 0.75 能透出底下的路网，同时 11px 的小字还看得清。
+     这个令牌只被 .leaflet-tooltip.rm-tip 用到，改它不影响别处。 */
+  --panel: rgba(255, 250, 253, 0.75);
   --panel-soft: rgba(255, 250, 253, 0.88);
   --panel-faint: rgba(255, 250, 253, 0.68);
   --paper-warm: #fff6fa;
