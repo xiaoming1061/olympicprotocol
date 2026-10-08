@@ -697,6 +697,13 @@ body {
 .leaflet-tooltip.rm-tip.is-next { border-color: var(--accent-line-strong); color: var(--accent); }
 .leaflet-tooltip.rm-tip.is-me { border-color: var(--accent-line); }
 
+/* 真实地图上"被选中那条线"的校巴站：站名常驻、跟上主色 */
+.leaflet-tooltip.rm-tip.is-stop.is-picked {
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 700;
+}
+
 .leaflet-container { background: var(--paper-warm); font-family: inherit; }
 .leaflet-control-attribution {
   background: var(--panel-soft) !important;
@@ -770,6 +777,9 @@ body {
 .bld-label { opacity: 0.72; }
 .bld-time { opacity: 0.6; }
 .bus-stop-label { opacity: 0.68; }
+
+/* 选中那条线的站名：不再半透明，加粗，且摆放优先级提到 rank 1 */
+.bus-stop-label.is-picked { opacity: 1; font-weight: 800; }
 .map-note { opacity: 0.55; }
 
 /* 下面这些是"要看清楚"的，保持不透明 */
@@ -824,6 +834,12 @@ body {
   fill: var(--stop-fill);
   stroke: var(--accent-ink);
   stroke-width: 2.5;
+}
+
+/* 选中那条线的校巴站：站标描粗、加一点主色外发光 */
+.bus-stop.is-picked {
+  stroke-width: 3.5;
+  filter: drop-shadow(0 0 3px rgba(201, 37, 108, 0.45));
 }
 
 .bus-stop-label {
@@ -1048,6 +1064,25 @@ body {
 
 .bus-group { display: flex; flex-direction: column; gap: 4px; }
 .bus-group + .bus-group { border-top: 1px solid var(--line); padding-top: 10px; }
+
+/* 校巴方案可以点选：点一下 → 地图只画那一条线，卡片上这块也亮起来。
+   负外边距是为了让高亮底色有左右内边距、文字又还在原来的对齐线上。 */
+.bus-group {
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: background-color var(--dur-hover) var(--ease-out);
+}
+.bus-group.is-picked {
+  background: var(--accent-soft);
+  box-shadow: inset 0 0 0 1px var(--accent-line);
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
+  margin-left: calc(-1 * var(--space-sm));
+  margin-right: calc(-1 * var(--space-sm));
+}
+@media (hover: hover) {
+  .bus-group:not(.is-picked):hover { background: var(--accent-soft); }
+}
 
 .bus-where {
   display: flex;

@@ -139,16 +139,20 @@ window.OP = window.OP || {};
       var stop = s && s.stop;
       if (!stop || !hasCoords(stop)) return;
       var role = s.roles && s.roles.board ? "上车" : (s.roles && s.roles.alight ? "下车" : "");
+      /* 选中那条线的站：圈更大、描边更粗，而且**常驻**站名浮标
+         （没选中的只做悬停提示，免得一堆站名糊在一起） */
+      var big = !!s.picked;
       L.circleMarker([stop.lat, stop.lng], {
-        radius: 4,
+        radius: big ? 7 : 4,
         color: "#04121c",
-        weight: 2,
+        weight: big ? 3 : 2,
         fillColor: "#ffc55a",
         fillOpacity: 1
-      }).addTo(overlay).bindTooltip("巴士站 · " + stop.zh + (role ? "（" + role + "）" : ""), {
+      }).addTo(overlay).bindTooltip(stop.zh + (role ? "（" + role + "）" : ""), {
         direction: "top",
-        offset: [0, -6],
-        className: "rm-tip is-stop"
+        offset: [0, big ? -10 : -6],
+        permanent: big,
+        className: "rm-tip is-stop" + (big ? " is-picked" : "")
       });
     });
   }

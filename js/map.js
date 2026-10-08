@@ -279,14 +279,25 @@ window.OP = window.OP || {};
       var st = s && s.stop;
       if (!st || typeof st.lat !== "number" || typeof st.lng !== "number") return;
       var p = project(st);
-      parts.push('<rect class="bus-stop" x="' + (p.x - 6).toFixed(1) + '" y="' + (p.y - 6).toFixed(1) +
-        '" width="12" height="12" rx="3" transform="rotate(45 ' +
+      /* 选中那条线的两站：站标放大、站名加深加粗、摆放优先级也提上去
+         （rank 越小越先摆，越不容易在拥挤时被丢掉），
+         这样"地图上显示对应的路线"才真的看得出来 */
+      var big = !!s.picked;
+      var half = big ? 8.5 : 6;
+      var r = big ? 13 : 9;
+      parts.push('<rect class="bus-stop' + (big ? " is-picked" : "") +
+        '" x="' + (p.x - half).toFixed(1) + '" y="' + (p.y - half).toFixed(1) +
+        '" width="' + (half * 2) + '" height="' + (half * 2) + '" rx="3" transform="rotate(45 ' +
         p.x.toFixed(1) + " " + p.y.toFixed(1) + ')"/>');
-      marks.push({ x: p.x, y: p.y, r: 9 });
+      marks.push({ x: p.x, y: p.y, r: r });
       /* 只写站名：它在哪条线是上车、哪条线是下车，路线列表里已经写了 */
       labels.push({
-        x: p.x, y: p.y, r: 9, rank: 3, title: st.zh,
-        lines: [{ text: esc(st.zh), fs: STOP_FS, cls: "bus-stop-label" }]
+        x: p.x, y: p.y, r: r, rank: big ? 1 : 3, title: st.zh,
+        lines: [{
+          text: esc(st.zh),
+          fs: big ? STOP_FS + 2 : STOP_FS,
+          cls: "bus-stop-label" + (big ? " is-picked" : "")
+        }]
       });
     });
 

@@ -25,6 +25,9 @@
     placesRaw: null,
     /* 校区楼栋列表默认收起，只看前几栋 */
     buildingListExpanded: false,
+    /* 当前点选的校巴方案（busPickId 的返回值）。null = 没选，
+       地图就按老样子把所有候选车站都标出来 */
+    busPick: null,
     ocr: { courses: [], warnings: [], busy: false }
   };
 
@@ -463,6 +466,12 @@
    * **只写时长，不写"几点到"**：校巴到站时间太不稳，报了反而误导。
    * 每行是「走到车站 + 车程 + 走到教室 = 合计」，再加这条线大概几分钟一班。
    */
+  /* 一套校巴方案的稳定标识：线路号 + 上车站 + 下车站。
+     卡片上点选、地图上高亮，两边都靠它对齐。 */
+  function busPickId(g) {
+    return String(g.route.no) + "|" + g.board.id + "|" + g.alight.id;
+  }
+
   function busHtml(plan, destLabel) {
     /* 模块没加载上说明页面是旧缓存（HTML 里没有 js/shuttle.js 那一行），
        这种情况要明说，不能跟"这段没车"长得一样 */
@@ -500,7 +509,9 @@
       else if (g.saves !== null && g.saves <= -1) verdict = "比走路慢 " + Math.round(-g.saves) + " 分";
       else if (g.saves !== null) verdict = "和走路差不多";
 
-      return '<div class="bus-group">' +
+      var pickId = busPickId(g);
+      return '<div class="bus-group' + (state.busPick === pickId ? " is-picked" : "") +
+        '" data-bus="' + esc(pickId) + '" role="button" tabindex="0">' +
         '<div class="bus-where">' +
           '<span class="bus-tag">' + esc(g.route.no) + "</span>" + esc(g.route.nameZh) +
         "</div>" +
@@ -675,17 +686,24 @@
     var seen = {};
     out.busStops.forEach(function (s) { seen[s.id] = true; });
 
-    (plan && plan.groups || []).forEach(function (g) {
+    var all = (plan && plan.groups) || [];
+    /* 点选了某条线就只画那一条；没选就维持原样——
+       所有候选车站都标出来，但只画最优先那条的连线 */
+    var picked = state.busPick
+      ? all.filter(function (g) { return busPickId(g) === state.busPick; })
+      : [];
+
+    (picked.length ? picked : all).forEach(function (g) {
       [g.board, g.alight].forEach(function (entry) {
         if (!entry || !entry.stop) return;
         if (seen[entry.id]) return;
         seen[entry.id] = true;
-        out.busStops.push({ id: entry.id, stop: entry.stop });
+        out.busStops.push({ id: entry.id, stop: entry.stop, picked: picked.length > 0 });
       });
     });
 
-    /* 取第一条线（现在在开的排最前）的上下车站画连线 */
-    var best = (plan && plan.groups || [])[0];
+    /* 取第一条线（现在在开的排最前）的上下车站画连线；选中了就画选中的那条 */
+    var best = (picked.length ? picked : all)[0];
     if (best) {
       if (fromPoint && best.board.stop) {
         out.busLinks.push({ from: fromPoint, to: best.board.stop });
@@ -3049,6 +3067,32 @@
     /* 点到别的地方就把所有候选收起来 */
     document.addEventListener("click", function (ev) {
       pickers.forEach(function (p) { p.hideIfOutside(ev.target); });
+    });
+
+    /* --- 点选校巴方案 ---
+       点一下选中：地图只画那一条的站和连线，卡片上高亮。再点一下取消。
+       用事件委托——方案列表每次 render() 都会重建，逐条绑会丢。 */
+    function toggleBusPick(el) {
+      var id = el.getAttribute("data-bus");
+      if (!id) return;
+      state.busPick = state.busPick === id ? null : id;
+      render();
+    }
+
+    document.addEventListener("click", function (ev) {
+      if (!ev.target || !ev.target.closest) return;
+      /* 方案里如果有按钮/链接，点它们不算选线路 */
+      if (ev.target.closest("button, a")) return;
+      var el = ev.target.closest("[data-bus]");
+      if (el) toggleBusPick(el);
+    });
+
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key !== "Enter" && ev.key !== " ") return;
+      var el = ev.target;
+      if (!el || !el.closest || !el.hasAttribute || !el.hasAttribute("data-bus")) return;
+      ev.preventDefault();
+      toggleBusPick(el);
     });
 
     $("#btnDormRemove").addEventListener("click", function () {

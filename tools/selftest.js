@@ -3162,6 +3162,28 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   /* 收费小巴（up/down）明确不在这一版范围里 */
   check("没有混进收费小巴路线",
     routes.every((r) => ["shuttle", "night", "meetclass"].indexOf(r.group) >= 0));
+
+  /* ---------- 点选校巴方案 → 地图跟着走 ---------- */
+  const appSrc = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+  const mapSrc = fs.readFileSync(path.join(root, "js", "map.js"), "utf8");
+  const realSrc = fs.readFileSync(path.join(root, "js", "realmaps.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+
+  check("每套校巴方案都带 data-bus 标识（卡片和地图靠它对上）",
+    /function busPickId\(g\)/.test(appSrc) &&
+    /'" data-bus="' \+ esc\(pickId\)/.test(appSrc));
+  check("点选走事件委托（方案列表每次渲染都会重建，逐条绑会丢）",
+    /closest\("\[data-bus\]"\)/.test(appSrc) &&
+    /state\.busPick = state\.busPick === id \? null : id/.test(appSrc));
+  check("选中后地图只画那一条的上下车站",
+    /all\.filter\(function \(g\) \{ return busPickId\(g\) === state\.busPick; \}\)/.test(appSrc));
+  check("选中的校巴站在简图上放大 + 站名加深（rank 提到 1，拥挤时也先摆它）",
+    /var big = !!s\.picked/.test(mapSrc) &&
+    /rank: big \? 1 : 3/.test(mapSrc) &&
+    /\.bus-stop-label\.is-picked \{ opacity: 1; font-weight: 800; \}/.test(css));
+  check("真实地图上选中的站名浮标常驻",
+    /permanent: big/.test(realSrc) &&
+    /\.leaflet-tooltip\.rm-tip\.is-stop\.is-picked/.test(css));
 }
 
 
