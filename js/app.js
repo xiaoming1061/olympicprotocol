@@ -1060,6 +1060,15 @@
   /* 已经挂上的下拉，点空白处要一起收起来 */
   var pickers = [];
 
+  /* 手指是不是正按在某个候选列表上。
+
+     为什么需要这个：候选列表一被触摸，输入框就失去焦点，浏览器随即触发
+     change。而这三个输入框的 change 都会"把输入框里的文字当成完整名字去解析"，
+     解析完重新渲染，候选列表跟着被重建——手指刚按住想滑动，列表就没了。
+     所以按住列表期间让这些 change 全部跳过。
+     抬手后再留 400ms，因为 change 不一定在 blur 那一刻就发出来。 */
+  var pickerTouching = false;
+
   /**
    * 给一个输入框挂上"候选列表"。
    *
@@ -1139,6 +1148,7 @@
     var lastPickAt = 0;
 
     box.addEventListener("pointerdown", function (ev) {
+      pickerTouching = true;
       var btn = ev.target.closest("[data-pick]");
       touch = btn ? { x: ev.clientX, y: ev.clientY, btn: btn } : null;
     });
@@ -1153,6 +1163,7 @@
     box.addEventListener("pointerup", function (ev) {
       var t = touch;
       touch = null;
+      setTimeout(function () { pickerTouching = false; }, 400);
       if (!t || t.moved || !t.btn.isConnected) return;
       ev.preventDefault();
       lastPickAt = Date.now();
@@ -1160,7 +1171,10 @@
     });
 
     /* 系统把滚动接管走时会发 pointercancel，这时不该当点选 */
-    box.addEventListener("pointercancel", function () { touch = null; });
+    box.addEventListener("pointercancel", function () {
+      touch = null;
+      setTimeout(function () { pickerTouching = false; }, 400);
+    });
 
     /* 键盘选中（Tab 到候选上按回车）走的是 click，补一个。
        刚被 pointerup 处理过的就别重复触发，否则 onPick 会跑两次。 */
@@ -2981,9 +2995,11 @@
 
     /* 输入框里可能是全名、别名或者半截名字，回车 / 失焦时交给这个名字解析器兜底 */
     $("#customFromSearch").addEventListener("change", function () {
+      if (pickerTouching) return;   // 手指在候选列表上，别解析、别重渲染
       pickBuildingByName("#customFromSearch", "customFrom", true);
     });
     $("#customToSearch").addEventListener("change", function () {
+      if (pickerTouching) return;
       pickBuildingByName("#customToSearch", "customTo", false);
     });
 
@@ -3025,6 +3041,7 @@
 
     /* 输入框里可能是全名、中文别名或者半截名字，交给 resolveDorm 去挑 */
     $("#dormSearch").addEventListener("change", function () {
+      if (pickerTouching) return;   // 同上，否则一按列表就被收掉
       pickDormByName($("#dormSearch").value);
       $("#dormSuggest").hidden = true;
     });
