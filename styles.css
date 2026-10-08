@@ -876,6 +876,18 @@ body {
 .leg:first-child { padding-top: 0; }
 .leg:last-child { padding-bottom: 0; }
 
+/* 已经开课的那一段：底色置灰，跟还没到的行程区分开。
+   .leg 原本没有左右内边距，直接填灰底会让文字贴着边缘，
+   所以补一层左右内边距、再用负外边距把文字拉回原来的对齐位置。 */
+.leg.is-past {
+  background: rgba(116, 114, 124, 0.10);
+  border-radius: var(--radius-sm);
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
+  margin-left: calc(-1 * var(--space-sm));
+  margin-right: calc(-1 * var(--space-sm));
+}
+
 .leg-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
 .leg-title { font-size: var(--text-lg); font-weight: 600; }
 .leg-title .idx {

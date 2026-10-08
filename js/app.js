@@ -568,6 +568,16 @@
       collectBus(leg.busPlan, leg.fromPoint, leg.toPoint, bus);
     });
 
+    /* 已经开课的那几段压到最后。
+       上课时间一到，「建议出发」就没意义了，但这一段仍然是有用的参考
+       （课还没下、或者想回头看），所以不删，只是沉到底下、底色置灰。
+       sort 在现代引擎里是稳定的，同类之间保持原有先后。 */
+    var nowMin = state.now.getHours() * 60 + state.now.getMinutes();
+    var isPastLeg = function (leg) { return P.hm(leg.course.start) <= nowMin; };
+    route = route.slice().sort(function (a, b) {
+      return (isPastLeg(a) ? 1 : 0) - (isPastLeg(b) ? 1 : 0);
+    });
+
     /* 「路线规划」这张卡片对应的地图数据（今天要去的教室） */
     todayMap = {
       stops: stops,
@@ -591,6 +601,7 @@
     var html = route.map(function (leg, i) {
       var c = leg.course;
       var b = leg.building;
+      var isPast = isPastLeg(leg);
       var links = b ? Geo.navLinks(b.name, b.lat, b.lng) : [];
 
       var metrics = leg.metrics
@@ -611,7 +622,7 @@
         warn = '<div class="leg-warn">余量只有 ' + Math.max(0, Math.round(leg.slackMin)) + " 分钟，别拖了</div>";
       }
 
-      return '<div class="leg">' +
+      return '<div class="leg' + (isPast ? " is-past" : "") + '">' +
         '<div class="leg-head">' +
           '<div class="leg-title"><span class="idx">' + (i + 1) + "</span>" +
             esc((leg.fromName || "起点") + " → " + (b ? b.name : "未知地点")) + "</div>" +
@@ -1036,7 +1047,9 @@
   /* ================= 可搜索的下拉 ================= */
 
   /* 候选列表最多显示几条：再多也没人翻，剩下的靠自己多打一个字缩小 */
-  var PICK_MAX = 8;
+  /* 这里原本有个 PICK_MAX = 8：候选列表只渲染前 8 条，剩下的让人"打个字缩小范围"。
+     用户要求能直接翻完整份列表，所以截断去掉了——.picker 自己有
+     max-height + overflow-y，整份塞进去就能滚，搜索逻辑一行没动。 */
 
   /* 已经挂上的下拉，点空白处要一起收起来 */
   var pickers = [];
@@ -1081,15 +1094,15 @@
         return;
       }
 
-      var shown = hits.slice(0, PICK_MAX);
-      box.innerHTML = shown.map(function (it) {
+      /* 不再截断。以前只渲染前 PICK_MAX 条，剩下的让人"打个字缩小范围"——
+         但用户想直接翻完整份列表。.picker 自己有 max-height + overflow-y，
+         整份塞进去就能滚，搜索逻辑一行都不用动。 */
+      box.innerHTML = hits.map(function (it) {
         return '<button type="button" class="picker-item" data-pick="' + esc(it.id) + '">' +
           '<span class="picker-name">' + esc(it.label) + "</span>" +
           (it.meta ? '<span class="picker-meta">' + esc(it.meta) + "</span>" : "") +
           "</button>";
-      }).join("") + (hits.length > shown.length
-        ? '<p class="picker-note">还有 ' + (hits.length - shown.length) + " 条，打个字缩小范围</p>"
-        : "");
+      }).join("");
       box.hidden = false;
     }
 
