@@ -11,8 +11,10 @@ import worker from "./timetable-proxy.js";
 const PROXY = "https://proxy.example.workers.dev";
 const ORIGIN = "https://rhythmhill.com";
 const TOKEN = "s3cret-path";
+const DEVICE = "watch-path";
 const ENV = {
   PROXY_TOKEN: TOKEN,
+  DEVICE_TOKEN: DEVICE,
   ALLOWED_ORIGINS: ORIGIN + ",http://localhost:5173",
   UPSTREAM_MODE: "soap-plain"
 };
@@ -66,6 +68,7 @@ function ask(path, options) {
 }
 
 const withToken = (suffix) => "/t/" + TOKEN + (suffix || "");
+const withDevice = (suffix) => "/d/" + DEVICE + (suffix || "");
 const XML = (json) => '<string xmlns="http://tempuri.org/">' + json + "</string>";
 
 /* ================= 1. 来源与路径 ================= */
@@ -241,6 +244,138 @@ console.log("\n[worker] 日志与限流");
   check("同一个 IP 一分钟内点到第 7 次会被限流（429）",
     codes.slice(0, 6).every((c) => c === 200) && codes[6] === 429,
     codes.join(","));
+}
+
+/* ================= 4. 墨水屏手表那条入口 ================= */
+
+console.log("\n[worker] 手表入口 /d/<口令>：小、准、不泄密");
+{
+  /* 上游一行真实数据的形状（字段名照抄 worker/README.md 里那份清单）。
+     固定成「周一 + 周三」上课，起止 2026-09-07 – 2026-12-04。
+     用来当锚点的几天：10-12 周一、10-13 周二（不上）、12-09 周三（已过 END_DT）。 */
+  const row = (over) => Object.assign({
+    SUBJECT: "BMEG", CATALOG_NBR: "2210", DESCR: "Biomedical Engineering",
+    COMDESC: "Lecture", FDESCR: "Science Centre L3",
+    START_DT: "20260907", END_DT: "20261204",
+    MEETING_TIME_START: "09:30", MEETING_TIME_END: "10:15",
+    INSTRUCTORS: "CHAN TAI MAN",
+    MON: "Y", TUES: "N", WED: "Y", THURS: "N", FRI: "N", SAT: "N", SUN: "N"
+  }, over);
+
+  const serveRows = (rows) => setUpstream(() => new Response(XML(JSON.stringify(rows)), { status: 200 }));
+  const askWatch = (body, options) =>
+    ask(withDevice(), Object.assign({ body: JSON.stringify(body) }, options || {}));
+  const watchAt = async (now, rows) => {
+    serveRows(rows === undefined ? [row({})] : rows);
+    const res = await askWatch({ sid: "1155000000", pwd: "pw", now: now });
+    return await res.json();
+  };
+
+  const offEntry = await askWatch({ sid: "1", pwd: "pw" }, { env: { DEVICE_TOKEN: "" } });
+  check("没配 DEVICE_TOKEN 时这条入口就当不存在（404）",
+    offEntry.status === 404 && (await offEntry.json()).error === "not_found");
+
+  const wrongEntry = await ask("/d/nope", { body: JSON.stringify({ sid: "1", pwd: "pw" }) });
+  check("手表口令不对同样是 404", wrongEntry.status === 404);
+
+  const gotEntry = await ask(withDevice(), { method: "GET" });
+  check("手表入口只收 POST（GET 返回 405）", gotEntry.status === 405);
+
+  const noCredsEntry = await askWatch({ sid: "1155000000" });
+  check("手表入口缺密码也返回 400",
+    noCredsEntry.status === 400 && (await noCredsEntry.json()).error === "missing_credentials");
+
+  const before = await watchAt("2026-10-12T09:00:00+08:00");
+  check("周一 09:00 请求：09:30 那节就是 next，还差 30 分钟",
+    before.ok === true && before.mode === "soap-plain" && before.day === "Mon" &&
+    before.next && before.next.code === "BMEG2210" && before.next.start === "0930" &&
+    before.next.startsInMinutes === 30 && before.next.inProgress === false);
+
+  const during = await watchAt("2026-10-12T10:00:00+08:00");
+  check("正在上的那节仍指向它，并标成 inProgress（而不是跳过它）",
+    during.next && during.next.code === "BMEG2210" &&
+    during.next.inProgress === true && during.next.startsInMinutes === -30);
+
+  const tuesday = await watchAt("2026-10-13T09:00:00+08:00");
+  check("星期开关说了算：周二不上，next 落到周三那节",
+    tuesday.days[0].classes.length === 0 &&
+    tuesday.next && tuesday.next.day === "Wed" && tuesday.next.dayOffset === 1);
+
+  const expired = await watchAt("2026-12-09T09:00:00+08:00");
+  check("过了 END_DT 那天排不出课：当天为空、next 为 null",
+    expired.days[0].classes.length === 0 && expired.next === null);
+
+  const loose = await watchAt("2026-10-12T09:00:00+08:00",
+    [row({ START_DT: "2026-09-07", END_DT: "2026-12-04", MEETING_TIME_START: "9:30 AM", MEETING_TIME_END: "1015" })]);
+  check("八位日期 / 带分隔符日期、`9:30 AM` / `1015` 两种时间写法都认",
+    loose.next && loose.next.start === "0930" && loose.next.end === "1015");
+
+  const broken = await watchAt("2026-10-12T09:00:00+08:00", [row({ START_DT: "20261301", END_DT: "" })]);
+  check("日期不合法（13 月）就当没写，课仍按星期开关出现",
+    broken.next !== null && broken.next.code === "BMEG2210");
+
+  const dup = await watchAt("2026-10-12T09:00:00+08:00", [row({}), row({})]);
+  check("同一门课重复的行只出现一次", dup.count === 1 && dup.days[0].classes.length === 1);
+
+  const sorted = await watchAt("2026-10-12T07:00:00+08:00", [
+    row({ MEETING_TIME_START: "14:30", MEETING_TIME_END: "15:15" }),
+    row({ MEETING_TIME_START: "09:30", MEETING_TIME_END: "10:15" }),
+    row({ MEETING_TIME_START: "11:30", MEETING_TIME_END: "12:15" })
+  ]);
+  check("一天里按上课时间排好序",
+    sorted.days[0].classes.map((c) => c.start).join(",") === "0930,1130,1430");
+
+  const split = await watchAt("2026-10-12T07:00:00+08:00", [
+    row({}),
+    row({ SUBJECT: "ELEC", CATALOG_NBR: "1100", FDESCR: "Foo Building 7",
+      MEETING_TIME_START: "11:00", MEETING_TIME_END: "11:45" })
+  ]);
+  check("地名里的教室号切出来单独放；楼名本身以数字结尾就不拆",
+    split.days[0].classes[0].building === "Science Centre" && split.days[0].classes[0].room === "L3" &&
+    split.days[0].classes[1].building === "Foo Building 7" && split.days[0].classes[1].room === "");
+
+  const none = await watchAt("2026-10-12T09:00:00+08:00", []);
+  check("这学期没课：ok 仍是 true，用 empty 标出来，next 为 null",
+    none.ok === true && none.empty === true && none.next === null);
+
+  /* 七天 × 每天八节、标题地点都写满，逼它把体积裁下来 */
+  const flags = ["MON", "TUES", "WED", "THURS", "FRI", "SAT", "SUN"];
+  const fat = [];
+  flags.forEach(function (flag) {
+    const day = {};
+    flags.forEach(function (name) { day[name] = name === flag ? "Y" : "N"; });
+    for (let i = 0; i < 8; i++) {
+      fat.push(row(Object.assign({
+        SUBJECT: "ABCD", CATALOG_NBR: "10" + i,
+        DESCR: "Biomedical Engineering Seminar Series " + i,
+        FDESCR: "Yasumoto International Academic Park L" + i,
+        MEETING_TIME_START: (8 + i) + ":00", MEETING_TIME_END: (8 + i) + ":50"
+      }, day)));
+    }
+  });
+  serveRows(fat);
+  const fatRes = await askWatch({ sid: "1155000000", pwd: "pw", now: "2026-10-12T07:00:00+08:00" });
+  const fatText = await fatRes.text();
+  check("七天塞满也只回一包小数据（不超过 4096 字节）",
+    new TextEncoder().encode(fatText).length <= 4096 && JSON.parse(fatText).days.length >= 1);
+
+  /* 密码/学号不能出现在给手表的那包里，DEBUG 日志里也不能有 */
+  const realLog = console.log;
+  const logged = [];
+  let leaked;
+  try {
+    console.log = (...args) => { logged.push(args.join(" ")); };
+    serveRows([row({})]);
+    const secret = await askWatch(
+      { sid: "1155000000", pwd: "TopSecret", now: "2026-10-12T09:00:00+08:00" },
+      { env: { DEBUG: "1" } });
+    const secretText = await secret.text();
+    leaked = secretText.indexOf("TopSecret") >= 0 || secretText.indexOf("1155000000") >= 0 ||
+      logged.some((line) => line.indexOf("TopSecret") >= 0 || line.indexOf("1155000000") >= 0);
+  } finally {
+    console.log = realLog;
+  }
+  check("手表拿到的这包里没有学号密码，DEBUG 日志里也没有", leaked === false);
 }
 
 /* ---------- 收尾 ---------- */

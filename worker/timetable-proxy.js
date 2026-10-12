@@ -16,6 +16,7 @@
  *
  * 环境变量（见 wrangler.toml / 控制台 Variables）：
  *   PROXY_TOKEN     访问口令，URL 形如 /t/<口令>；不设的话只认 /timetable
+ *   DEVICE_TOKEN    给墨水屏手表用的口令，URL 形如 /d/<口令>；不设的话这条入口就当不存在
  *   ALLOWED_ORIGINS 允许的网页来源，逗号分隔
  *   UPSTREAM_MODE   默认 soap-plain，见下面 MODES
  *   DEBUG           设成 "1" 才往日志里写状态码/耗时（永远不写请求体）
@@ -23,6 +24,9 @@
  *                   设成 "1" 才允许空学号/空密码。只用来确认"管道通不通"
  *                   （空凭据本来就登不进去，放开它没有风险），平时别开。
  */
+
+/* 手表要的数据只有「今天/接下来」，映射规则单独一个文件，纯函数、可单测 */
+import { buildDevicePayload } from "./device-payload.js";
 
 /* ---------- 常量 ---------- */
 
@@ -107,6 +111,14 @@ function pathAllowed(url, env) {
   const token = env && env.PROXY_TOKEN;
   if (token) return url.pathname === "/t/" + token;
   return url.pathname === "/timetable";
+}
+
+/* 手表那条入口：口令单独配（DEVICE_TOKEN），跟网页那条互不影响。
+   没配就整条入口不存在——手表地址是写死在固件里的，多一条暴露面不如少一条。 */
+function devicePathAllowed(url, env) {
+  const token = env && env.DEVICE_TOKEN;
+  if (!token) return false;
+  return url.pathname === "/d/" + token;
 }
 
 function clientIp(request) {
@@ -255,6 +267,23 @@ async function callUpstream(modeName, sid, pwd) {
 
 /* ---------- 入口 ---------- */
 
+/**
+ * 手表那条入口的响应：上游给的是一行行「上课安排」（28 个字段），
+ * 这里压成很小的一包「今天 / 接下来」，字段都短、都好解析。
+ *
+ * `now` 只在联调和自检时传，用来把"现在"钉死，不然断言会随真实时间飘。
+ */
+function deviceResponse(rows, payload, modeName) {
+  const asked = payload && payload.now ? Date.parse(payload.now) : NaN;
+  const data = buildDevicePayload(
+    rows,
+    Number.isFinite(asked) ? asked : Date.now(),
+    { days: payload && payload.days, perDay: payload && payload.perDay }
+  );
+  data.mode = modeName;
+  return data;
+}
+
 export default {
   async fetch(request, env) {
     const started = Date.now();
@@ -274,8 +303,11 @@ export default {
       return new Response(null, { status: 204, headers: cors });
     }
 
+    /* 两条入口：/d/<口令> 给墨水屏手表，其余按原来那套（网页用） */
+    const isDevice = devicePathAllowed(url, env);
+
     /* 路径不对就装作没有这个服务，别告诉扫描器"这里有个代理" */
-    if (!pathAllowed(url, env)) return done({ ok: false, error: "not_found" }, 404);
+    if (!isDevice && !pathAllowed(url, env)) return done({ ok: false, error: "not_found" }, 404);
 
     if (request.method !== "POST") return done({ ok: false, error: "method_not_allowed" }, 405);
 
@@ -335,6 +367,8 @@ export default {
     }
 
     if (!Array.isArray(courses)) courses = [];
+
+    if (isDevice) return done(deviceResponse(courses, payload, modeName), 200);
 
     return done({
       ok: true,

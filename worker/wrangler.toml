@@ -6,6 +6,8 @@
 #
 # 口令用 secret 配（不要写进这个文件、更不要提交进仓库）：
 #   npx wrangler secret put PROXY_TOKEN
+# 墨水屏手表那条入口是另一个口令，也走 secret：
+#   npx wrangler secret put DEVICE_TOKEN     （不配的话 /d/… 这条路径就是 404）
 # 控制台里对应 Variables and Secrets → Add → 类型选 Secret。
 
 name = "cuhk-timetable-proxy"

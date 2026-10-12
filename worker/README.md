@@ -73,6 +73,60 @@ npx wrangler secret put PROXY_TOKEN        # 口令用 secret 配，不写进文
 | 502 | `upstream_status` / `upstream_unparseable` | 上游报错或回了个不是 JSON 的东西（会带一小段原文） |
 | 504 | `upstream_timeout` / `upstream_unreachable` | 20 秒没等到上游 |
 
+## 墨水屏手表那条入口（`/d/<口令>`）
+
+手表只有一块 200×200 的黑白屏、一块小电池、一次只醒十几秒，所以它不要网页
+拿的那份 28 字段原始数据，而要**一小包「今天 / 接下来」**：字段短、总量有上限。
+
+这条入口跟网页那条**各配各的口令**：`DEVICE_TOKEN` 没配，`/d/…` 直接 404，
+等于这条入口不存在。口令写在 URL 里 = 一个静态凭据，别发到公开的地方。
+
+**请求** `POST /d/<DEVICE_TOKEN>`，`Content-Type: application/json`
+
+```json
+{ "sid": "1155xxxxxx", "pwd": "你的密码" }
+```
+
+可选两个字段：`days`（往前排几天，默认 7，最多 14）、`perDay`（每天最多几节，
+默认 8，最多 20）。联调时还可以传 `now`（形如 `2026-10-12T09:00:00+08:00`）
+把"现在"钉死，方便对着断言看结果——手表自己不会传。
+
+**成功** `200`
+
+```json
+{
+  "ok": true, "v": 1, "mode": "soap-aes",
+  "now": "2026-10-12T09:00+08:00", "today": "20261012",
+  "weekday": 1, "day": "Mon",
+  "next": {
+    "date": "20261012", "day": "Mon", "dayOffset": 0,
+    "start": "0930", "end": "1015", "code": "BMEG2210", "type": "Lecture",
+    "title": "Biomedical Engineering", "venue": "Science Centre L3",
+    "building": "Science Centre", "room": "L3", "teacher": "CHAN TAI MAN",
+    "startsInMinutes": 30, "inProgress": false
+  },
+  "days": [ { "date": "20261012", "weekday": 1, "day": "Mon", "classes": [ … ] } ],
+  "count": 12, "empty": false, "truncated": false
+}
+```
+
+几条约定（都有单测盯着）：
+
+| 约定 | 为什么 |
+| --- | --- |
+| `start` / `end` 是 `HHMM` 四位字符串 | 手表不用解析时区、不用管冒号 |
+| `inProgress` 为真时 `next` 仍指向**正在上**的那节 | 屏幕上显示"现在这节"比显示"下一节"有用 |
+| 正在上时 `startsInMinutes` 是负数 | 一眼看出已经上课几分钟 |
+| 总量压到 4096 字节以内（从最后一天开始丢，并给 `truncated: true`） | 手表的缓冲区就那么大 |
+| 标题 28 字、地点 26 字、每天最多 8 节 | 屏上一行只有 23 个字符 |
+| 星期读 `MON…SUN` 七列开关，不拿 `START_DT` 猜 | 和网页那边同一个判据 |
+| `START_DT` 八位数字、带分隔符两种都认；13 月这种当没写 | 上游两种都出现过 |
+| 地点末尾像教室号才切出来（`L3`、`303`）；`Foo Building 7` 不拆 | 拆错了比不拆更难看 |
+
+**失败**：跟上面那张表一样（`bad_json` / `missing_credentials` / `not_found` /
+`method_not_allowed` / `body_too_large` / `too_many_requests` / `upstream_*`），
+只是 `not_found` 也涵盖"口令不对"。
+
 ## 四种上游写法（`mode`）
 
 | mode | 打到哪 | 凭据 | 说明 |
