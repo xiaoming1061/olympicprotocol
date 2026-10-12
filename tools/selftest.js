@@ -5432,5 +5432,93 @@ console.log("\n[57] 拉取课表卡片：接口出处署名");
     /\.credit-link \{[\s\S]{0,220}?color: var\(--accent-ink\)/.test(css));
 }
 
+console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
+{
+  const cp = require("child_process");
+  const hw = path.join(root, "hardware");
+  const boardCode = fs.readFileSync(path.join(hw, "firmware", "include", "board_config.h"), "utf8");
+  const themeCode = fs.readFileSync(path.join(hw, "firmware", "src", "ui_theme.h"), "utf8");
+  const previewCode = fs.readFileSync(path.join(hw, "preview", "layout.mjs"), "utf8");
+  const payloadCode = fs.readFileSync(path.join(root, "worker", "device-payload.js"), "utf8");
+  const gitignore = fs.readFileSync(path.join(root, ".gitignore"), "utf8");
+
+  /* 引脚是照抄官方仓库的。抄错一位，屏幕就不亮或者画歪，所以钉死几个关键值 */
+  check("墨水屏引脚与官方定义一致（SCK6 / MOSI5 / MISO4 / CS7 / DC15 / RST11 / BUSY10）",
+    /#define EPD_SCK_PIN 6\b/.test(boardCode) &&
+    /#define EPD_MOSI_PIN 5\b/.test(boardCode) &&
+    /#define EPD_MISO_PIN 4\b/.test(boardCode) &&
+    /#define EPD_CS_PIN 7\b/.test(boardCode) &&
+    /#define EPD_DC_PIN 15\b/.test(boardCode) &&
+    /#define EPD_RST_PIN 11\b/.test(boardCode) &&
+    /#define EPD_BUSY_PIN 10\b/.test(boardCode));
+  check("I2C 与电池采样引脚和官方一致（SDA18 / SCL8 / 电池 ADC0，分压 ÷2）",
+    /#define I2C_SDA_PIN 18\b/.test(boardCode) &&
+    /#define I2C_SCL_PIN 8\b/.test(boardCode) &&
+    /#define VBAT_ADC_PIN 0\b/.test(boardCode) &&
+    /#define VBAT_DIVIDER 2\.0f/.test(boardCode));
+  check("屏幕供电与电源保持位挂在 I/O 扩展芯片上（EXIO 0 / 5）",
+    /#define EXIO_EPD_PWR 0\b/.test(boardCode) &&
+    /#define EXIO_POWER_HOLD 5\b/.test(boardCode));
+
+  /* 排版：一行放得下几个字必须和屏幕宽度自洽，不然字会被切在屏幕外 */
+  const themeNum = (name) => {
+    const hit = new RegExp("#define\\s+" + name + "\\s+(-?\\d+)").exec(themeCode);
+    return hit ? Number(hit[1]) : NaN;
+  };
+  check("一行 23 个字，和屏幕宽度自洽（(200 − 6×2) ÷ 8）",
+    Math.floor((themeNum("UI_W") - themeNum("UI_MARGIN") * 2) / themeNum("UI_ADVANCE")) === 23 &&
+    themeNum("UI_CHARS_MAX") === 23);
+  check("课少/课多两套列表参数都在（两行一节 与 一行一节）",
+    themeNum("UI_LIST_STEP_TALL") > themeNum("UI_LIST_STEP_SHORT") &&
+    themeNum("UI_LIST_ROWS_TALL") > 0 && themeNum("UI_LIST_ROWS_SHORT") >= themeNum("UI_LIST_ROWS_TALL"));
+  check("预览不另存一份字库和排版参数，直接读固件那两个头文件",
+    previewCode.indexOf("font8x8.h") > 0 && previewCode.indexOf("ui_theme.h") > 0);
+
+  /* 手上没有编译器，那就把"用了一个没定义过的宏"这类错先查了 */
+  const firmwareFiles = [
+    "src/main.cpp", "src/board.cpp", "src/board.h", "src/net.cpp", "src/net.h",
+    "src/ui.cpp", "src/ui.h", "src/ui_theme.h", "src/font8x8.h",
+    "include/board_config.h", "include/config.example.h"
+  ].map((rel) => path.join(hw, "firmware", rel));
+  const firmwareCode = firmwareFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
+  const defined = new Set(
+    [...firmwareCode.matchAll(/#define\s+([A-Za-z_][A-Za-z0-9_]*)/g)].map((hit) => hit[1]));
+
+  const usedTheme = new Set([...firmwareCode.matchAll(/\bUI_[A-Z0-9_]+\b/g)].map((hit) => hit[0]));
+  const missingTheme = [...usedTheme].filter((name) => !defined.has(name));
+  check("固件里用到的排版参数都在 ui_theme.h 里定义过",
+    missingTheme.length === 0, missingTheme.join("、"));
+
+  const usedBoard = new Set([...firmwareCode.matchAll(
+    /\b(EPD_[A-Z0-9_]+|I2C_[A-Z0-9_]+|VBAT_[A-Z0-9_]+|EXIO_[A-Z0-9_]+|PWR_BUTTON_PIN|BOOT_BUTTON_PIN|TCA9554_ADDR|PCF85063_ADDR)\b/g
+  )].map((hit) => hit[0]));
+  const missingBoard = [...usedBoard].filter((name) => !defined.has(name));
+  check("固件里用到的引脚 / I2C 地址宏都在 board_config.h 里定义过",
+    missingBoard.length === 0, missingBoard.join("、"));
+
+  const usedConfig = new Set([...firmwareCode.matchAll(/\bOP_[A-Z0-9_]+\b/g)].map((hit) => hit[0]));
+  const missingConfig = [...usedConfig].filter((name) => !defined.has(name));
+  check("固件里用到的配置项都在 config.example.h 里有名有姓（用户照抄就能编）",
+    missingConfig.length === 0, missingConfig.join("、"));
+
+  /* 设备接口那包数据的上限，要和固件的缓冲区对得上 */
+  const mainCode = fs.readFileSync(path.join(hw, "firmware", "src", "main.cpp"), "utf8");
+  check("设备接口硬上限 4096 字节，固件缓冲区留了余量且不小于它",
+    /DEFAULT_LIMIT_BYTES = 4096/.test(payloadCode) &&
+    /kCacheBytes = 4\d{3}\b/.test(mainCode));
+
+  /* 这条是"别把密码提交上去"的闸门 */
+  check("固件本地配置不进 Git（里面有 WiFi 密码和学号密码）",
+    gitignore.indexOf("hardware/firmware/include/config.h") >= 0 &&
+    !fs.existsSync(path.join(hw, "firmware", "include", "config.h")));
+
+  /* 真的把 5 种画面画一遍：有没有画出界、有没有字库里没有的字符 */
+  const run = cp.spawnSync(process.execPath,
+    [path.join(hw, "preview", "render.mjs"), "--check"], { encoding: "utf8" });
+  check("屏幕排版脚本跑通：5 种画面都没画出界、没有字库外的字符",
+    run.status === 0 && String(run.stdout).indexOf("屏幕排版自检通过") >= 0,
+    run.status === 0 ? "" : (run.stdout || "") + (run.stderr || ""));
+}
+
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");
 process.exit(fail === 0 ? 0 : 1);

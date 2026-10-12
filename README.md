@@ -1637,9 +1637,13 @@ tools/make-shuttle.js    生成 data/shuttle.js（配 shuttle-source / osm-stops
 cuhk-buildings.json   港中文 7 栋教学楼的坐标，可直接导入
 tools/places-live.js  联网实测一次地图取点
 tools/deploy.js       同步到 clubwebsite 仓库并推送，发布到 rhythmhill.com
-worker/timetable-proxy.js  CUHK 课表代理（Cloudflare Worker，**不上线**，见下）
+worker/timetable-proxy.js  CUHK 课表代理（Cloudflare Worker，见下）
+worker/device-payload.js   给墨水屏手表压出「今天 / 接下来」那一小包（纯逻辑，可单测）
 worker/dev-server.mjs      本地跑同一个代理（不用注册 Cloudflare 账号）
-worker/test.mjs            代理的 25 条单元测试（上游用替身，不联网）
+worker/test.mjs            代理的 41 条单元测试（上游用替身，不联网）
+hardware/README.md         墨水屏课表牌：选型、采购清单、引脚、续航估算、上电流程
+hardware/firmware/         ESP32-C6 固件（PlatformIO 工程，联网取数 → 画屏 → 深度睡眠）
+hardware/preview/          在电脑上把 200×200 屏幕画出来（读固件里的字库和排版参数）
 ```
 
 ## 课表代理（可选功能，默认不启用）
@@ -1661,6 +1665,15 @@ worker/test.mjs            代理的 25 条单元测试（上游用替身，不�
 
 > 部署与否都不影响线上页面：`worker/` 不在 `tools/deploy.js` 的搬运清单里，
 > 页面用不到它就一直躺着，一行都不会上线。
+
+### 手表那条入口（`/d/<口令>`）
+
+同一台 worker 还挂着一条给**墨水屏课表牌**用的入口：手表拿学号密码 POST 一次，
+回一小包「今天上什么、下一节几点、在哪栋楼」（≤4096 字节），字段都是给
+200×200 黑白小屏准备的。它和网页那条**各配各的口令**（`DEVICE_TOKEN`），
+不配就整条 404。字段含义、压缩规则和几条约定见 `worker/README.md`。
+
+硬件那头（选板子、采购清单、引脚、续航估算）在 `hardware/README.md`。
 
 ### 页面这边怎么用（课表页的两张滑动卡之一）
 
@@ -1883,3 +1896,5 @@ route 的祖先链: SECTION.view < BODY < HTML
 - **真实路网**：接一个地图服务的 JS SDK（需要 key），把直线估算升级为真实步行路线
 - **打包成 App**：用 Capacitor 套壳，再把语音换成系统 TTS、提醒换成系统本地通知，
   就能在后台也能收到提醒
+- **墨水屏课表牌**：硬件那头的固件和取数接口已经写好（`hardware/`），下一步是
+  买板子烧进去、把 Worker 缓存课表让手表不再带密码，以及在网页上挂一张「设备」卡片
