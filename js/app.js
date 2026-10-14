@@ -509,18 +509,15 @@
       else if (g.saves !== null && g.saves <= -1) verdict = "比走路慢 " + Math.round(-g.saves) + " 分";
       else if (g.saves !== null) verdict = "和走路差不多";
 
-      /* 总站开出时刻。这是时刻表上写死的发车时间，不会变，所以可以放心报出来。
-         **故意不写"到你这站几点"**——校巴到站时间不稳，报了反而误导。
-         只在**正在运营**的线路上显示：nextDepartures 只往后扫 6 小时，
-         不设这道门的话，凌晨三点会看到"总站开出 07:40"，而隔壁那条
-         7:45 才开班的不显示——同一批停运线路里有的有一行有的没有，像坏了。 */
-      var deps = (g.runningNow && OP.Shuttle && OP.Shuttle.nextDepartures)
-        ? OP.Shuttle.nextDepartures(g.route, state.now, 3)
-        : [];
-      var depsLine = deps.length
-        ? '<div class="bus-deps">总站开出 ' + deps.map(function (d) {
-            return pad2(d.getHours()) + ":" + pad2(d.getMinutes());
-          }).join(" · ") + "</div>"
+      /* 每小时开出时间。直接照交通处页面的写法（那边是
+         「每小時開出時間 (分) 10, 25, 40, 55分」），给的是**时刻表本身**，
+         不是"今天接下来哪几班"——所以不看运营状态，停运的线路照样标。
+         之前用 nextDepartures 换算成具体几班，只往后扫 6 小时，
+         凌晨三点会出现"一部分线路有、一部分没有"的怪相。
+         **仍然不写"到你这站几点"**：校巴到站时间不稳，报了反而误导。 */
+      var everyMin = (g.route.everyHour || []).slice().sort(function (a, b) { return a - b; });
+      var depsLine = everyMin.length
+        ? '<div class="bus-deps">每小时开出 ' + everyMin.map(pad2).join(" · ") + " 分</div>"
         : "";
 
       var pickId = busPickId(g);

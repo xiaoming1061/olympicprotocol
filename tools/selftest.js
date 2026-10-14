@@ -3193,22 +3193,31 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /permanent: big/.test(realSrc) &&
     /\.leaflet-tooltip\.rm-tip\.is-stop\.is-picked/.test(css));
 
-  /* ---------- 总站开出时刻 ---------- */
-  check("卡片上会列总站开出时刻（时刻表写死的，可以放心报）",
+  /* ---------- 每小时开出时间 ---------- */
+  check("卡片上列「每小时开出时间」（照交通处页面的写法）",
     /class="bus-deps"/.test(appSrc) &&
-    /OP\.Shuttle\.nextDepartures\(g\.route, state\.now, 3\)/.test(appSrc) &&
+    /每小时开出 /.test(appSrc) &&
     /\.bus-deps \{/.test(css));
-  check("只在正在运营的线路上列（否则凌晨会看到一部分线路有、另一部分没有）",
-    /var deps = \(g\.runningNow && OP\.Shuttle && OP\.Shuttle\.nextDepartures\)/.test(appSrc));
-  check("注明不报「到你这站几点」（到站时间不稳，报了反而误导）",
-    appSrc.indexOf("故意不写") > 0);
+  check("不看运营状态：用 everyHour 直接给时刻表，不再换算成今天哪几班",
+    /\(g\.route\.everyHour \|\| \[\]\)/.test(appSrc) &&
+    appSrc.indexOf("nextDepartures(g.route") === -1);
+  check("仍然注明不报「到你这站几点」（到站时间不稳，报了反而误导）",
+    appSrc.indexOf("仍然不写") > 0);
 
-  const dep1 = (OP.SHUTTLE_ROUTES || []).filter((r) => r.no === "1")[0];
-  const dep3 = OP.Shuttle.nextDepartures(dep1, new Date(2026, 9, 15, 10, 0, 0), 3);
-  check("nextDepartures 给出接下来 3 班（线路 1 在 10:00 应该是 10:10/10:25/10:40）",
-    dep3.length === 3 &&
-    dep3.map((d) => d.getHours() + ":" + d.getMinutes()).join(",") === "10:10,10:25,10:40",
-    dep3.map((d) => d.getHours() + ":" + d.getMinutes()).join(","));
+  /* 每分钟数直接对着交通处页面核（2026-10-15 抄的），数据漂了会当场报错 */
+  const OFFICIAL_MINUTES = {
+    "1": [10, 25, 40, 55], "2": [15, 45], "2S": [0, 30], "3": [0, 20, 40],
+    "4": [10, 30, 50], "8": [15, 35, 55], "N": [0, 15, 30, 45], "H": [0, 20, 40]
+  };
+  const deviated = Object.keys(OFFICIAL_MINUTES).filter((no) => {
+    const route = routes.filter((r) => r.no === no)[0];
+    if (!route) return true;
+    return (route.everyHour || []).slice().sort((a, b) => a - b).join(",") !==
+      OFFICIAL_MINUTES[no].join(",");
+  });
+  check("8 条穿梭线的每小时开出分钟数与交通处页面一致",
+    deviated.length === 0,
+    deviated.length ? "对不上：" + deviated.join(" ") : "全部一致");
 }
 
 
