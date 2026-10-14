@@ -390,7 +390,9 @@ check("四个页签都有对应的视图",
 
 /* script / link 引用的文件要真实存在 */
 const assetRefs = Array.from(html.matchAll(/<(?:script|link)[^>]+(?:src|href)="([^"]+)"/g))
-  .map((m) => m[1]);
+  /* 本地资源都带 ?v= 版本号（tools/bump.js 写的），比对路径时要去掉查询串，
+     否则 both "文件是否存在" 和下面的加载顺序判断全会失效 */
+  .map((m) => m[1].split("?")[0]);
 const missingAssets = assetRefs.filter((ref) => !fs.existsSync(path.join(root, ref)));
 check("script / stylesheet 引用的文件都存在", missingAssets.length === 0, missingAssets.join(", "));
 
@@ -432,8 +434,8 @@ check("导航栏在 </main> 之后，属于 .app 的末尾",
   html.indexOf('class="tabbar"') > mainEnd);
 /* 认"标签"而不是"这个词"：注释里提到 js/app.js 不算（被坑过一次） */
 check("外部样式表在 <head> 里，脚本在 </main> 之后",
-  html.indexOf('<link rel="stylesheet" href="styles.css"') < html.indexOf("<body") &&
-  html.indexOf('<script src="js/app.js"') > mainEnd);
+  html.indexOf('<link rel="stylesheet" href="styles.css') < html.indexOf("<body") &&
+  html.indexOf('<script src="js/app.js') > mainEnd);
 
 /* 开闭数量也要配平 */
 function tagCounts(source, name) {
@@ -1867,8 +1869,16 @@ console.log("\n[22] 站点托管方式（独立仓库 + 自定义域名）");
   check("部署脚本把两个老地址都指向新域名",
     (deploySource.match(/https:\/\/olympicprotocol\.com\//g) || []).length >= 2 &&
     deploySource.indexOf("legacyTarget") > 0);
-  check("源文件本身不带版本号",
-    srcHtml.indexOf("styles.css?v=") === -1 && srcHtml.indexOf("js/app.js?v=") === -1);
+  /* 版本号由 tools/bump.js 写进 index.html。
+     改完 js/ 或 styles.css 忘了跑它，访问者就会拿到"新 HTML + 旧 js"，
+     看着像改动没生效——这个坑已经踩过好几次。 */
+  const stamped = (srcHtml.match(/[?&]v=([^"'&]+)/g) || [])
+    .map((s) => s.replace(/^[?&]v=/, ""));
+  check("本地资源全部带版本号，且版本一致（改完 js/css 跑 node tools/bump.js）",
+    stamped.length > 0 && stamped.every((v) => v === stamped[0]),
+    stamped.length ? stamped.length + " 处，版本 " + stamped[0] : "一处都没有");
+  check("版本号是「年月日-时分」形式（设置页的发布时间直接读它）",
+    /^\d{8}-\d{4}$/.test(stamped[0] || ""), stamped[0] || "");
   /* 以前域名停在 Porkbun 的停车页，浏览器把 Porkbun 的图标记在了标签页上。
      给出自己的 favicon 才会被覆盖掉。 */
   check("有标签页图标和 iOS 主屏图标（否则标签页会显示上一家的图标）",
@@ -2303,8 +2313,9 @@ console.log("\n[28] 楼栋与课表分开存");
     "lat: 出现 " + (defaultsSource.match(/lat:/g) || []).length + " 次");
 
   /* --- 加载顺序：先有楼栋数据，才能组装默认值 --- */
-  const buildingsAt = pageHtml.indexOf('src="data/buildings.js"');
-  const defaultsAt = pageHtml.indexOf('src="data/defaults.js"');
+  /* 不写结尾引号：标签上带着 ?v= 版本号，写成 src="..." 就匹配不上了 */
+  const buildingsAt = pageHtml.indexOf('src="data/buildings.js');
+  const defaultsAt = pageHtml.indexOf('src="data/defaults.js');
   check("页面先加载楼栋文件再加载默认值",
     buildingsAt > 0 && defaultsAt > buildingsAt);
   check("部署脚本会把 data/ 下的文件一起搬走（自动扫描，不用手加清单）",
@@ -3158,7 +3169,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     "route8 站序=" + uni.join(">") + " | stops有上=" + !!stops["39區（上行）"] +
     " 有下=" + !!stops["39區（下行）"]);
 
-  check("页面会加载这份数据", pageHtml.indexOf('src="data/shuttle.js"') > 0);
+  check("页面会加载这份数据", pageHtml.indexOf('src="data/shuttle.js') > 0);
   check("生成脚本和数据文件都在",
     fs.existsSync(path.join(root, "tools", "make-shuttle.js")) &&
     fs.existsSync(path.join(root, "tools", "shuttle-source.json")) &&
@@ -3234,7 +3245,7 @@ console.log("\n[36] 校巴乘坐规划");
   check("规划模块挂在 OP.Shuttle 上",
     S && typeof S.plan === "function" && typeof S.nextDepartures === "function" &&
     typeof S.rideMinutes === "function");
-  check("页面加载了规划模块", pageHtml.indexOf('src="js/shuttle.js"') > 0);
+  check("页面加载了规划模块", pageHtml.indexOf('src="js/shuttle.js') > 0);
 
   /* ---------- 海拔 ---------- */
   const noElev = Object.keys(stops).filter((k) => typeof stops[k].elevation !== "number");
@@ -3874,7 +3885,7 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
 
   /* ---------- 页面 ---------- */
   check("页面加载了宿舍数据和模块",
-    pageHtml.indexOf('src="data/dorms.js"') > 0 && pageHtml.indexOf('src="js/dorm.js"') > 0);
+    pageHtml.indexOf('src="data/dorms.js') > 0 && pageHtml.indexOf('src="js/dorm.js') > 0);
   check("路线页有「返回宿舍」卡片",
     pageHtml.indexOf("返回宿舍") > 0 && pageHtml.indexOf('id="dormPlan"') > 0 &&
     pageHtml.indexOf('id="dormSearch"') > 0 && pageHtml.indexOf('id="dormSuggest"') > 0);
@@ -4222,7 +4233,7 @@ console.log("\n[45] 搜索规则：中英文 / 简体繁体 / 拼音首字母（
 
   check("有共用的繁简/拼音模块，页面也加载了",
     !!Z && !!Z.matches && !!Z.toSimplified && !!Z.initialsOf && !!Z.normalize &&
-    pageHtml.indexOf('src="js/zh.js"') > 0);
+    pageHtml.indexOf('src="js/zh.js') > 0);
   check("表是脚本生成的，不是手写的",
     fs.existsSync(path.join(root, "tools", "make-zh.js")) &&
     zhSource.indexOf("node tools/make-zh.js") > 0);

@@ -65,7 +65,13 @@
     var tags = document.querySelectorAll("script[src]");
     for (var i = 0; i < tags.length; i++) {
       var hit = /[?&]v=([^&"']+)/.exec(tags[i].getAttribute("src") || "");
-      if (hit) return hit[1];
+      if (!hit) continue;
+      /* 版本号是 tools/bump.js 写的 20261015-1843 这种形式，
+         设置页显示时拆成 2026-10-15 18:43，比一串数字好读 */
+      var m = /^(\d{4})(\d{2})(\d{2})-(\d{2})(\d{2})$/.exec(hit[1]);
+      return m
+        ? m[1] + "-" + m[2] + "-" + m[3] + " " + m[4] + ":" + m[5]
+        : hit[1];
     }
 
     /* 新架构：页面由本仓库直接托管在 olympicprotocol.com，没有构建步骤，

@@ -17,9 +17,19 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1130 项检查，不联网
+node tools/selftest.js             # 1131 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
+
+改完 `js/` 或 `styles.css` **提交前跑一次**：
+
+```bash
+node tools/bump.js                 # 给 index.html 里的本地资源换新版本号
+```
+
+GitHub Pages 给 js/css 也是 10 分钟缓存。不换版本号的话，访问者可能拿到
+「新 HTML + 旧 js」这种半新半旧的状态，看着就像改动没生效。
+版本号写成 `20261015-1843` 这种「年月日-时分」，设置页的「发布时间」直接读它。
 
 ## 四个页面
 
@@ -1629,7 +1639,8 @@ js/timetable.js       学校接口拉回来的课表 → 我们的课程结构�
 js/exportimage.js     课表导出成图片（排版是纯计算，画图在 canvas 上手绘）
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
-tools/selftest.js     自检脚本，1130 项
+tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
+tools/selftest.js     自检脚本，1131 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）
