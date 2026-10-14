@@ -1069,6 +1069,13 @@ body {
 .bus-group { display: flex; flex-direction: column; gap: 4px; }
 .bus-group + .bus-group { border-top: 1px solid var(--line); padding-top: 10px; }
 
+/* 总站开出时刻：校巴卡片里唯一"确定"的时间（到站时间不稳，不报） */
+.bus-deps {
+  font-size: var(--text-xs);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
 /* 校巴方案可以点选：点一下 → 地图只画那一条线，卡片上这块也亮起来。
    负外边距是为了让高亮底色有左右内边距、文字又还在原来的对齐线上。 */
 .bus-group {

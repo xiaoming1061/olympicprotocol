@@ -3192,6 +3192,23 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   check("真实地图上选中的站名浮标常驻",
     /permanent: big/.test(realSrc) &&
     /\.leaflet-tooltip\.rm-tip\.is-stop\.is-picked/.test(css));
+
+  /* ---------- 总站开出时刻 ---------- */
+  check("卡片上会列总站开出时刻（时刻表写死的，可以放心报）",
+    /class="bus-deps"/.test(appSrc) &&
+    /OP\.Shuttle\.nextDepartures\(g\.route, state\.now, 3\)/.test(appSrc) &&
+    /\.bus-deps \{/.test(css));
+  check("只在正在运营的线路上列（否则凌晨会看到一部分线路有、另一部分没有）",
+    /var deps = \(g\.runningNow && OP\.Shuttle && OP\.Shuttle\.nextDepartures\)/.test(appSrc));
+  check("注明不报「到你这站几点」（到站时间不稳，报了反而误导）",
+    appSrc.indexOf("故意不写") > 0);
+
+  const dep1 = (OP.SHUTTLE_ROUTES || []).filter((r) => r.no === "1")[0];
+  const dep3 = OP.Shuttle.nextDepartures(dep1, new Date(2026, 9, 15, 10, 0, 0), 3);
+  check("nextDepartures 给出接下来 3 班（线路 1 在 10:00 应该是 10:10/10:25/10:40）",
+    dep3.length === 3 &&
+    dep3.map((d) => d.getHours() + ":" + d.getMinutes()).join(",") === "10:10,10:25,10:40",
+    dep3.map((d) => d.getHours() + ":" + d.getMinutes()).join(","));
 }
 
 
