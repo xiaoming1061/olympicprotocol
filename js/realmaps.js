@@ -210,9 +210,10 @@ window.OP = window.OP || {};
       if (!link || !link.from || !link.to) return;
       var pts = [[link.from.lat, link.from.lng], [link.to.lat, link.to.lng]];
       if (link.ride) {
-        /* 坐车那一段：线型跟走路那两截一样，只是黄色 */
+        /* 坐车那一段：线型跟走路那两截一样，颜色用**该线路的官方色** */
         L.polyline(pts, {
-          color: "#e08a00", weight: 5, dashArray: "10 8",
+          color: link.color || "#e08a00",
+          weight: 5, dashArray: "10 8",
           opacity: 0.95, lineCap: "round"
         }).addTo(overlay);
       } else {

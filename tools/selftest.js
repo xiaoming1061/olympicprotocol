@@ -3241,6 +3241,19 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   check("8 条穿梭线的每小时开出分钟数与交通处页面一致",
     deviated.length === 0,
     deviated.length ? "对不上：" + deviated.join(" ") : "全部一致");
+
+  /* ---------- 官方线路配色 ---------- */
+  const noColor = routes.filter((r) => !/^#[0-9a-f]{6}$/i.test(OP.Shuttle.colorOf(r)));
+  check("每条线路都有官方配色（抄自交通处各线路页面的 stroke 值）",
+    noColor.length === 0 && Object.keys(OP.Shuttle.ROUTE_COLORS).length === 12,
+    noColor.length ? "缺色：" + noColor.map((r) => r.no).join(" ") : "12 条齐全");
+  check("线路号徽章和地图连线都用线路色",
+    /OP\.Shuttle\.colorOf\(g\.route\)/.test(appSrc) &&
+    /OP\.Shuttle\.inkOn\(bg\)/.test(appSrc) &&
+    /OP\.Shuttle\.colorOf\(link\.route\)/.test(mapSrc) &&
+    /OP\.Shuttle\.colorOf\(link\.route\)/.test(realSrc));
+  check("徽章字色按底色亮度挑（亮黄配白字看不清）",
+    ["#f2e421", "#3f438f", "#ffc55a"].every((c) => /^#[0-9a-f]{6}$/i.test(OP.Shuttle.inkOn(c))));
 }
 
 
@@ -4006,7 +4019,8 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
   check("简图给坐车那一截加了区分用的 class",
     mapCode.indexOf('(link.ride ? " is-ride" : "")') > 0);
   check("真实地图换成另一种颜色和粗细",
-    /color: "#e08a00", weight: 5/.test(realMapCode) &&
+    /color: OP\.Shuttle \? OP\.Shuttle\.colorOf\(link\.route\)/.test(realMapCode) &&
+    /weight: 5, dashArray: "10 8"/.test(realMapCode) &&
     /color: "#ff6fa5", weight: 3/.test(realMapCode));
   check("样式里有 .bus-link.is-ride",
     /\.bus-link\.is-ride\s*\{[\s\S]{0,220}stroke:\s*var\(--bus-line\)/.test(css));
@@ -4032,7 +4046,7 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
   check("三条线都画出来了",
     (svg.innerHTML.match(/class="bus-link/g) || []).length === 3);
   check("其中只有中间那条是「坐车」",
-    (svg.innerHTML.match(/class="bus-link is-ride"/g) || []).length === 1);
+    (svg.innerHTML.match(/is-ride(?!-)/g) || []).length === 1);
 }
 
 console.log("\n[43] 提示条的配色与对比度（播报之后弹出来的那条）");

@@ -265,8 +265,13 @@ window.OP = window.OP || {};
       if (!link || !link.from || !link.to) return;
       var a = project(link.from);
       var b = project(link.to);
-      /* 坐车那一段只是换 class（黄色），线型跟走路那两截保持一致 */
-      parts.push('<line class="bus-link' + (link.ride ? " is-ride" : "") +
+      /* 坐车那一段：线型跟走路那两截一致，颜色换成**该线路的官方色**
+         （link.route 是线路号，由 collectBus 带过来） */
+      /* 颜色由调用方算好放在 link.color 上（这里取不到 OP.Shuttle） */
+      var stroke = link.color
+        ? ' style="stroke:' + link.color + '"'
+        : "";
+      parts.push('<line class="bus-link' + (link.ride ? " is-ride" : "") + stroke +
         '" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
         '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '"/>');
     });

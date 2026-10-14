@@ -391,6 +391,34 @@ window.OP = window.OP || {};
     return routeTable().filter(function (r) { return runsOn(r, date); });
   }
 
+  /* 每条线路的官方配色，抄自交通处各线路页面里的 stroke 值
+     （https://transport.cuhk.edu.hk/tc/route/<线路>/）。
+     地图上的连线、卡片上线路号徽章的底色都用它。
+     这是外面网站的东西，没法自动同步，改了要手动更新——
+     自检里有一条盯着"每条线路都要有颜色"。 */
+  var ROUTE_COLORS = {
+    "1": "#f2e421", "2": "#ec4790", "2S": "#d9c473", "3": "#318761",
+    "4": "#e75a24", "5": "#29a1d8", "6A": "#7c8644", "6B": "#3f438f",
+    "7": "#666666", "8": "#ffc55a", "N": "#7961a8", "H": "#453087"
+  };
+
+  /* 取线路色；查不到给个中性灰，不至于白板一块 */
+  function colorOf(route) {
+    var no = String((route && route.no) || route || "").toUpperCase();
+    return ROUTE_COLORS[no] || "#8a8a8a";
+  }
+
+  /* 压在某个底色上该用黑字还是白字。
+     #f2e421 那种亮黄配白字根本看不清，得按亮度挑。 */
+  function inkOn(hex) {
+    var h = String(hex || "").replace("#", "");
+    if (h.length === 3) h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+    var r = parseInt(h.slice(0, 2), 16) || 0;
+    var g = parseInt(h.slice(2, 4), 16) || 0;
+    var b = parseInt(h.slice(4, 6), 16) || 0;
+    return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#241016" : "#ffffff";
+  }
+
   OP.Shuttle = {
     plan: plan,
     routesOn: routesOn,
@@ -406,6 +434,9 @@ window.OP = window.OP || {};
     stopIds: stopIds,
     stopNote: stopNote,
     noteRules: noteRules,
+    colorOf: colorOf,
+    inkOn: inkOn,
+    ROUTE_COLORS: ROUTE_COLORS,
     runStops: runStops,
     headwayOf: headwayOf,
     MAX_ACCESS_BOARD: MAX_ACCESS_BOARD,

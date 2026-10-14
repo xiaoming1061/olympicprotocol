@@ -505,8 +505,18 @@
 
     var first = box.querySelector("[data-bus]");
     if (!first) return;
+
+    /* 用户手动选的那条还在卡片上 → 尊重用户，什么都不做。
+       少了这道判断，每次 render 之后都会被强行改回第一条，
+       表现就是"点了别的线路没反应"（这个 bug 就是这么来的）。 */
+    var cur = state.busPick[routeSlide];
+    var stillThere = $$("[data-bus]").some(function (el) {
+      return el.getAttribute("data-bus") === cur;
+    });
+    if (stillThere) return;
+
     var id = first.getAttribute("data-bus");
-    if (state.busPick[routeSlide] === id) return;
+    if (cur === id) return;
 
     state.busPick[routeSlide] = id;
     /* 重跑一遍 render：卡片高亮、以及**地图上的车站和连线**都要跟着换。
@@ -567,7 +577,12 @@
       return '<div class="bus-group' + (state.busPick[kind] === pickId ? " is-picked" : "") +
         '" data-bus="' + esc(pickId) + '" role="button" tabindex="0">' +
         '<div class="bus-where">' +
-          '<span class="bus-tag">' + esc(g.route.no) + "</span>" + esc(g.route.nameZh) +
+          /* 线路号徽章用官方线路色打底，字色按底色亮度挑黑或白 */
+          (function () {
+            var bg = OP.Shuttle.colorOf(g.route);
+            return '<span class="bus-tag" style="background:' + bg +
+              ";color:" + OP.Shuttle.inkOn(bg) + '">' + esc(g.route.no) + "</span>";
+          })() + esc(g.route.nameZh) +
         "</div>" +
         '<div class="bus-stops">' + esc(g.board.stop.zh) + " 上车 → " +
           esc(g.alight.stop.zh) + " 下车" +
@@ -805,7 +820,10 @@
           from: best.board.stop,
           to: best.alight.stop,
           ride: true,
-          route: best.route.no
+          route: best.route.no,
+          /* 颜色在这里就算好：map.js / realmaps.js 里不一定拿得到 OP.Shuttle，
+             实测那边取不到，导致连线颜色加不上。 */
+          color: OP.Shuttle ? OP.Shuttle.colorOf(best.route) : ""
         });
       }
       if (best.alight.stop && toPoint) {
