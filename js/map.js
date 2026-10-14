@@ -267,12 +267,15 @@ window.OP = window.OP || {};
       var b = project(link.to);
       /* 坐车那一段：线型跟走路那两截一致，颜色换成**该线路的官方色**
          （link.route 是线路号，由 collectBus 带过来） */
-      /* 颜色由调用方算好放在 link.color 上（这里取不到 OP.Shuttle） */
+      /* 颜色由调用方算好放在 link.color 上（这里取不到 OP.Shuttle）。
+         注意拼接：stroke 要放在 class 的**闭合引号之外**——
+         写成 …+ stroke + '"' 会拼出 class="… style="stroke:#f00""，
+         引号套引号，style 属性根本不会存在（这个 bug 找了一轮）。 */
       var stroke = link.color
         ? ' style="stroke:' + link.color + '"'
         : "";
-      parts.push('<line class="bus-link' + (link.ride ? " is-ride" : "") + stroke +
-        '" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+      parts.push('<line class="bus-link' + (link.ride ? " is-ride" : "") + '"' + stroke +
+        ' x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
         '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '"/>');
     });
 

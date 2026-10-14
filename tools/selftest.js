@@ -3250,8 +3250,15 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   check("线路号徽章和地图连线都用线路色",
     /OP\.Shuttle\.colorOf\(g\.route\)/.test(appSrc) &&
     /OP\.Shuttle\.inkOn\(bg\)/.test(appSrc) &&
-    /OP\.Shuttle\.colorOf\(link\.route\)/.test(mapSrc) &&
-    /OP\.Shuttle\.colorOf\(link\.route\)/.test(realSrc));
+    /color: OP\.Shuttle \? OP\.Shuttle\.colorOf\(best\.route\) : ""/.test(appSrc) &&
+    /var stroke = link\.color/.test(mapSrc) &&
+    /color: link\.color \|\| "#e08a00"/.test(realSrc));
+  /* 拼 SVG 时 stroke 必须放在 class 的闭合引号**之外**。
+     写成 …+ stroke + '"' 会拼出 class="… style="stroke:#f00"" ——
+     引号套引号，style 属性根本不会存在，线就一直是兜底色。
+     这个 bug 排查了一整轮，这里钉住它。 */
+  check("连线的 style 拼在 class 引号之外（引号套引号会把 style 整条吃掉）",
+    /\(link\.ride \? " is-ride" : ""\) \+ '"' \+ stroke/.test(mapSrc));
   check("徽章字色按底色亮度挑（亮黄配白字看不清）",
     ["#f2e421", "#3f438f", "#ffc55a"].every((c) => /^#[0-9a-f]{6}$/i.test(OP.Shuttle.inkOn(c))));
 }
@@ -4019,7 +4026,7 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
   check("简图给坐车那一截加了区分用的 class",
     mapCode.indexOf('(link.ride ? " is-ride" : "")') > 0);
   check("真实地图换成另一种颜色和粗细",
-    /color: OP\.Shuttle \? OP\.Shuttle\.colorOf\(link\.route\)/.test(realMapCode) &&
+    /color: link\.color \|\| "#e08a00"/.test(realMapCode) &&
     /weight: 5, dashArray: "10 8"/.test(realMapCode) &&
     /color: "#ff6fa5", weight: 3/.test(realMapCode));
   check("样式里有 .bus-link.is-ride",
