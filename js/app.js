@@ -25,9 +25,11 @@
     placesRaw: null,
     /* 校区楼栋列表默认收起，只看前几栋 */
     buildingListExpanded: false,
-    /* 当前点选的校巴方案（busPickId 的返回值）。null = 没选，
-       地图就按老样子把所有候选车站都标出来 */
-    busPick: null,
+    /* 每张卡片各自记自己选中的校巴方案（busPickId 的返回值），
+       键是卡片名：plan / dorm / custom。
+       **必须是三份**：以前只存一条字符串，三张卡片渲染时会互抢——
+       实测表现为"默认选中的不是看到的第一条"。 */
+    busPick: { plan: "", dorm: "", custom: "" },
     ocr: { courses: [], warnings: [], busy: false }
   };
 
@@ -472,13 +474,23 @@
    * **只写时长，不写"几点到"**：校巴到站时间太不稳，报了反而误导。
    * 每行是「走到车站 + 车程 + 走到教室 = 合计」，再加这条线大概几分钟一班。
    */
-  /* 一套校巴方案的稳定标识：线路号 + 上车站 + 下车站。
-     卡片上点选、地图上高亮，两边都靠它对齐。 */
-  function busPickId(g) {
-    return String(g.route.no) + "|" + g.board.id + "|" + g.alight.id;
+  /* 一套校巴方案的稳定标识：卡片 + 线路号 + 上车站 + 下车站。
+     卡片名必须在里面——否则「今日课表」和「返回宿舍」里同一条线
+     会互相点亮；而且有了它，每张卡片才能各自记住自己选中了哪一条。 */
+  function busPickId(g, kind) {
+    return kind + "|" + g.route.no + "|" + g.board.id + "|" + g.alight.id;
   }
 
-  function busHtml(plan, destLabel) {
+  /* 方案在卡片上的**显示顺序**：现在在开的排前面，其余保持时间顺序。
+     默认选中和卡片渲染必须共用这一套——各用各的顺序就会出现
+     "选中的不是看到的第一条"（实测踩过，而且很难看出原因）。 */
+  function displayedGroups(plan) {
+    var groups = (plan && plan.groups) || [];
+    return groups.filter(function (g) { return g.runningNow; })
+      .concat(groups.filter(function (g) { return !g.runningNow; }));
+  }
+
+  function busHtml(plan, destLabel, kind) {
     /* 模块没加载上说明页面是旧缓存（HTML 里没有 js/shuttle.js 那一行），
        这种情况要明说，不能跟"这段没车"长得一样 */
     if (!OP.Shuttle || !(OP.SHUTTLE_ROUTES || []).length) {
@@ -526,8 +538,8 @@
         ? '<div class="bus-deps">每小时开出 ' + everyMin.map(pad2).join(" · ") + " 分</div>"
         : "";
 
-      var pickId = busPickId(g);
-      return '<div class="bus-group' + (state.busPick === pickId ? " is-picked" : "") +
+      var pickId = busPickId(g, kind);
+      return '<div class="bus-group' + (state.busPick[kind] === pickId ? " is-picked" : "") +
         '" data-bus="' + esc(pickId) + '" role="button" tabindex="0">' +
         '<div class="bus-where">' +
           '<span class="bus-tag">' + esc(g.route.no) + "</span>" + esc(g.route.nameZh) +
@@ -548,8 +560,9 @@
     }
 
     /* 现在在开的排前面；停运的（比如白天的 H 线、晚间的 N 线）自动折叠起来 */
-    var running = groups.filter(function (g) { return g.runningNow; });
-    var stopped = groups.filter(function (g) { return !g.runningNow; });
+    var ordered = displayedGroups(plan);
+    var running = ordered.filter(function (g) { return g.runningNow; });
+    var stopped = ordered.filter(function (g) { return !g.runningNow; });
 
     var html = running.map(renderGroup).join("");
     if (stopped.length) {
@@ -564,7 +577,7 @@
   function busOptions(leg, course) {
     void course;
     if (!leg.fromPoint || !leg.toPoint) return "";
-    return busHtml(leg.busPlan, "教室");
+    return busHtml(leg.busPlan, "教室", "plan");
   }
 
   function renderRoute() {
@@ -605,7 +618,7 @@
         ? OP.Shuttle.plan(leg.fromPoint, leg.toPoint, leg.start,
           leg.metrics ? leg.metrics.minutes : null, data.settings)
         : null;
-      collectBus(leg.busPlan, leg.fromPoint, leg.toPoint, bus);
+      collectBus(leg.busPlan, leg.fromPoint, leg.toPoint, bus, "plan");
     });
 
     /* 排序已经在 nextInfo() 里做完了（未开始 → 正在上 → 已下课）。
@@ -613,9 +626,32 @@
        不再自己拿开始时间比一遍——两边标准必须一致。 */
     var isPastLeg = function (leg) { return leg.status !== "upcoming"; };
 
-    /* 「路线规划」这张卡片对应的地图数据（今天要去的教室） */
+    /* 选中了哪条校巴，地图就只画那一段：我的位置 → 那节课的地点。
+       用户要求"不显示今天其他课程的路线"，所以 stops 收窄成一栋。
+       选中方案属于哪一段行程，靠 pickId 反查。 */
+    var pickedLeg = null;
+    route.forEach(function (leg) {
+      if (pickedLeg) return;
+      ((leg.busPlan && leg.busPlan.groups) || []).forEach(function (g) {
+        if (busPickId(g, "plan") === state.busPick.plan) pickedLeg = leg;
+      });
+    });
+
+    var shownStops = stops;
+    if (pickedLeg && pickedLeg.building) {
+      /* 只留一栋也要重新编号，否则地图上会孤零零地标着「3」 */
+      shownStops = [{
+        building: pickedLeg.building,
+        order: 1,
+        times: [pickedLeg.course.start],
+        time: pickedLeg.course.start,
+        isNext: true
+      }];
+    }
+
+    /* 「路线规划」这张卡片对应的地图数据 */
     todayMap = {
-      stops: stops,
+      stops: shownStops,
       position: info.position,
       busStops: bus.busStops,
       busLinks: bus.busLinks,
@@ -688,6 +724,20 @@
     }).join("");
 
     box.innerHTML = html;
+
+    /* 默认选中 = 卡片上**实际排在第一位的**那一条。
+       这里放在渲染之后按 DOM 顺序取，而不是渲染前自己算一遍顺序：
+       两处各算各的很容易对不上（实测就是"选中的不是看到的第一条"），
+       直接问 DOM 最省事也最准。用户点过的那条还在就保留，不覆盖。 */
+    if (!state.busPick.plan || !box.querySelector('[data-bus="' + state.busPick.plan + '"]')) {
+      var firstGroup = box.querySelector("[data-bus]");
+      if (firstGroup) {
+        state.busPick.plan = firstGroup.getAttribute("data-bus");
+        paintBusPicks();
+        /* 地图只画选中的那一段，选中变了地图得跟着变 */
+        renderRouteMap();
+      }
+    }
   }
 
   /* ================= 路线页：三张卡片 + 地图跟着卡片走 ================= */
@@ -706,17 +756,24 @@
    * 「路线规划」和「返回宿舍 / 自定义路线」用的是同一套算法，所以抽出来共用：
    * 去上课是每段行程各算一次累加，回宿舍/自定义路线整段的算一次。
    */
-  function collectBus(plan, fromPoint, toPoint, into) {
+  function collectBus(plan, fromPoint, toPoint, into, kind) {
     var out = into || { busStops: [], busLinks: [] };
     var seen = {};
     out.busStops.forEach(function (s) { seen[s.id] = true; });
 
     var all = (plan && plan.groups) || [];
-    /* 点选了某条线就只画那一条；没选就维持原样——
-       所有候选车站都标出来，但只画最优先那条的连线 */
-    var picked = state.busPick
-      ? all.filter(function (g) { return busPickId(g) === state.busPick; })
-      : [];
+    /* 每张卡片各自记自己选中的那条（state.busPick 是个按卡片分键的对象） */
+    var picked = all.filter(function (g) { return busPickId(g, kind) === state.busPick[kind]; });
+
+    /* 用户要求"取消不选中任何校巴路线"这种状态：这张卡片有方案、而里面
+       没有当前选中的，就自动落到**显示顺序的第一条**（在开的优先，
+       其次时间最快）。必须用 displayedGroups，不能直接用 all[0]——
+       那是方案数组的顺序，和卡片渲染出来的顺序不一定一样。 */
+    var shown = displayedGroups(plan);
+    if (!picked.length && shown.length) {
+      state.busPick[kind] = busPickId(shown[0], kind);
+      picked = [shown[0]];
+    }
 
     (picked.length ? picked : all).forEach(function (g) {
       [g.board, g.alight].forEach(function (entry) {
@@ -784,7 +841,7 @@
     var plan = OP.Shuttle
       ? OP.Shuttle.plan(start.point, target, start.at, metrics ? metrics.minutes : null, s)
       : null;
-    var bus = collectBus(plan, start.point, target);
+    var bus = collectBus(plan, start.point, target, null, "dorm");
 
     return {
       stops: (start.fromClass ? [markOf(start.point, start.name, "起")] : [])
@@ -832,7 +889,7 @@
     var plan = OP.Shuttle
       ? OP.Shuttle.plan(fromPoint, target, state.now, metrics ? metrics.minutes : null, s)
       : null;
-    var bus = collectBus(plan, fromPoint, target);
+    var bus = collectBus(plan, fromPoint, target, null, "custom");
 
     return {
       stops: (fromIsBuilding ? [markOf(fromPoint, fromName, "起")] : [])
@@ -1391,7 +1448,7 @@
     }).join("") + "</div>";
 
     box.innerHTML = '<div class="leg dorm-leg">' + head + note + stats +
-      (start ? busHtml(busPlan, "宿舍") : "") + actions + "</div>";
+      (start ? busHtml(busPlan, "宿舍", "dorm") : "") + actions + "</div>";
   }
 
   /* ================= 渲染：自定义路线 ================= */
@@ -1500,7 +1557,7 @@
         '<div class="leg-title"><span class="idx">自</span>' +
           esc(fromName + " → " + to.name) + "</div>" +
         '<div class="leg-time">' + esc(metrics ? Geo.formatDuration(metrics.minutes) : "--") + "</div>" +
-      "</div>" + stats + busHtml(busPlan, "终点") + actions + "</div>";
+      "</div>" + stats + busHtml(busPlan, "终点", "custom") + actions + "</div>";
   }
 
   /* ================= 渲染：课表 ================= */
@@ -2988,8 +3045,10 @@
       initial: routeSlide,
       onChange: function (kind) {
         routeSlide = kind;
-        /* 只重画地图：三张卡片的内容本身不受影响 */
+        /* 重画地图；顺便刷新卡片上的选中态——自动选中跟着当前这张卡片走，
+           切过去之后高亮也得跟上 */
         renderRouteMap();
+        paintBusPicks();
       }
     });
 
@@ -3097,10 +3156,24 @@
     /* --- 点选校巴方案 ---
        点一下选中：地图只画那一条的站和连线，卡片上高亮。再点一下取消。
        用事件委托——方案列表每次 render() 都会重建，逐条绑会丢。 */
+    /* 把三张卡片上的校巴选中态刷一遍。自动选中是跟着"当前显示哪张卡片"走的，
+       切过去之后高亮必须跟上，否则会出现"地图画了、卡片没亮"。 */
+    function paintBusPicks() {
+      $$("[data-bus]").forEach(function (el) {
+        var id = el.getAttribute("data-bus");
+        var kind = String(id).split("|")[0];
+        el.classList.toggle("is-picked", id === state.busPick[kind]);
+      });
+    }
+
     function toggleBusPick(el) {
       var id = el.getAttribute("data-bus");
-      if (!id) return;
-      state.busPick = state.busPick === id ? null : id;
+      /* 卡片名就写在 id 里：kind|线路号|上车站|下车站 */
+      var kind = String(id).split("|")[0];
+      /* 点一下就换成这条。**不再支持"取消选中"**——用户要求随时都有一条
+         选中的，地图上也就总有明确的路线可看。再点已选中的那条就什么都不做。 */
+      if (!id || id === state.busPick[kind]) return;
+      state.busPick[kind] = id;
       render();
     }
 

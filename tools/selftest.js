@@ -3189,13 +3189,22 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
   check("每套校巴方案都带 data-bus 标识（卡片和地图靠它对上）",
-    /function busPickId\(g\)/.test(appSrc) &&
+    /function busPickId\(g, kind\)/.test(appSrc) &&
     /'" data-bus="' \+ esc\(pickId\)/.test(appSrc));
   check("点选走事件委托（方案列表每次渲染都会重建，逐条绑会丢）",
     /closest\("\[data-bus\]"\)/.test(appSrc) &&
-    /state\.busPick = state\.busPick === id \? null : id/.test(appSrc));
+    /if \(!id \|\| id === state\.busPick\[kind\]\) return;/.test(appSrc) &&
+    /state\.busPick\[kind\] = id;/.test(appSrc));
   check("选中后地图只画那一条的上下车站",
-    /all\.filter\(function \(g\) \{ return busPickId\(g\) === state\.busPick; \}\)/.test(appSrc));
+    /all\.filter\(function \(g\) \{ return busPickId\(g, kind\) === state\.busPick\[kind\]; \}\)/.test(appSrc));
+  check("每张卡片各存各的选中（一条全局字符串会让三张卡片互相抢）",
+    /busPick: \{ plan: "", dorm: "", custom: "" \}/.test(appSrc) &&
+    /state\.busPick\[kind\] = busPickId\(shown\[0\], kind\)/.test(appSrc));
+  check("默认选中「显示顺序的第一条」，且没有「取消选中」这种状态",
+    /var shown = displayedGroups\(plan\)/.test(appSrc) &&
+    appSrc.indexOf("? null : id") === -1);
+  check("渲染后按 DOM 顺序兜底选中第一条（顺序算两遍容易和渲染对不上）",
+    appSrc.indexOf('box.querySelector("[data-bus]")') > 0);
   check("选中的校巴站在简图上放大 + 站名加深（rank 提到 1，拥挤时也先摆它）",
     /var big = !!s\.picked/.test(mapSrc) &&
     /rank: big \? 1 : 3/.test(mapSrc) &&
@@ -3947,10 +3956,10 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
     appCode.indexOf("dormFromClass") === -1 && !/dormFromClass\s*:/.test(defaults));
   check("回宿舍也走同一个校巴规划",
     /OP\.Shuttle\.plan\(start\.point/.test(appCode) &&
-    appCode.indexOf('busHtml(busPlan, "宿舍")') > 0);
+    appCode.indexOf('busHtml(busPlan, "宿舍", "dorm")') > 0);
   check("校巴那块 HTML 教室和宿舍共用一份",
-    appCode.indexOf("function busHtml(plan, destLabel)") > 0 &&
-    appCode.indexOf('return busHtml(leg.busPlan, "教室")') > 0);
+    appCode.indexOf("function busHtml(plan, destLabel, kind)") > 0 &&
+    appCode.indexOf('busHtml(leg.busPlan, "教室", "plan")') > 0);
   check("宿舍的高差也算（缺海拔会自动补查一次）",
     appCode.indexOf("ensureDormElevation") > 0 &&
     appCode.indexOf("OP.Elevation.at(dorm.lat, dorm.lng)") > 0);
@@ -3992,14 +4001,16 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
     appCode.indexOf("out.busLinks.push({ from: fromPoint, to: best.board.stop })") > 0 &&
     appCode.indexOf("out.busLinks.push({ from: best.alight.stop, to: toPoint })") > 0);
   check("简图给坐车那一截加了区分用的 class",
-    mapCode.indexOf('(link.ride ? " is-ride" : "")') > 0);
+    mapCode.indexOf('class="bus-link is-ride-casing"') > 0 &&
+    mapCode.indexOf('class="bus-link is-ride"') > 0);
   check("真实地图换成另一种颜色和粗细",
-    /color: ride \? "#a06bff" : "#ff6fa5"/.test(realMapCode) &&
-    /weight: ride \? 5 : 3/.test(realMapCode));
+    /color: "#a06bff", weight: 6/.test(realMapCode) &&
+    /color: "#ff6fa5", weight: 3/.test(realMapCode));
   check("样式里有 .bus-link.is-ride",
     /\.bus-link\.is-ride\s*\{[\s\S]{0,220}stroke:\s*var\(--accent-2\)/.test(css));
-  check("虚线动画接得上（周期能整除 -18 的偏移）",
-    /\.bus-link\.is-ride\s*\{[\s\S]{0,240}stroke-dasharray:\s*3 6/.test(css));
+  check("坐车那一截是实线 + 浅色 casing（不再是紫色虚线跑马灯）",
+    /\.bus-link\.is-ride\s*\{[\s\S]{0,260}stroke-dasharray:\s*none/.test(css) &&
+    /\.bus-link\.is-ride-casing\s*\{[\s\S]{0,260}stroke:\s*var\(--paper-warm\)/.test(css));
   check("图例说明了两种线",
     pageHtml.indexOf("走这一段") > 0 && pageHtml.indexOf("坐车这一段") > 0 &&
     css.indexOf(".line-ride") > 0);
@@ -4017,7 +4028,8 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
     ]
   });
   check("三条线都画出来了",
-    (svg.innerHTML.match(/class="bus-link/g) || []).length === 3);
+    /* 坐车那一条现在是两层（casing + 实线），所以 3 段连线共 4 条 line */
+    (svg.innerHTML.match(/class="bus-link/g) || []).length === 4);
   check("其中只有中间那条是「坐车」",
     (svg.innerHTML.match(/class="bus-link is-ride"/g) || []).length === 1);
 }
@@ -4190,7 +4202,7 @@ console.log("\n[44] 自定义路线 / 去掉两个选项");
   check("用的是同一套规划：走多久 + 校巴方案",
     /OP\.Shuttle\.plan\(fromPoint, toPoint, state\.now/.test(appCode) &&
     /var metrics = P\.walkMetrics\(fromPoint, toPoint, s\)/.test(appCode) &&
-    appCode.indexOf('busHtml(busPlan, "终点")') > 0);
+    appCode.indexOf('busHtml(busPlan, "终点", "custom")') > 0);
   check("起点终点同一条路会提示，不会算出一段两边一样的路",
     appCode.indexOf("起点和终点是同一栋楼") > 0);
   check("起点选了「我的位置」但没定位时有说明",
@@ -4338,9 +4350,9 @@ console.log("\n[46] 路线页三张卡片轮流显示 / 设置卡片默认藏起
     /position: start\.fromClass \? null : start\.point/.test(appCode) &&
     /position: fromIsBuilding \? null : fromPoint/.test(appCode));
   check("车站和连线也跟着这张卡片走",
-    /function collectBus\(plan, fromPoint, toPoint, into\)/.test(appCode) &&
-    appCode.indexOf("collectBus(plan, start.point, target)") > 0 &&
-    appCode.indexOf("collectBus(plan, fromPoint, target)") > 0);
+    /function collectBus\(plan, fromPoint, toPoint, into, kind\)/.test(appCode) &&
+    appCode.indexOf('collectBus(plan, start.point, target, null, "dorm")') > 0 &&
+    appCode.indexOf('collectBus(plan, fromPoint, target, null, "custom")') > 0);
   /* 简图没东西可画时，说法由调用方给（不同卡片不一样） */
   check("简图空状态的说法由调用方给",
     fs.readFileSync(path.join(root, "js", "map.js"), "utf8")

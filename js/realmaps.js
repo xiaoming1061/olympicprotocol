@@ -208,13 +208,24 @@ window.OP = window.OP || {};
        原来那条把各地点串起来的线看着像路线，其实没有指导意义 */
     (opts.busLinks || []).forEach(function (link) {
       if (!link || !link.from || !link.to) return;
-      var ride = !!link.ride;
-      L.polyline([[link.from.lat, link.from.lng], [link.to.lat, link.to.lng]], {
-        color: ride ? "#a06bff" : "#ff6fa5",
-        weight: ride ? 5 : 3,
-        dashArray: ride ? "3 8" : "8 7",
-        opacity: 0.95
-      }).addTo(overlay);
+      var pts = [[link.from.lat, link.from.lng], [link.to.lat, link.to.lng]];
+      if (link.ride) {
+        /* 坐车那一段：底下垫一层浅色粗线当 casing，上面压一条实线。
+           原来的紫色短虚线看着像警示带，不像公交线。 */
+        L.polyline(pts, {
+          color: "#fff6fa", weight: 11, opacity: 0.9,
+          lineCap: "round", lineJoin: "round"
+        }).addTo(overlay);
+        L.polyline(pts, {
+          color: "#a06bff", weight: 6, opacity: 1,
+          lineCap: "round", lineJoin: "round"
+        }).addTo(overlay);
+      } else {
+        L.polyline(pts, {
+          color: "#ff6fa5", weight: 3, dashArray: "8 7",
+          opacity: 0.95, lineCap: "round"
+        }).addTo(overlay);
+      }
     });
 
     /* 取景把校巴站也算进去，不然要去的站可能落在画面外 */

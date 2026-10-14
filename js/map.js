@@ -265,9 +265,17 @@ window.OP = window.OP || {};
       if (!link || !link.from || !link.to) return;
       var a = project(link.from);
       var b = project(link.to);
-      parts.push('<line class="bus-link' + (link.ride ? " is-ride" : "") +
-        '" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
-        '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '"/>');
+      var geom = ' x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+        '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '"/>';
+      /* 坐车那一段画两层：先一层浅色粗线当 casing，再压一条实线上去，
+         像地图上的公交线。原来是紫色虚线 + 走马灯动画，
+         在简图这种尺寸上就是串抖动的斑点。 */
+      if (link.ride) {
+        parts.push('<line class="bus-link is-ride-casing"' + geom);
+        parts.push('<line class="bus-link is-ride"' + geom);
+      } else {
+        parts.push('<line class="bus-link"' + geom);
+      }
     });
 
     /* 记号先全画出来，文字统一到最后摆——要摆才知道谁压着谁 */

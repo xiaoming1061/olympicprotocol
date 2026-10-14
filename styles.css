@@ -802,14 +802,24 @@ body {
   opacity: 0.85;
 }
 
-/* 上车站 → 下车站这一段：这一截是坐车，不是走路。
-   画粗一点、换成紫色，一眼能跟走路的两截分开。
-   虚线周期 3+6=9，动画走 -18 刚好两个周期，接得上不会跳。 */
+/* 上车站 → 下车站：这一截是坐车。画成一条**实线**，底下垫一层浅色 casing，
+   像地图上的公交线。原来是紫色虚线 + 走马灯动画，
+   在简图那种尺寸上就是一串抖动的斑点，很丑。
+   两层是 js/map.js 里分两条 line 发出的，casing 在前、实线在后。 */
+.bus-link.is-ride-casing {
+  stroke: var(--paper-warm);
+  stroke-width: 11;
+  stroke-dasharray: none;
+  animation: none;
+  opacity: 0.85;
+}
+
 .bus-link.is-ride {
   stroke: var(--accent-2);
-  stroke-width: 5;
-  stroke-dasharray: 3 6;
-  opacity: 0.9;
+  stroke-width: 6;
+  stroke-dasharray: none;
+  animation: none;
+  opacity: 1;
 }
 
 @keyframes dash {
