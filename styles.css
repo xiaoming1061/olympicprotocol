@@ -91,6 +91,9 @@
   --map-a: rgba(255, 234, 244, 0.55);
   --map-b: rgba(255, 246, 250, 0.45);
   --stop-fill: rgba(255, 197, 90, 0.22);
+  /* 校巴站之间那条线。跟校巴站的黄同一族，但深enough，
+     压在浅粉底上还看得清（#ffc55a 那种亮黄当线几乎看不见）。 */
+  --bus-line: #e08a00;
 
   /* ---- 描边 ---- */
   --line-strong: #f5a8c8;
@@ -802,24 +805,16 @@ body {
   opacity: 0.85;
 }
 
-/* 上车站 → 下车站：这一截是坐车。画成一条**实线**，底下垫一层浅色 casing，
-   像地图上的公交线。原来是紫色虚线 + 走马灯动画，
-   在简图那种尺寸上就是一串抖动的斑点，很丑。
-   两层是 js/map.js 里分两条 line 发出的，casing 在前、实线在后。 */
-.bus-link.is-ride-casing {
-  stroke: var(--paper-warm);
-  stroke-width: 11;
-  stroke-dasharray: none;
-  animation: none;
-  opacity: 0.85;
-}
-
+/* 上车站 → 下车站：这一截是坐车。样式**跟「车站 ↔ 楼栋」那两截完全一致**
+   （同样的虚线周期、同样的流动动画、同样的粗细），
+   只把颜色换成黄色——跟校巴站的黄同一族，一眼能认出是同一套东西。
+   靠颜色区分"走路"和"坐车"，不靠线型。 */
 .bus-link.is-ride {
-  stroke: var(--accent-2);
-  stroke-width: 6;
-  stroke-dasharray: none;
-  animation: none;
-  opacity: 1;
+  stroke: var(--bus-line);
+  stroke-width: 5;
+  stroke-dasharray: 10 8;
+  animation: dash 1.1s linear infinite;
+  opacity: 0.95;
 }
 
 @keyframes dash {

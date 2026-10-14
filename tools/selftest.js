@@ -1336,7 +1336,7 @@ console.log("\n[14] 底部留白（防止最后一个按钮滑不出来）");
     appSource.indexOf('setProperty("--bottom-space"') > 0);
   check("渲染完会核对最后一个卡片有没有被盖住",
     appSource.indexOf("function ensureBottomClearance") > 0 &&
-    /function render\(\)[\s\S]{0,400}scheduleClearanceCheck/.test(appSource));
+    /function render\(\)[\s\S]{0,700}scheduleClearanceCheck/.test(appSource));
   check("核对会用滑到底时的位置来算，不用真的滚动",
     appSource.indexOf("root.scrollHeight - window.innerHeight") > 0 &&
     appSource.indexOf("window.scrollY") > 0);
@@ -3199,9 +3199,12 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /all\.filter\(function \(g\) \{ return busPickId\(g, kind\) === state\.busPick\[kind\]; \}\)/.test(appSrc));
   check("每张卡片各存各的选中（一条全局字符串会让三张卡片互相抢）",
     /busPick: \{ plan: "", dorm: "", custom: "" \}/.test(appSrc) &&
-    /state\.busPick\[kind\] = busPickId\(shown\[0\], kind\)/.test(appSrc));
-  check("默认选中「显示顺序的第一条」，且没有「取消选中」这种状态",
-    /var shown = displayedGroups\(plan\)/.test(appSrc) &&
+    /state\.busPick\[kind\] = id;/.test(appSrc));
+  check("默认选中交给 settleBusPick 在渲染后统一做（只做一次）",
+    /function settleBusPick\(\)/.test(appSrc) &&
+    /state\.busPick\[routeSlide\] = id;/.test(appSrc) &&
+    /* 每段行程各兜底一次会把最后一段选中、车站全堆到地图上，所以 collectBus 里不能有 */
+    appSrc.indexOf("var shown = displayedGroups(plan)") === -1 &&
     appSrc.indexOf("? null : id") === -1);
   check("渲染后按 DOM 顺序兜底选中第一条（顺序算两遍容易和渲染对不上）",
     appSrc.indexOf('box.querySelector("[data-bus]")') > 0);
@@ -4001,16 +4004,15 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
     appCode.indexOf("out.busLinks.push({ from: fromPoint, to: best.board.stop })") > 0 &&
     appCode.indexOf("out.busLinks.push({ from: best.alight.stop, to: toPoint })") > 0);
   check("简图给坐车那一截加了区分用的 class",
-    mapCode.indexOf('class="bus-link is-ride-casing"') > 0 &&
-    mapCode.indexOf('class="bus-link is-ride"') > 0);
+    mapCode.indexOf('(link.ride ? " is-ride" : "")') > 0);
   check("真实地图换成另一种颜色和粗细",
-    /color: "#a06bff", weight: 6/.test(realMapCode) &&
+    /color: "#e08a00", weight: 5/.test(realMapCode) &&
     /color: "#ff6fa5", weight: 3/.test(realMapCode));
   check("样式里有 .bus-link.is-ride",
-    /\.bus-link\.is-ride\s*\{[\s\S]{0,220}stroke:\s*var\(--accent-2\)/.test(css));
-  check("坐车那一截是实线 + 浅色 casing（不再是紫色虚线跑马灯）",
-    /\.bus-link\.is-ride\s*\{[\s\S]{0,260}stroke-dasharray:\s*none/.test(css) &&
-    /\.bus-link\.is-ride-casing\s*\{[\s\S]{0,260}stroke:\s*var\(--paper-warm\)/.test(css));
+    /\.bus-link\.is-ride\s*\{[\s\S]{0,220}stroke:\s*var\(--bus-line\)/.test(css));
+  check("坐车那一截的线型跟走路一致，只换颜色（黄）",
+    /\.bus-link\.is-ride\s*\{[\s\S]{0,260}stroke-dasharray:\s*10 8/.test(css) &&
+    /\.bus-link\.is-ride\s*\{[\s\S]{0,300}animation:\s*dash/.test(css));
   check("图例说明了两种线",
     pageHtml.indexOf("走这一段") > 0 && pageHtml.indexOf("坐车这一段") > 0 &&
     css.indexOf(".line-ride") > 0);
@@ -4028,8 +4030,7 @@ console.log("\n[42] 地图上多一截「坐车」的连线");
     ]
   });
   check("三条线都画出来了",
-    /* 坐车那一条现在是两层（casing + 实线），所以 3 段连线共 4 条 line */
-    (svg.innerHTML.match(/class="bus-link/g) || []).length === 4);
+    (svg.innerHTML.match(/class="bus-link/g) || []).length === 3);
   check("其中只有中间那条是「坐车」",
     (svg.innerHTML.match(/class="bus-link is-ride"/g) || []).length === 1);
 }

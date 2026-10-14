@@ -210,15 +210,10 @@ window.OP = window.OP || {};
       if (!link || !link.from || !link.to) return;
       var pts = [[link.from.lat, link.from.lng], [link.to.lat, link.to.lng]];
       if (link.ride) {
-        /* 坐车那一段：底下垫一层浅色粗线当 casing，上面压一条实线。
-           原来的紫色短虚线看着像警示带，不像公交线。 */
+        /* 坐车那一段：线型跟走路那两截一样，只是黄色 */
         L.polyline(pts, {
-          color: "#fff6fa", weight: 11, opacity: 0.9,
-          lineCap: "round", lineJoin: "round"
-        }).addTo(overlay);
-        L.polyline(pts, {
-          color: "#a06bff", weight: 6, opacity: 1,
-          lineCap: "round", lineJoin: "round"
+          color: "#e08a00", weight: 5, dashArray: "10 8",
+          opacity: 0.95, lineCap: "round"
         }).addTo(overlay);
       } else {
         L.polyline(pts, {

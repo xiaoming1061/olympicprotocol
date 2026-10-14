@@ -490,6 +490,31 @@
       .concat(groups.filter(function (g) { return !g.runningNow; }));
   }
 
+  /* 当前显示那张卡片里，**实际排第一位**的方案 = 默认选中。
+
+     为什么在渲染完之后按 DOM 问、而不是渲染前自己算一遍顺序：
+     算的顺序和渲染的顺序一旦有出入，就会出现"选中的不是看到的第一条"
+     （追踪了好几轮，就是这么来的）。直接问 DOM 最省事也最准。
+     这里也负责把选中态补到 DOM 上——不经过 bindEvents 里的 paintBusPicks，
+     那个函数在另一个作用域里，直接调会抛错。 */
+  function settleBusPick() {
+    if (state.view !== "route") return;
+    var box = routeSlide === "dorm" ? $("#dormPlan")
+      : routeSlide === "custom" ? $("#customPlan") : $("#routeList");
+    if (!box) return;
+
+    var first = box.querySelector("[data-bus]");
+    if (!first) return;
+    var id = first.getAttribute("data-bus");
+    if (state.busPick[routeSlide] === id) return;
+
+    state.busPick[routeSlide] = id;
+    /* 重跑一遍 render：卡片高亮、以及**地图上的车站和连线**都要跟着换。
+       只调 renderRouteMap() 不够——它用的 todayMap 是上一轮建好的，
+       里面根本没有这一段的车站。第二次进来时上面那句提前返回，不会递归。 */
+    render();
+  }
+
   function busHtml(plan, destLabel, kind) {
     /* 模块没加载上说明页面是旧缓存（HTML 里没有 js/shuttle.js 那一行），
        这种情况要明说，不能跟"这段没车"长得一样 */
@@ -724,20 +749,6 @@
     }).join("");
 
     box.innerHTML = html;
-
-    /* 默认选中 = 卡片上**实际排在第一位的**那一条。
-       这里放在渲染之后按 DOM 顺序取，而不是渲染前自己算一遍顺序：
-       两处各算各的很容易对不上（实测就是"选中的不是看到的第一条"），
-       直接问 DOM 最省事也最准。用户点过的那条还在就保留，不覆盖。 */
-    if (!state.busPick.plan || !box.querySelector('[data-bus="' + state.busPick.plan + '"]')) {
-      var firstGroup = box.querySelector("[data-bus]");
-      if (firstGroup) {
-        state.busPick.plan = firstGroup.getAttribute("data-bus");
-        paintBusPicks();
-        /* 地图只画选中的那一段，选中变了地图得跟着变 */
-        renderRouteMap();
-      }
-    }
   }
 
   /* ================= 路线页：三张卡片 + 地图跟着卡片走 ================= */
@@ -765,17 +776,15 @@
     /* 每张卡片各自记自己选中的那条（state.busPick 是个按卡片分键的对象） */
     var picked = all.filter(function (g) { return busPickId(g, kind) === state.busPick[kind]; });
 
-    /* 用户要求"取消不选中任何校巴路线"这种状态：这张卡片有方案、而里面
-       没有当前选中的，就自动落到**显示顺序的第一条**（在开的优先，
-       其次时间最快）。必须用 displayedGroups，不能直接用 all[0]——
-       那是方案数组的顺序，和卡片渲染出来的顺序不一定一样。 */
-    var shown = displayedGroups(plan);
-    if (!picked.length && shown.length) {
-      state.busPick[kind] = busPickId(shown[0], kind);
-      picked = [shown[0]];
-    }
+    /* 这里**不做**默认选中。以前在这儿兜底，结果每段行程都会触发一次：
+       第一段选中第一条，第二段发现"没选中我这条"又改成自己的第一条——
+       最终选中的是最后一段，而且三段的车站和连线全堆到地图上。
+       默认选中统一交给 settleBusPick()，在整页渲染完之后只做一次。 */
 
-    (picked.length ? picked : all).forEach(function (g) {
+    /* 选中的这条不在这一段里 → 这一段什么都不画。
+       以前会退回"这段的第一条"，结果三段的车站和连线全堆到地图上
+       （实测地图上出现 9 条连线，其实只有一段）。 */
+    picked.forEach(function (g) {
       [g.board, g.alight].forEach(function (entry) {
         if (!entry || !entry.stop) return;
         if (seen[entry.id]) return;
@@ -784,8 +793,8 @@
       });
     });
 
-    /* 取第一条线（现在在开的排最前）的上下车站画连线；选中了就画选中的那条 */
-    var best = (picked.length ? picked : all)[0];
+    /* 只画选中那条的上下车站连线 */
+    var best = picked[0] || null;
     if (best) {
       if (fromPoint && best.board.stop) {
         out.busLinks.push({ from: fromPoint, to: best.board.stop });
@@ -2232,6 +2241,9 @@
     }
     else if (state.view === "course") renderCourse();
     else if (state.view === "settings") renderSettings();
+    /* 三张卡片都渲染完了，再统一兜底一次默认选中——
+       只有这时候 DOM 才是最终状态。在 renderRoute() 里做会被后面的重渲染覆盖。 */
+    settleBusPick();
     /* 内容变了，页尾留白要重新核对 */
     scheduleClearanceCheck();
   }
