@@ -3309,10 +3309,12 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
 
   /* ---------- 美术：字号统一 / 顿一拍 / 切卡片也展开 / 停运块不自己折 ---------- */
   check("「校巴」和「步行」标题同一字号（16px，用户要求以校巴为准）",
-    /\.leg-bus-head \{[\s\S]{0,160}font-size: var\(--text-lg\)/.test(css) &&
-    /\.leg-walk-head \{[\s\S]{0,240}font-size: var\(--text-lg\)/.test(css) &&
-    /* 折叠标题那条重置规则里不能写 font: inherit —— 它会把字重字号一起抹掉 */
-    /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,300}font-family: inherit;/.test(css));
+    /* 两个标题共用一条规则：改一处两个都变，不会再各自漂移 */
+    /\.leg-bus-head,\s*\.leg-walk-head \{[\s\S]{0,240}font-size: var\(--text-lg\)[\s\S]{0,240}font-weight: 600[\s\S]{0,240}color: var\(--text\)/.test(css) &&
+    /* 两条重置规则里不能写 font: inherit / color: inherit——
+       上一版就是它俩把「校巴」的字重和颜色改成了别的值，两边才对不上 */
+    /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,320}font-family: inherit;/.test(css) &&
+    /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,400}color: inherit;/.test(css) === false);
   check("分步导航顿一拍再展开（180ms 后才加 is-open）",
     /setTimeout\(function \(\) \{[\s\S]{0,500}requestAnimationFrame[\s\S]{0,400}\}, 180\);/.test(appSrc));
   check("切到「返回宿舍」「自定义路线」时也会自动选中并展开分步导航",
@@ -3326,6 +3328,18 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   check("「分步导航」四个字也有入场动画，跟身子同一节拍（180ms 后淡入上移）",
     /\.bus-steps-head \{[\s\S]{0,400}animation: bus-steps-in var\(--dur-panel\) var\(--ease-out\) 180ms both/.test(css) &&
     /@keyframes bus-steps-in \{[\s\S]{0,120}opacity: 0; transform: translateY\(-4px\)/.test(css));
+
+  /* ---------- 提示的位置与文案 / 高亮留白 / 分界线 ---------- */
+  check("已下课不提示余量；正在上课时只说「正在上课」",
+    /if \(leg\.status === "ongoing"\) \{\s*\n\s*warn = '<div class="leg-warn is-now">正在上课<\/div>';/.test(appSrc) &&
+    /else if \(leg\.status !== "past"\)/.test(appSrc) &&
+    /\.leg-warn\.is-now \{ color: var\(--accent-ink\)/.test(css));
+  check("提示挪到「步行」的外置导航按钮下方",
+    /navActionsHtml\(links\) \+\s*\n\s*\/\* 提示挪到/.test(appSrc));
+  check("选中高亮上下也留白（边界不再挤着文字和按钮）",
+    /\.bus-group\.is-picked \{[\s\S]{0,260}padding: 10px var\(--space-sm\)/.test(css));
+  check("课程之间的分界线加粗",
+    /\.leg \+ \.leg \{ border-top: 2px solid var\(--line-strong\); \}/.test(css));
 }
 
 

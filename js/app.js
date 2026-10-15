@@ -817,11 +817,19 @@
           "</div>"
         : "";
 
+      /* 提示分三种情况：
+           正在上 → 就一句「正在上课」
+           已下课 → 什么也不提示（课都上完了，"很紧""别拖了"没有意义）
+           还没上 → 按余量提醒 */
       var warn = "";
-      if (leg.missed) {
-        warn = '<div class="leg-warn">按现在的余量已经很紧了，直接出发吧</div>';
-      } else if (leg.slackMin !== null && leg.slackMin <= 10) {
-        warn = '<div class="leg-warn">余量只有 ' + Math.max(0, Math.round(leg.slackMin)) + " 分钟，别拖了</div>";
+      if (leg.status === "ongoing") {
+        warn = '<div class="leg-warn is-now">正在上课</div>';
+      } else if (leg.status !== "past") {
+        if (leg.missed) {
+          warn = '<div class="leg-warn">按现在的余量已经很紧了，直接出发吧</div>';
+        } else if (leg.slackMin !== null && leg.slackMin <= 10) {
+          warn = '<div class="leg-warn">余量只有 ' + Math.max(0, Math.round(leg.slackMin)) + " 分钟，别拖了</div>";
+        }
       }
 
       /* 已经不该按它出发的那一段（正在上 / 已下课）：靠标题旁边这枚标说明状态。
@@ -840,10 +848,12 @@
         '<div class="leg-meta"><span>' + esc(c.name) +
           (c.room ? " · " + esc(c.room) : "") +
           (c.teacher ? " · " + esc(c.teacher) : "") + "</span></div>" +
-        metrics + busOptions(leg, c) + warn +
+        metrics + busOptions(leg, c) +
         /* 走路这一段也给它一个标题，跟上面的「校巴」并列 */
         '<div class="leg-walk-head">步行</div>' +
         navActionsHtml(links) +
+        /* 提示挪到步行导航按钮下面（用户要求），别再夹在校巴和步行中间 */
+        warn +
       "</div>";
     }).join("");
 

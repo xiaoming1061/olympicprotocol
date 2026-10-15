@@ -887,7 +887,8 @@ body {
   padding: 16px 0;
 }
 
-.leg + .leg { border-top: 1px solid var(--line); }
+/* 课程之间那条分界线加粗：1px 的浅粉在手机屏上几乎看不出分段 */
+.leg + .leg { border-top: 2px solid var(--line-strong); }
 .leg:first-child { padding-top: 0; }
 .leg:last-child { padding-bottom: 0; }
 
@@ -923,6 +924,9 @@ body {
 .leg-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 
 .leg-warn { margin-top: 9px; font-size: 12px; color: var(--warn); }
+
+/* 「正在上课」是状态、不是警告，别用琥珀色的警告色 */
+.leg-warn.is-now { color: var(--accent-ink); font-weight: 600; }
 
 /* ---------- 返回宿舍 / 自定义路线 ---------- */
 
@@ -1056,11 +1060,19 @@ body {
 }
 
 .leg-bus-head {
-  /* 16px：用户要求「步行」跟它统一到这个大小 */
+  /* 字体相关的都跟「步行」共用下面那条规则 */
+  color: var(--text);
+}
+
+/* 「校巴」和「步行」共用同一套字——一份规则，改一处两个都变，
+   不会再出现"一个深一个淡""一个粗一个不粗"这种偏差。
+   颜色特意用 --text 而不是 --text-dim：淡灰那档看着就像没加粗。 */
+.leg-bus-head,
+.leg-walk-head {
   font-size: var(--text-lg);
   letter-spacing: 0.08em;
   font-weight: 600;
-  color: var(--text-dim);
+  color: var(--text);
 }
 
 /* ---------- 折叠块：标题按钮 + 高度过渡 ----------
@@ -1090,7 +1102,6 @@ body {
   /* 只继承字体族：写成 font: inherit 会把字重和字号一起抹掉，
      之前的「校巴」就因此变成了 400 / 16px（本该 600 / 12px）。 */
   font-family: inherit;
-  color: inherit;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1120,11 +1131,7 @@ button.leg-bus-head::after,
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
-  /* 跟「校巴」标题同一个字号 */
-  font-size: var(--text-lg);
-  letter-spacing: 0.08em;
-  font-weight: 600;
-  color: var(--text-dim);
+  /* 字体见上面跟 .leg-bus-head 共用的那条规则 */
 }
 
 /* 选中校巴后的「分步导航」：两段走路各一组按钮 */
@@ -1182,8 +1189,9 @@ button.leg-bus-head::after,
 .bus-group.is-picked {
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
-  padding-left: var(--space-sm);
-  padding-right: var(--space-sm);
+  /* 上下也得留白：原来只有左右内边距，高亮的边界直接贴着里头的
+     文字、图标和按钮，很挤 */
+  padding: 10px var(--space-sm);
   margin-left: calc(-1 * var(--space-sm));
   margin-right: calc(-1 * var(--space-sm));
 }
