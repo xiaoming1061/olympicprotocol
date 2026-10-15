@@ -524,6 +524,20 @@
     render();
   }
 
+  /* 选中某条校巴后，它的「分步导航」自动展开。
+     先按收起渲染、下一帧再加 is-open——元素一插进 DOM 就是全高的话，
+     过渡不会触发，看起来还是"啪"地出现。 */
+  function autoOpenBusSteps() {
+    if (state.view !== "route") return;
+    var steps = document.querySelector(".bus-group.is-picked .bus-steps");
+    if (!steps || steps.classList.contains("is-open")) return;
+    requestAnimationFrame(function () {
+      steps.classList.add("is-open");
+      var head = steps.querySelector(".bus-steps-head");
+      if (head) head.setAttribute("aria-expanded", "true");
+    });
+  }
+
   /* 一排外置地图导航按钮。行程块、宿舍、自定义路线、以及校巴的分步导航
      都用它，省得同一段 map/join 抄四遍。 */
   function navActionsHtml(links) {
@@ -549,19 +563,24 @@
       rows.push({ title: "从终点校巴站到" + (dest.label || "终点"), target: dest, min: g.walkAfterMin });
     }
 
-    return '<details class="bus-steps"><summary>分步导航</summary>' +
-      rows.map(function (row) {
-        var t = row.target;
-        if (!t || typeof t.lat !== "number") return "";
-        var name = t.zh || t.name || t.label || "目的地";
-        return '<div class="bus-step">' +
-          '<div class="bus-step-title">' + esc(row.title) +
-            (typeof row.min === "number" && isFinite(row.min)
-              ? " · 步行 " + Math.round(row.min) + " 分钟" : "") +
-          "</div>" +
-          navActionsHtml(Geo.navLinks(name, t.lat, t.lng)) +
-        "</div>";
-      }).join("") + "</details>";
+    /* 先按"收起"渲染，选中的那一刻由 autoOpenBusSteps() 下一帧加 is-open，
+       这样它是"滑"出来的，而不是凭空出现。 */
+    return '<div class="bus-steps">' +
+      '<button type="button" class="bus-steps-head" aria-expanded="false">分步导航</button>' +
+      '<div class="bus-steps-body"><div class="bus-steps-inner">' +
+        rows.map(function (row) {
+          var t = row.target;
+          if (!t || typeof t.lat !== "number") return "";
+          var name = t.zh || t.name || t.label || "目的地";
+          return '<div class="bus-step">' +
+            '<div class="bus-step-title">' + esc(row.title) +
+              (typeof row.min === "number" && isFinite(row.min)
+                ? " · 步行 " + Math.round(row.min) + " 分钟" : "") +
+            "</div>" +
+            navActionsHtml(Geo.navLinks(name, t.lat, t.lng)) +
+          "</div>";
+        }).join("") +
+      "</div></div></div>";
   }
 
   function busHtml(plan, destLabel, kind, destPoint) {
@@ -647,16 +666,25 @@
 
     var html = running.map(renderGroup).join("");
     if (stopped.length) {
-      html += '<details class="bus-off"><summary>现在停运的线路（' + stopped.length + " 条）</summary>" +
-        stopped.map(renderGroup).join("") + "</details>";
+      /* 跟其他折叠块同一套（标题按钮 + 高度过渡），动画才统一 */
+      html += '<div class="bus-off">' +
+        '<button type="button" class="bus-off-head" aria-expanded="false">' +
+          "现在停运的线路（" + stopped.length + " 条）</button>" +
+        '<div class="bus-off-body"><div class="bus-off-inner">' +
+          stopped.map(renderGroup).join("") + "</div></div></div>";
     }
 
     /* 整块做成可折叠的：收起来就完全不显示规划出来的校巴（用户要求）。
        状态记在设置里，下次打开页面还是收着的。
        计数写在标题上，收起来也知道有几条可乘。 */
-    return '<details class="leg-bus"' + (data.settings.busCollapsed ? "" : " open") + ">" +
-      '<summary class="leg-bus-head">校巴<span class="bus-count">' +
-        groups.length + " 条可乘</span></summary>" + html + "</details>";
+    /* 自己那层包裹，不用 <details>：原生展开是瞬间的，做不了平滑动画。
+       高度靠 grid-template-rows 0fr↔1fr 过渡（见 styles.css）。 */
+    var busOpen = !data.settings.busCollapsed;
+    return '<div class="leg-bus' + (busOpen ? " is-open" : "") + '">' +
+      '<button type="button" class="leg-bus-head" aria-expanded="' + (busOpen ? "true" : "false") + '">' +
+        '校巴<span class="bus-count">' + groups.length + " 条可乘</span></button>" +
+      '<div class="leg-bus-body"><div class="leg-bus-inner">' + html + "</div></div>" +
+    "</div>";
   }
 
   /* 去教室那一段的校巴方案 */
@@ -2290,6 +2318,8 @@
     /* 三张卡片都渲染完了，再统一兜底一次默认选中——
        只有这时候 DOM 才是最终状态。在 renderRoute() 里做会被后面的重渲染覆盖。 */
     settleBusPick();
+    /* 选中的那条，分步导航自动滑出来 */
+    autoOpenBusSteps();
     /* 内容变了，页尾留白要重新核对 */
     scheduleClearanceCheck();
   }
@@ -3211,14 +3241,27 @@
       pickers.forEach(function (p) { p.hideIfOutside(ev.target); });
     });
 
-    /* 校巴那块折叠/展开：把状态记进设置，下次打开还是收着的。
-       toggle 事件不冒泡，所以第三个参数要 true（捕获阶段听）。 */
-    document.addEventListener("toggle", function (ev) {
-      var el = ev.target;
-      if (!el || el.tagName !== "DETAILS" || !el.classList.contains("leg-bus")) return;
-      data.settings.busCollapsed = !el.open;
-      save();
-    }, true);
+    /* 折叠块的标题：点一下收放。高度动画由 is-open 这个 class 驱动。
+       （不用 <details> 是因为它展开是瞬间的，没法做平滑动画。） */
+    document.addEventListener("click", function (ev) {
+      if (!ev.target || !ev.target.closest) return;
+      var head = ev.target.closest(".leg-bus-head, .bus-steps-head, .bus-off-head");
+      if (!head) return;
+
+      var box = head.parentElement;
+      /* 「校巴模块没加载」「这段没有合适的班次」那两种提示没有可收放的身子，
+         点了什么都不该发生 */
+      if (!box || !box.querySelector(".leg-bus-body, .bus-steps-body, .bus-off-body")) return;
+
+      var open = box.classList.toggle("is-open");
+      head.setAttribute("aria-expanded", open ? "true" : "false");
+
+      /* 只有校巴整块的状态要记进设置，分步导航每次都是自动展开的 */
+      if (box.classList.contains("leg-bus")) {
+        data.settings.busCollapsed = !open;
+        save();
+      }
+    });
 
     /* --- 点选校巴方案 ---
        点一下选中：地图只画那一条的站和连线，卡片上高亮。再点一下取消。

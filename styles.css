@@ -1062,23 +1062,49 @@ body {
   color: var(--text-dim);
 }
 
-/* <summary> 当标题用：去掉浏览器默认的三角，换成自己的，
-   整行可点，收起时也看得见有几条可乘。 */
-summary.leg-bus-head {
+/* ---------- 折叠块：标题按钮 + 高度过渡 ----------
+   不用 <details>：原生展开是瞬间的，做不了平滑动画。
+   高度用 grid-template-rows 0fr ↔ 1fr 过渡——这是目前兼容性最好的
+   "高度自动"动画写法（Safari 16+ / Chrome 107+）；万一浏览器不认，
+   也只是不带动画地直接开合，不会坏。 */
+.leg-bus-body,
+.bus-steps-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-panel) var(--ease-out);
+}
+.leg-bus-inner,
+.bus-steps-inner { overflow: hidden; min-height: 0; }
+
+.leg-bus:not(.is-open) > .leg-bus-body,
+.bus-steps:not(.is-open) > .bus-steps-body { grid-template-rows: 0fr; }
+
+/* 标题当按钮使：抹掉按钮默认长相，整行可点，右边一个会转的三角 */
+.leg-bus-head,
+.bus-steps-head {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
   display: flex;
   align-items: center;
   gap: 8px;
+  width: 100%;
+  text-align: left;
   cursor: pointer;
-  list-style: none;
 }
-summary.leg-bus-head::-webkit-details-marker { display: none; }
-summary.leg-bus-head::after {
+/* 三角只给真有身子的那些（"模块没加载""没有班次"两种提示是纯文本，不带三角） */
+button.leg-bus-head::after,
+.bus-steps-head::after {
   content: "▸";
   font-size: 10px;
   line-height: 1;
-  transition: transform var(--dur-hover) var(--ease-out);
+  transition: transform var(--dur-panel) var(--ease-out);
 }
-.leg-bus[open] > summary.leg-bus-head::after { transform: rotate(90deg); }
+.leg-bus.is-open > .leg-bus-head::after,
+.bus-steps.is-open > .bus-steps-head::after { transform: rotate(90deg); }
 
 .bus-count {
   font-weight: 500;
@@ -1103,23 +1129,12 @@ summary.leg-bus-head::after {
   font-size: var(--text-sm);
 }
 
-.bus-steps > summary {
-  cursor: pointer;
-  list-style: none;
+/* 放在重置规则之后，把颜色/字重盖回来 */
+.bus-steps-head {
   color: var(--accent-ink);
   font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+  font-size: var(--text-sm);
 }
-.bus-steps > summary::-webkit-details-marker { display: none; }
-.bus-steps > summary::after {
-  content: "▸";
-  font-size: 10px;
-  line-height: 1;
-  transition: transform var(--dur-hover) var(--ease-out);
-}
-.bus-steps[open] > summary::after { transform: rotate(90deg); }
 
 .bus-step { margin-top: 10px; }
 
@@ -1218,20 +1233,40 @@ summary.leg-bus-head::after {
   padding-top: 8px;
 }
 
-.bus-off > summary {
-  cursor: pointer;
+.bus-off-head {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
   font-size: 12px;
   color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
   /* 原来这里是 outline: none 且没有替代——可访问性上的硬伤。
      现在靠全局的 :focus-visible 环。 */
-  list-style: none;
 }
-
-.bus-off > summary::before { content: "▸ "; }
-.bus-off[open] > summary::before { content: "▾ "; }
-.bus-off > summary::-webkit-details-marker { display: none; }
-.bus-off[open] > summary { margin-bottom: 8px; }
+.bus-off-head::after {
+  content: "▸";
+  font-size: 10px;
+  line-height: 1;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+.bus-off.is-open > .bus-off-head::after { transform: rotate(90deg); }
+.bus-off.is-open > .bus-off-head { margin-bottom: 8px; }
 .bus-off .bus-group { opacity: 0.72; }
+
+.bus-off-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-panel) var(--ease-out);
+}
+.bus-off-inner { overflow: hidden; min-height: 0; }
+.bus-off:not(.is-open) > .bus-off-body { grid-template-rows: 0fr; }
 
 /* 地图入口：链接和「复制坐标」按钮长得一样，所以用类选择器 */
 .nav-link {

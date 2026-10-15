@@ -3269,13 +3269,21 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /var ORDER = \{ ongoing: 0, upcoming: 1, past: 2 \}/.test(appSrc) &&
     /var isPastLeg = function \(leg\) \{ return leg\.status === "past"; \}/.test(appSrc));
   check("校巴整块可折叠，收起就完全不显示可乘路线",
-    /'<details class="leg-bus"' \+ \(data\.settings\.busCollapsed \? "" : " open"\)/.test(appSrc) &&
+    /'<div class="leg-bus' \+ \(busOpen \? " is-open" : ""\)/.test(appSrc) &&
     /busCollapsed: false/.test(defaultsSrc) &&
-    /data\.settings\.busCollapsed = !el\.open;/.test(appSrc));
+    /data\.settings\.busCollapsed = !open;/.test(appSrc));
   check("折叠状态记进设置，下次打开还是收着的；标题整行可点",
-    /addEventListener\("toggle"[\s\S]{0,240}leg-bus/.test(appSrc) &&
-    /summary\.leg-bus-head \{[\s\S]{0,200}cursor: pointer/.test(css) &&
+    /closest\("\.leg-bus-head, \.bus-steps-head, \.bus-off-head"\)/.test(appSrc) &&
+    /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,320}cursor: pointer/.test(css) &&
     /\.bus-count \{/.test(css));
+  /* 展开要有平滑动画：高度走 grid-template-rows 0fr↔1fr 过渡。
+     原生 <details> 是瞬间展开的，所以这里自己搭了一层。 */
+  check("展开是平滑的（grid-template-rows 0fr↔1fr 过渡，没用原生 details）",
+    /transition: grid-template-rows var\(--dur-panel\) var\(--ease-out\)/.test(css) &&
+    /grid-template-rows: 0fr;/.test(css) &&
+    /\.bus-steps-inner \{ overflow: hidden; min-height: 0; \}/.test(css) &&
+    appSrc.indexOf('<details class="leg-bus"') === -1 &&
+    appSrc.indexOf('<details class="bus-off"') === -1);
   check("徽章字色按底色亮度挑（亮黄配白字看不清）",
     ["#f2e421", "#3f438f", "#ffc55a"].every((c) => /^#[0-9a-f]{6}$/i.test(OP.Shuttle.inkOn(c))));
 
@@ -3288,7 +3296,11 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /从当前位置到起始校巴站/.test(appSrc) &&
     /从终点校巴站到/.test(appSrc) &&
     /state\.busPick\[kind\] === pickId \? busWalkSteps\(g, destPoint\) : ""/.test(appSrc) &&
-    /\.bus-steps > summary \{/.test(css));
+    /\.bus-steps-head \{/.test(css));
+  check("选中线路时分步导航自动滑出来（下一帧才加 is-open，过渡才会触发）",
+    /function autoOpenBusSteps\(\)/.test(appSrc) &&
+    /requestAnimationFrame\(function \(\) \{\s*\n\s*steps\.classList\.add\("is-open"\)/.test(appSrc) &&
+    /autoOpenBusSteps\(\);\s*\n\s*\/\* 内容变了/.test(appSrc));
   check("点分步导航的展开三角不会顺手把选中的线路取消掉",
     /closest\("button, a, summary"\)/.test(appSrc));
 }
@@ -3622,7 +3634,7 @@ console.log("\n[38] 主题、连堂课、停运折叠、地图连线");
       !(g.runningNow && !planAt10.groups[i - 1].runningNow)));
   check("界面把停运的折起来",
     appCode.indexOf("bus-off") > 0 && appCode.indexOf("现在停运的线路") > 0 &&
-    css.indexOf(".bus-off > summary") > 0);
+    css.indexOf(".bus-off-head") > 0);
 
   /* ---------- 连堂课不再拆成两段 ---------- */
   const P2 = OP.Planner;
