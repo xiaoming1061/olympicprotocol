@@ -3299,10 +3299,28 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.bus-steps-head \{/.test(css));
   check("选中线路时分步导航自动滑出来（下一帧才加 is-open，过渡才会触发）",
     /function autoOpenBusSteps\(\)/.test(appSrc) &&
-    /requestAnimationFrame\(function \(\) \{\s*\n\s*steps\.classList\.add\("is-open"\)/.test(appSrc) &&
-    /autoOpenBusSteps\(\);\s*\n\s*\/\* 内容变了/.test(appSrc));
+    /* 顿一拍再展开：setTimeout 之后下一帧才加 is-open */
+    /setTimeout\(function \(\) \{[\s\S]{0,140}requestAnimationFrame/.test(appSrc) &&
+    /* 三张卡片各自的选中项都要开，不能只开第一个匹配的 */
+    /\$\$\("\.bus-group\.is-picked \.bus-steps"\)\.filter/.test(appSrc) &&
+    /autoOpenBusSteps\(\);/.test(appSrc));
   check("点分步导航的展开三角不会顺手把选中的线路取消掉",
     /closest\("button, a, summary"\)/.test(appSrc));
+
+  /* ---------- 美术：字号统一 / 顿一拍 / 切卡片也展开 / 停运块不自己折 ---------- */
+  check("「校巴」和「步行」标题同一字号（16px，用户要求以校巴为准）",
+    /\.leg-bus-head \{[\s\S]{0,160}font-size: var\(--text-lg\)/.test(css) &&
+    /\.leg-walk-head \{[\s\S]{0,240}font-size: var\(--text-lg\)/.test(css) &&
+    /* 折叠标题那条重置规则里不能写 font: inherit —— 它会把字重字号一起抹掉 */
+    /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,300}font-family: inherit;/.test(css));
+  check("分步导航顿一拍再展开（180ms 后才加 is-open）",
+    /setTimeout\(function \(\) \{[\s\S]{0,500}requestAnimationFrame[\s\S]{0,400}\}, 180\);/.test(appSrc));
+  check("切到「返回宿舍」「自定义路线」时也会自动选中并展开分步导航",
+    /routeSlide = kind;[\s\S]{0,500}settleBusPick\(\);[\s\S]{0,500}autoOpenBusSteps\(\);/.test(appSrc));
+  check("点停运线路后那块不会自己折回去（展开状态要记着）",
+    /busOffOpen: false/.test(appSrc) &&
+    /state\.busOffOpen \? " is-open" : ""/.test(appSrc) &&
+    /if \(box\.classList\.contains\("bus-off"\)\) state\.busOffOpen = open;/.test(appSrc));
 }
 
 

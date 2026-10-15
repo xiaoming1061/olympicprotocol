@@ -30,6 +30,9 @@
        **必须是三份**：以前只存一条字符串，三张卡片渲染时会互抢——
        实测表现为"默认选中的不是看到的第一条"。 */
     busPick: { plan: "", dorm: "", custom: "" },
+    /* 「现在停运的线路」那块是不是展开着。只记在内存里——
+       它是临时翻看一下用的，不必跨刷新保留。 */
+    busOffOpen: false,
     ocr: { courses: [], warnings: [], busy: false }
   };
 
@@ -529,13 +532,23 @@
      过渡不会触发，看起来还是"啪"地出现。 */
   function autoOpenBusSteps() {
     if (state.view !== "route") return;
-    var steps = document.querySelector(".bus-group.is-picked .bus-steps");
-    if (!steps || steps.classList.contains("is-open")) return;
-    requestAnimationFrame(function () {
-      steps.classList.add("is-open");
-      var head = steps.querySelector(".bus-steps-head");
-      if (head) head.setAttribute("aria-expanded", "true");
+    /* 三张卡片各自的选中项都要开。以前只取第一个匹配的，
+       所以在「返回宿舍」「自定义路线」上点线路时，那边根本没反应。 */
+    var pending = $$(".bus-group.is-picked .bus-steps").filter(function (el) {
+      return !el.classList.contains("is-open");
     });
+    if (!pending.length) return;
+    /* 顿一拍再展开：先让选中态落定，再滑出分步导航。
+       曲线走 --ease-out（cubic-bezier(0.16, 1, 0.3, 1)），由快至慢。 */
+    setTimeout(function () {
+      requestAnimationFrame(function () {
+        pending.forEach(function (el) {
+          el.classList.add("is-open");
+          var head = el.querySelector(".bus-steps-head");
+          if (head) head.setAttribute("aria-expanded", "true");
+        });
+      });
+    }, 180);
   }
 
   /* 一排外置地图导航按钮。行程块、宿舍、自定义路线、以及校巴的分步导航
@@ -666,9 +679,12 @@
 
     var html = running.map(renderGroup).join("");
     if (stopped.length) {
-      /* 跟其他折叠块同一套（标题按钮 + 高度过渡），动画才统一 */
-      html += '<div class="bus-off">' +
-        '<button type="button" class="bus-off-head" aria-expanded="false">' +
+      /* 跟其他折叠块同一套（标题按钮 + 高度过渡），动画才统一。
+         展开状态记在 state 里：点一条停运线路会选中它 → 整页重渲染，
+         要是每次都按收起渲染，那块就会自己折回去（用户报的 bug）。 */
+      html += '<div class="bus-off' + (state.busOffOpen ? " is-open" : "") + '">' +
+        '<button type="button" class="bus-off-head" aria-expanded="' +
+          (state.busOffOpen ? "true" : "false") + '">' +
           "现在停运的线路（" + stopped.length + " 条）</button>" +
         '<div class="bus-off-body"><div class="bus-off-inner">' +
           stopped.map(renderGroup).join("") + "</div></div></div>";
@@ -3133,10 +3149,15 @@
       initial: routeSlide,
       onChange: function (kind) {
         routeSlide = kind;
-        /* 重画地图；顺便刷新卡片上的选中态——自动选中跟着当前这张卡片走，
-           切过去之后高亮也得跟上 */
+        /* 切过去的那张卡片可能还没选中过任何方案（默认选中是在 render()
+           末尾按"当前卡片"做的，滑动不会触发整页重渲染）。这里补一次：
+           选定之后它会自己 render() 一遍，把高亮和分步导航的 DOM 一起生出来。 */
+        settleBusPick();
+        /* 重画地图；顺便刷新卡片上的选中态 */
         renderRouteMap();
         paintBusPicks();
+        /* 新选中那条的分步导航也滑出来 */
+        autoOpenBusSteps();
       }
     });
 
@@ -3261,6 +3282,8 @@
         data.settings.busCollapsed = !open;
         save();
       }
+      /* 停运那块只记在内存：重渲染之后还要保持展开 */
+      if (box.classList.contains("bus-off")) state.busOffOpen = open;
     });
 
     /* --- 点选校巴方案 ---

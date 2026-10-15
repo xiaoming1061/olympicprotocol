@@ -1056,7 +1056,8 @@ body {
 }
 
 .leg-bus-head {
-  font-size: var(--text-xs);
+  /* 16px：用户要求「步行」跟它统一到这个大小 */
+  font-size: var(--text-lg);
   letter-spacing: 0.08em;
   font-weight: 600;
   color: var(--text-dim);
@@ -1086,7 +1087,9 @@ body {
   background: none;
   border: 0;
   padding: 0;
-  font: inherit;
+  /* 只继承字体族：写成 font: inherit 会把字重和字号一起抹掉，
+     之前的「校巴」就因此变成了 400 / 16px（本该 600 / 12px）。 */
+  font-family: inherit;
   color: inherit;
   display: flex;
   align-items: center;
@@ -1117,7 +1120,8 @@ button.leg-bus-head::after,
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--line);
-  font-size: var(--text-xs);
+  /* 跟「校巴」标题同一个字号 */
+  font-size: var(--text-lg);
   letter-spacing: 0.08em;
   font-weight: 600;
   color: var(--text-dim);
