@@ -1494,6 +1494,39 @@ button.leg-bus-head::after,
   .credit-link { padding-block: 3px; }
 }
 
+/* 「数据」卡片右下角的仓库入口（只有一个 GitHub 图标）。
+   发丝线跟上面那条署名用同一个令牌，颜色也同一档（--accent-ink），
+   不做成淡灰——那类淡灰说明早先已经删光了。 */
+.card-foot {
+  display: flex;
+  justify-content: flex-end;
+  margin: var(--space-md) 0 0;
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--line);
+}
+
+.repo-link {
+  /* 图标本体只有 20px，手指要 44px 才点得准（跟 .btn 那条同样要求）。
+     多出来的空白用负外边距收回去，视觉上它还是贴着那条发丝线、
+     右边缘跟卡片里的内容对齐。 */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: calc(-1 * var(--space-sm)) calc(-1 * var(--space-sm)) calc(-1 * var(--space-sm)) 0;
+  border-radius: var(--radius-pill);
+  color: var(--accent-ink);
+  transition: color var(--dur-hover) var(--ease-out);
+}
+
+/* 悬停只在真有指针的设备上生效（触屏按一下不会留下卡住的悬停态） */
+@media (hover: hover) {
+  .repo-link:hover { color: var(--accent); }
+}
+
+.repo-ico { display: block; width: 20px; height: 20px; }
+
 /* ---------- 表单 ---------- */
 
 .form { display: flex; flex-direction: column; gap: 14px; }

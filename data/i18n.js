@@ -21,7 +21,6 @@ window.OP.I18N_TABLE = {
     "lang.hans": "简体中文",
     "lang.hant": "繁體中文",
     "lang.en": "English",
-    "lang.note": "切换后立刻生效，并记在这台设备上",
     "lang.auto": "跟随浏览器"
   },
 
@@ -36,7 +35,6 @@ window.OP.I18N_TABLE = {
     "lang.hans": "简体中文",
     "lang.hant": "繁體中文",
     "lang.en": "English",
-    "lang.note": "切換後立刻生效，並記在這台裝置上",
     "lang.auto": "跟隨瀏覽器"
   },
 
@@ -51,7 +49,6 @@ window.OP.I18N_TABLE = {
     "lang.hans": "简体中文",
     "lang.hant": "繁體中文",
     "lang.en": "English",
-    "lang.note": "Takes effect immediately, remembered on this device",
     "lang.auto": "Follow browser"
   }
 };

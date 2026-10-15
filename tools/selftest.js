@@ -3048,6 +3048,7 @@ console.log("\n[34] 设置页里的版本号");
 {
   const pageHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
   const appCode = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
   check("应用版本号有单一出处",
     /OP\.APP_VERSION\s*=\s*"[^"]+"/.test(fs.readFileSync(path.join(root, "data", "defaults.js"), "utf8")));
@@ -3076,6 +3077,27 @@ console.log("\n[34] 设置页里的版本号");
     /function buildStamp\(\)[\s\S]*?document\.lastModified[\s\S]*?return "本地";/.test(appCode));
   check("本地直接打开源码时显示「本地」",
     /function buildStamp\(\)[\s\S]*?location\.protocol !== "file:"[\s\S]*?return "本地";/.test(appCode));
+
+  /* 仓库入口（用户要求）：数据卡片右下角一个 GitHub 图标，点开是这一页的仓库 */
+  check("「数据」卡片右下角有仓库入口，指向本页的仓库",
+    /class="card-foot"[\s\S]{0,260}?href="https:\/\/github\.com\/xiaoming1061\/olympicprotocol"/.test(pageHtml) &&
+    pageHtml.indexOf('id="btnResetData"') < pageHtml.indexOf('class="card-foot"'));
+  check("图标是内联 SVG、新窗口打开、带 noopener（跟课表代理那条署名同一套规矩）",
+    /class="repo-link" href="https:\/\/github\.com\/xiaoming1061\/olympicprotocol"\s*\n?\s*target="_blank" rel="noopener noreferrer"/.test(pageHtml) &&
+    /class="repo-ico"[\s\S]{0,140}?<path fill="currentColor"/.test(pageHtml) &&
+    !/<img[^>]*repo/i.test(pageHtml));
+  check("仓库图标走主色那一档（不是淡灰），触摸目标 44px，右边缘跟卡片内容对齐",
+    /\.repo-link \{[\s\S]{0,460}?width: 44px;[\s\S]{0,60}?height: 44px;[\s\S]{0,240}?color: var\(--accent-ink\)/.test(css) &&
+    /\.card-foot \{[\s\S]{0,160}?justify-content: flex-end/.test(css));
+
+  /* 「界面语言」卡片挪到「数据」卡片前面，那句说明删掉（用户要求） */
+  check("「界面语言」卡片在「数据」卡片前面",
+    pageHtml.indexOf('id="langPicker"') > 0 &&
+    pageHtml.indexOf('id="langPicker"') < pageHtml.indexOf('id="verData"'));
+  check("不再写「切换后立刻生效，并记在这台设备上」",
+    pageHtml.indexOf("切换后立刻生效") === -1 &&
+    pageHtml.indexOf("lang.note") === -1 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8").indexOf("lang.note") === -1);
 }
 
 console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
