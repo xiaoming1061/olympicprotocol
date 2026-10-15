@@ -524,7 +524,47 @@
     render();
   }
 
-  function busHtml(plan, destLabel, kind) {
+  /* 一排外置地图导航按钮。行程块、宿舍、自定义路线、以及校巴的分步导航
+     都用它，省得同一段 map/join 抄四遍。 */
+  function navActionsHtml(links) {
+    return '<div class="leg-actions">' + (links || []).map(function (l) {
+      if (l.copy) {
+        return '<button type="button" class="nav-link" data-copy="' + esc(l.copy) + '">' +
+          esc(l.label) + "</button>";
+      }
+      return '<a class="nav-link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
+        esc(l.label) + "</a>";
+    }).join("") + "</div>";
+  }
+
+  /* 选中某条校巴之后展开的两段步行：
+       「从当前位置到起始校巴站」和「从终点校巴站到教室」，
+     每段下面配上外置地图导航按钮——点开就是那一段的步行导航。
+     dest 是终点（教室 / 宿舍 / 自定义终点），没有坐标就不给按钮。 */
+  function busWalkSteps(g, dest) {
+    var rows = [
+      { title: "从当前位置到起始校巴站", target: g.board && g.board.stop, min: g.walkBeforeMin }
+    ];
+    if (dest && typeof dest.lat === "number") {
+      rows.push({ title: "从终点校巴站到" + (dest.label || "终点"), target: dest, min: g.walkAfterMin });
+    }
+
+    return '<details class="bus-steps"><summary>分步导航</summary>' +
+      rows.map(function (row) {
+        var t = row.target;
+        if (!t || typeof t.lat !== "number") return "";
+        var name = t.zh || t.name || t.label || "目的地";
+        return '<div class="bus-step">' +
+          '<div class="bus-step-title">' + esc(row.title) +
+            (typeof row.min === "number" && isFinite(row.min)
+              ? " · 步行 " + Math.round(row.min) + " 分钟" : "") +
+          "</div>" +
+          navActionsHtml(Geo.navLinks(name, t.lat, t.lng)) +
+        "</div>";
+      }).join("") + "</details>";
+  }
+
+  function busHtml(plan, destLabel, kind, destPoint) {
     /* 模块没加载上说明页面是旧缓存（HTML 里没有 js/shuttle.js 那一行），
        这种情况要明说，不能跟"这段没车"长得一样 */
     if (!OP.Shuttle || !(OP.SHUTTLE_ROUTES || []).length) {
@@ -595,6 +635,8 @@
         "</div>" +
         depsLine +
         (flags.length ? '<div class="bus-breakdown">' + esc(flags.join(" · ")) + "</div>" : "") +
+        /* 选中的那条才展开分步导航：不选就不铺开，免得一堆按钮 */
+        (state.busPick[kind] === pickId ? busWalkSteps(g, destPoint) : "") +
       "</div>";
     }
 
@@ -621,7 +663,8 @@
   function busOptions(leg, course) {
     void course;
     if (!leg.fromPoint || !leg.toPoint) return "";
-    return busHtml(leg.busPlan, "教室", "plan");
+    return busHtml(leg.busPlan, "教室", "plan",
+      leg.building ? { label: leg.building.name, lat: leg.building.lat, lng: leg.building.lng } : null);
   }
 
   function renderRoute() {
@@ -754,16 +797,9 @@
           (c.room ? " · " + esc(c.room) : "") +
           (c.teacher ? " · " + esc(c.teacher) : "") + "</span></div>" +
         metrics + busOptions(leg, c) + warn +
-        '<div class="leg-actions">' +
-          links.map(function (l) {
-            if (l.copy) {
-              return '<button type="button" class="nav-link" data-copy="' + esc(l.copy) + '">' +
-                esc(l.label) + "</button>";
-            }
-            return '<a class="nav-link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
-              esc(l.label) + "</a>";
-          }).join("") +
-        "</div>" +
+        /* 走路这一段也给它一个标题，跟上面的「校巴」并列 */
+        '<div class="leg-walk-head">步行</div>' +
+        navActionsHtml(links) +
       "</div>";
     }).join("");
 
@@ -1468,18 +1504,12 @@
 
     /* 名字给「英文 中文」：高德 / 百度会把这个名字显示在目的地上，
        两个写法都带上，用中文地图的人也能一眼确认是不是这栋 */
-    var links = Geo.navLinks(dorm.label, dorm.lat, dorm.lng);
-    var actions = '<div class="leg-actions">' + links.map(function (l) {
-      if (l.copy) {
-        return '<button type="button" class="nav-link" data-copy="' + esc(l.copy) + '">' +
-          esc(l.label) + "</button>";
-      }
-      return '<a class="nav-link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
-        esc(l.label) + "</a>";
-    }).join("") + "</div>";
+    var actions = '<div class="leg-walk-head">步行</div>' +
+      navActionsHtml(Geo.navLinks(dorm.label, dorm.lat, dorm.lng));
 
     box.innerHTML = '<div class="leg dorm-leg">' + head + note + stats +
-      (start ? busHtml(busPlan, "宿舍", "dorm") : "") + actions + "</div>";
+      (start ? busHtml(busPlan, "宿舍", "dorm",
+        { label: dorm.label, lat: dorm.lat, lng: dorm.lng }) : "") + actions + "</div>";
   }
 
   /* ================= 渲染：自定义路线 ================= */
@@ -1573,22 +1603,16 @@
         "</div>"
       : "";
 
-    var links = Geo.navLinks(to.name, to.lat, to.lng);
-    var actions = '<div class="leg-actions">' + links.map(function (l) {
-      if (l.copy) {
-        return '<button type="button" class="nav-link" data-copy="' + esc(l.copy) + '">' +
-          esc(l.label) + "</button>";
-      }
-      return '<a class="nav-link" href="' + esc(l.url) + '" target="_blank" rel="noopener">' +
-        esc(l.label) + "</a>";
-    }).join("") + "</div>";
+    var actions = '<div class="leg-walk-head">步行</div>' +
+      navActionsHtml(Geo.navLinks(to.name, to.lat, to.lng));
 
     box.innerHTML = '<div class="leg custom-leg">' +
       '<div class="leg-head">' +
         '<div class="leg-title"><span class="idx">自</span>' +
           esc(fromName + " → " + to.name) + "</div>" +
         '<div class="leg-time">' + esc(metrics ? Geo.formatDuration(metrics.minutes) : "--") + "</div>" +
-      "</div>" + stats + busHtml(busPlan, "终点", "custom") + actions + "</div>";
+      "</div>" + stats + busHtml(busPlan, "终点", "custom",
+        { label: to.name, lat: to.lat, lng: to.lng }) + actions + "</div>";
   }
 
   /* ================= 渲染：课表 ================= */
@@ -3222,8 +3246,8 @@
 
     document.addEventListener("click", function (ev) {
       if (!ev.target || !ev.target.closest) return;
-      /* 方案里如果有按钮/链接，点它们不算选线路 */
-      if (ev.target.closest("button, a")) return;
+      /* 方案里如果有按钮/链接/展开三角，点它们不算选线路 */
+      if (ev.target.closest("button, a, summary")) return;
       var el = ev.target.closest("[data-bus]");
       if (el) toggleBusPick(el);
     });

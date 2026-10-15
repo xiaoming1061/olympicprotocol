@@ -1086,6 +1086,53 @@ summary.leg-bus-head::after {
   color: var(--text-faint);
 }
 
+/* 「步行」标题：跟「校巴」那个标题同一套长相，两块并列 */
+.leg-walk-head {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+  font-size: var(--text-xs);
+  letter-spacing: 0.08em;
+  font-weight: 600;
+  color: var(--text-dim);
+}
+
+/* 选中校巴后的「分步导航」：两段走路各一组按钮 */
+.bus-steps {
+  margin-top: 10px;
+  font-size: var(--text-sm);
+}
+
+.bus-steps > summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--accent-ink);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.bus-steps > summary::-webkit-details-marker { display: none; }
+.bus-steps > summary::after {
+  content: "▸";
+  font-size: 10px;
+  line-height: 1;
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+.bus-steps[open] > summary::after { transform: rotate(90deg); }
+
+.bus-step { margin-top: 10px; }
+
+.bus-step-title {
+  font-size: var(--text-sm);
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 分步导航里的按钮比行程块那排小一号，别喧宾夺主 */
+.bus-step .leg-actions { margin-top: 8px; }
+.bus-step .nav-link { font-size: var(--text-xs); padding: 6px 10px; }
+
 .bus-group { display: flex; flex-direction: column; gap: 4px; }
 .bus-group + .bus-group { border-top: 1px solid var(--line); padding-top: 10px; }
 

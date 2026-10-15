@@ -3278,6 +3278,19 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.bus-count \{/.test(css));
   check("徽章字色按底色亮度挑（亮黄配白字看不清）",
     ["#f2e421", "#3f438f", "#ffc55a"].every((c) => /^#[0-9a-f]{6}$/i.test(OP.Shuttle.inkOn(c))));
+
+  /* ---------- 「步行」并列 + 校巴分步导航 ---------- */
+  check("「步行」标题与「校巴」并列，就在外置导航按钮上方",
+    /class="leg-walk-head">步行<\/div>'\s*\+\s*navActionsHtml\(links\)/.test(appSrc) &&
+    /\.leg-walk-head \{/.test(css));
+  check("选中校巴后展开分步导航：去上车站 + 下车站去教室，各配导航按钮",
+    /function busWalkSteps\(g, dest\)/.test(appSrc) &&
+    /从当前位置到起始校巴站/.test(appSrc) &&
+    /从终点校巴站到/.test(appSrc) &&
+    /state\.busPick\[kind\] === pickId \? busWalkSteps\(g, destPoint\) : ""/.test(appSrc) &&
+    /\.bus-steps > summary \{/.test(css));
+  check("点分步导航的展开三角不会顺手把选中的线路取消掉",
+    /closest\("button, a, summary"\)/.test(appSrc));
 }
 
 
@@ -3996,10 +4009,10 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
     appCode.indexOf("dormFromClass") === -1 && !/dormFromClass\s*:/.test(defaults));
   check("回宿舍也走同一个校巴规划",
     /OP\.Shuttle\.plan\(start\.point/.test(appCode) &&
-    appCode.indexOf('busHtml(busPlan, "宿舍", "dorm")') > 0);
+    appCode.indexOf('busHtml(busPlan, "宿舍", "dorm"') > 0);
   check("校巴那块 HTML 教室和宿舍共用一份",
-    appCode.indexOf("function busHtml(plan, destLabel, kind)") > 0 &&
-    appCode.indexOf('busHtml(leg.busPlan, "教室", "plan")') > 0);
+    appCode.indexOf("function busHtml(plan, destLabel, kind") > 0 &&
+    appCode.indexOf('busHtml(leg.busPlan, "教室", "plan"') > 0);
   check("宿舍的高差也算（缺海拔会自动补查一次）",
     appCode.indexOf("ensureDormElevation") > 0 &&
     appCode.indexOf("OP.Elevation.at(dorm.lat, dorm.lng)") > 0);
@@ -4241,7 +4254,7 @@ console.log("\n[44] 自定义路线 / 去掉两个选项");
   check("用的是同一套规划：走多久 + 校巴方案",
     /OP\.Shuttle\.plan\(fromPoint, toPoint, state\.now/.test(appCode) &&
     /var metrics = P\.walkMetrics\(fromPoint, toPoint, s\)/.test(appCode) &&
-    appCode.indexOf('busHtml(busPlan, "终点", "custom")') > 0);
+    appCode.indexOf('busHtml(busPlan, "终点", "custom"') > 0);
   check("起点终点同一条路会提示，不会算出一段两边一样的路",
     appCode.indexOf("起点和终点是同一栋楼") > 0);
   check("起点选了「我的位置」但没定位时有说明",
