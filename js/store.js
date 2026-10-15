@@ -176,6 +176,14 @@ window.OP = window.OP || {};
         if (saved[key] !== undefined) out[key] = saved[key];
       });
     }
+
+    /* 底图默认值从「简图」改成「街道图」（用户要求）。
+       老存档里存着 schematic 的一起换一次——不然只有新用户看到新默认值。
+       mapDefaultV 是这次迁移的标记，换过就不再动，之后用户自己选什么就是什么。 */
+    if (!(Number(out.mapDefaultV) >= 1)) {
+      if (out.mapMode === "schematic") out.mapMode = "osm";
+      out.mapDefaultV = 1;
+    }
     return out;
   }
 

@@ -52,7 +52,12 @@ window.OP.DEFAULT_DATA = {
     placesRadius: 800,
     placesMerge: true,      // 合并坐标几乎重合的点位
     placesEnglish: true,    // 地图取楼栋时优先用英文名，中文名存成别名
-    mapMode: "schematic",   // schematic 简图 / osm 街道图 / cuhk 港中文地图
+    /* 默认街道图（用户要求），简图排最后。
+       mapDefaultV 是"默认值改过一次"的标记，见 store.js 里的迁移。 */
+    mapMode: "osm",         // osm 街道图 / cuhk 港中文地图 / schematic 简图
+    /* 必须是 0：老存档里没这个字段，合并后会取到默认值——
+       默认值要是 1，迁移就会以为"已经是新版"而跳过（踩过）。 */
+    mapDefaultV: 0,
 
     /* 校巴那块整块收起来（路线页的「校巴」标题可点）。
        true 就完全不显示规划出来的校巴 */

@@ -728,6 +728,17 @@ body {
 /* 下一节课所在的那栋 */
 .bld.is-next { fill: var(--accent); stroke: var(--accent-disabled); stroke-width: 3; }
 
+/* 圈里的标记（「终」「起」）。字号压到 11px 才装得进 r=9 的圈，
+   跟圆点一起缩放，所以不跟 .bld-label 那套大字号走。 */
+.bld-tag {
+  fill: var(--text);
+  font-size: 11px;
+  font-weight: 700;
+  text-anchor: middle;
+  font-family: inherit;
+}
+.bld-tag.is-next { fill: var(--on-accent); font-weight: 800; }
+
 .bld-time {
   fill: var(--text-dim);
   font-size: 13px;
@@ -1069,7 +1080,8 @@ body {
    颜色特意用 --text 而不是 --text-dim：淡灰那档看着就像没加粗。 */
 .leg-bus-head,
 .leg-walk-head {
-  font-size: var(--text-lg);
+  /* 比大标题小一号：16px 那两个标题压在行程里还是偏重 */
+  font-size: var(--text-md);
   letter-spacing: 0.08em;
   font-weight: 600;
   color: var(--text);

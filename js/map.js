@@ -323,7 +323,14 @@ window.OP = window.OP || {};
       var r = s.isNext ? 11 : 9;
 
       parts.push('<circle class="bld' + (s.isNext ? " is-next" : " is-today") +
-        '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>');
+        '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>' +
+        /* 圈里只写「终」「起」这类标记——跟「返回宿舍」那张图的终点是同一套。
+           纯数字（今天第几节）不写：用户要求圈里别堆序号。 */
+        (/^[0-9]+$/.test(String(s.order || "")) || !s.order
+          ? ""
+          : '<text class="bld-tag' + (s.isNext ? " is-next" : "") +
+            '" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '">' +
+            esc(s.order) + "</text>"));
 
       marks.push({ x: p.x, y: p.y, r: r });
 

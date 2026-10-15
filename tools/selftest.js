@@ -2014,8 +2014,10 @@ console.log("\n[24] 真实地图底图");
     ["schematic", "osm", "cuhk"].every(function (m) {
       return html.indexOf('data-mapmode="' + m + '"') > 0;
     }));
-  check("默认是简图（离线可用、不依赖外部资源）",
-    OP.Store.defaults().settings.mapMode === "schematic");
+  check("默认是街道图（用户要求），简图排到最后",
+    OP.Store.defaults().settings.mapMode === "osm" &&
+    /data-mapmode="schematic"[^>]*>简图<\/button>\s*<\/div>/.test(
+      fs.readFileSync(path.join(root, "index.html"), "utf8")));
 
   /* 踩过的坑：写成后代选择器会连 Leaflet 版权栏里的国旗 SVG 一起拉伸 */
   check("SVG 尺寸规则只作用于简图本身，不能写成后代选择器",
@@ -3310,7 +3312,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   /* ---------- 美术：字号统一 / 顿一拍 / 切卡片也展开 / 停运块不自己折 ---------- */
   check("「校巴」和「步行」标题同一字号（16px，用户要求以校巴为准）",
     /* 两个标题共用一条规则：改一处两个都变，不会再各自漂移 */
-    /\.leg-bus-head,\s*\.leg-walk-head \{[\s\S]{0,240}font-size: var\(--text-lg\)[\s\S]{0,240}font-weight: 600[\s\S]{0,240}color: var\(--text\)/.test(css) &&
+    /\.leg-bus-head,\s*\.leg-walk-head \{[\s\S]{0,300}font-size: var\(--text-md\)[\s\S]{0,240}font-weight: 600[\s\S]{0,240}color: var\(--text\)/.test(css) &&
     /* 两条重置规则里不能写 font: inherit / color: inherit——
        上一版就是它俩把「校巴」的字重和颜色改成了别的值，两边才对不上 */
     /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,320}font-family: inherit;/.test(css) &&
@@ -3340,6 +3342,20 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.bus-group\.is-picked \{[\s\S]{0,260}padding: 10px var\(--space-sm\)/.test(css));
   check("课程之间的分界线加粗",
     /\.leg \+ \.leg \{ border-top: 2px solid var\(--line-strong\); \}/.test(css));
+
+  /* ---------- 课室标记 / 底图默认值 ---------- */
+  check("课室楼栋标记写「终」，跟「返回宿舍」那张图一致",
+    /order: "终"/.test(appSrc) &&
+    /class="bld-tag/.test(mapSrc) &&
+    /\.bld-tag \{/.test(css));
+  check("简图圈里只写「终」「起」这类标记，今天的序号不写",
+    /\^\[0-9\]\+\$\/\.test\(String\(s\.order/.test(mapSrc));
+  check("底图默认改成街道图，简图排最后；老存档也换一次",
+    /mapMode: "osm"/.test(defaultsSrc) &&
+    /* 默认必须是 0，否则老存档合并后就"看起来已经是新版"，迁移被跳过 */
+    /mapDefaultV: 0/.test(defaultsSrc) &&
+    /Number\(out\.mapDefaultV\) >= 1/.test(
+      fs.readFileSync(path.join(root, "js", "store.js"), "utf8")));
 }
 
 

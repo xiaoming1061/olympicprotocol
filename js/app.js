@@ -773,7 +773,8 @@
       /* 只留一栋也要重新编号，否则地图上会孤零零地标着「3」 */
       shownStops = [{
         building: pickedLeg.building,
-        order: 1,
+        /* 「终」而不是序号：跟「返回宿舍」那张图的终点标记保持一致 */
+        order: "终",
         times: [pickedLeg.course.start],
         time: pickedLeg.course.start,
         isNext: true
@@ -1037,7 +1038,7 @@
    */
   function renderRouteMap() {
     var d = slideMapData(routeSlide);
-    var mode = data.settings.mapMode || "schematic";
+    var mode = data.settings.mapMode || "osm";
     var svg = $("#mapSvg");
     var realBox = $("#mapReal");
     if (!svg || !realBox) return;
