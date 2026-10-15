@@ -54,6 +54,10 @@ window.OP.DEFAULT_DATA = {
     placesEnglish: true,    // 地图取楼栋时优先用英文名，中文名存成别名
     mapMode: "schematic",   // schematic 简图 / osm 街道图 / cuhk 港中文地图
 
+    /* 校巴那块整块收起来（路线页的「校巴」标题可点）。
+       true 就完全不显示规划出来的校巴 */
+    busCollapsed: false,
+
     /* 返回宿舍：
        dormId 指向 data/dorms.js 里的某一条（默认宿舍），或者 addedDorms 里的
        一条（老版本用「当前位置添加」补的）。addedDorms 是数组，跟默认数据
@@ -61,11 +65,6 @@ window.OP.DEFAULT_DATA = {
        起点固定用"我的位置"，所以没有 dormFromClass 这个开关了。 */
     dormId: "",
     addedDorms: [],
-
-    /* 路线规划的起点：
-         "here" 用当前位置（默认）
-         "prev" 用今天正在上/刚上完那节课的楼栋——教室里定位飘、或者没开定位时用 */
-    departFrom: "here",
 
     /* 自定义路线：上次选的起点/终点楼栋 id。空字符串表示起点用「我的位置」 */
     customFrom: "",

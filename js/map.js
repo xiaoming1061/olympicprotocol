@@ -317,13 +317,13 @@ window.OP = window.OP || {};
       /* 圈保持够大（简图是"一眼看清今天去哪几栋"），
          字改成简写 + 小一号 + 半透明，免得一堆全称糊在一起。
          真实街道图上那是另一回事——那边会压住地图细节，所以那边反过来缩小。 */
-      var r = s.isNext ? 18 : 15;
+      /* 圈里不再写序号（用户要求）：数字跟地名挤在一起反而乱，
+         而且好几栋楼时"1 2 3"还得分神去对行程列表。
+         缩小成一个"这里有一栋"的记号，靠颜色区分下一节和今天其余。 */
+      var r = s.isNext ? 11 : 9;
 
       parts.push('<circle class="bld' + (s.isNext ? " is-next" : " is-today") +
-        '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>' +
-        '<text class="bld-order' + (s.isNext ? " is-next" : "") +
-        '" x="' + p.x.toFixed(1) + '" y="' + (p.y + 5).toFixed(1) + '">' +
-        esc(s.order || "") + "</text>");
+        '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>');
 
       marks.push({ x: p.x, y: p.y, r: r });
 

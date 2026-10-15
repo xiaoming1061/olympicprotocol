@@ -290,7 +290,7 @@ window.OP = window.OP || {};
    * 生成当天的路线链：当前位置 → 第一节 → 第二节 → …
    * 每段带上「必须几点出发」，出发时间不会早于上一节课下课。
    */
-  function buildLegs(data, position, date, originLabel) {
+  function buildLegs(data, position, date) {
     var list = todayCourses(data, date);
     /* 已经下课的也留着：用户要求"即使课程结束也要显示"。
        以前这里会用 c.end > now 把下课的先滤掉，于是已下课的课
@@ -300,9 +300,7 @@ window.OP = window.OP || {};
 
     var legs = [];
     var fromPoint = position || null;
-    /* originLabel 让调用方换掉第一段的起点叫法——比如"从上一节课出发"时
-       起点是那栋教学楼，不该还写着"我的位置" */
-    var fromName = position ? (originLabel || "我的位置") : null;
+    var fromName = position ? "我的位置" : null;
     var prevEnd = date;
     var prevBuilding = null;
 
@@ -351,12 +349,9 @@ window.OP = window.OP || {};
         prevEnd = new Date(Math.max(prevEnd.getTime(), end.getTime()));
       }
 
-      /* 通往下一段的起点是这栋楼，海拔要一起带上——
-         之前只复制了经纬度，导致第二段之后爬升全部按"未知"处理 */
-      fromPoint = building
-        ? { lat: building.lat, lng: building.lng, elevation: building.elevation }
-        : fromPoint;
-      fromName = building ? building.name : fromName;
+      /* 起点固定"我的位置"：用户要求**每一段都从当前位置算起**，
+         不再把上一节课的楼栋当成下一段的起点。
+         prevBuilding 仍然要更新——它是用来判断"连堂课"的，跟起点无关。 */
       prevBuilding = building || prevBuilding;
     });
 

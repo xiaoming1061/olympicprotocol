@@ -150,7 +150,8 @@ check("折算距离大于直线距离", metric.distance > metric.straight,
 const legs = P.buildLegs(data, { lat: 31.2300, lng: 121.4710 }, monday);
 check("周一生成了 3 段行程", legs.length === 3, legs.length);
 check("第一段的起点是「我的位置」", legs[0].fromName === "我的位置", legs[0].fromName);
-check("第二段的起点是上一节课的楼栋", legs[1].fromName === buildingA.name, legs[1].fromName);
+check("第二段的起点也是「我的位置」（用户要求每段都从当前位置算，不再接上一节课的楼栋）",
+  legs[1].fromName === "我的位置", legs[1].fromName);
 
 const first = legs[0];
 const expectedDepart = P.hm("08:00") - first.metrics.minutes - data.settings.bufferMinutes;
@@ -175,9 +176,9 @@ check("09:30 时仍在进行中的课被标为 ongoing",
 const midRoute = P.routeLegs(data, null, new Date(2026, 8, 28, 9, 30, 0));
 check("路线链排除了正在上的课", midRoute.length === 2, midRoute.length);
 check("没有定位时第一段没有距离（起点不明）", midClass[0].metrics === null);
-check("没有定位时后续段按上一节课的楼栋估算",
-  midRoute[0].metrics !== null && midRoute[0].metrics.distance > 0,
-  midRoute[0].metrics && midRoute[0].metrics.distance.toFixed(0) + " 米");
+check("没有定位时每一段都没有距离——起点统一是「我的位置」，不再借用楼栋",
+  midClass.every((l) => l.metrics === null),
+  midClass.map((l) => (l.metrics ? "有" : "无")).join(""));
 check("没有定位时也能算出出发时间",
   midRoute[0].departAt instanceof Date, String(midRoute[0].departAt));
 
@@ -288,9 +289,9 @@ check("其余楼栋连暗点都不画",
   (fakeSvg.innerHTML.match(/<circle/g) || []).length + " 个圆圈");
 const bldRadii = Array.from(fakeSvg.innerHTML.matchAll(/<circle class="bld[^"]*"[^>]*r="(\d+)"/g))
   .map((m) => m[1]);
-check("简图的楼栋圈够大（下一节 18、其余 15）",
-  bldRadii.indexOf("18") >= 0 && bldRadii.indexOf("15") >= 0 &&
-  bldRadii.every((r) => r === "15" || r === "18"),
+check("简图的楼栋圈缩小成记号（下一节 11、其余 9）",
+  bldRadii.indexOf("11") >= 0 && bldRadii.indexOf("9") >= 0 &&
+  bldRadii.every((r) => r === "9" || r === "11"),
   bldRadii.join(" "));
 check("我的位置标记也跟着放大",
   /class="me-ring"[^>]*r="13"/.test(fakeSvg.innerHTML) &&
@@ -317,9 +318,11 @@ check("顶栏和底部导航都压在地图容器之上",
   "topbar=" + topbarZ + " tabbar=" + tabbarZ + " map-wrap=0");
 check("下一节课有专门的标记",
   fakeSvg.innerHTML.indexOf("is-next") > 0 && fakeSvg.innerHTML.indexOf("下一节") > 0);
-check("今天要去的楼栋带编号和时间",
-  fakeSvg.innerHTML.indexOf("bld-order") > 0 && fakeSvg.innerHTML.indexOf("bld-time") > 0);
-check("第一栋的编号是 1", fakeSvg.innerHTML.indexOf('class="bld-order is-next"') > 0);
+check("今天要去的楼栋只标时间，圈里不再写编号（用户要求）",
+  fakeSvg.innerHTML.indexOf("bld-time") > 0 &&
+  fakeSvg.innerHTML.indexOf("bld-order") === -1);
+check("圈靠颜色区分「下一节」和「今天其余」",
+  fakeSvg.innerHTML.indexOf("bld is-next") > 0 && fakeSvg.innerHTML.indexOf("bld is-today") > 0);
 
 /* 没定位时要在图上说明，不然会以为"我的位置"坏了 */
 const noPosSvg = { innerHTML: "" };
@@ -1942,8 +1945,8 @@ console.log("\n[23] 垂直距离（爬升）计算");
   /* 海拔模块本身 */
   const E = OP.Elevation;
   /* ---------- 多段行程里每一段都要带上起点海拔 ----------
-     踩过的坑：通往下一段时起点被重建成 { lat, lng }，海拔字段丢了，
-     结果只有第一段显示爬升，后面全按"未知"处理。 */
+     现在每一段的起点都是"我的位置"（用户要求），所以四段的起点海拔
+     都是 28 米，爬升分别是 28→146 / 28→107 / 28→119 / 28→99。 */
   const climbWorld = demo();
   climbWorld.campus.buildings = [
     { id: "ycl", name: "Y.C. Liang Hall", alias: [], lat: 22.420101, lng: 114.206546, elevation: 146 },
@@ -1969,12 +1972,12 @@ console.log("\n[23] 垂直距离（爬升）计算");
     climbLegs.map((l) => (l.metrics.hasElevation ? "有" : "无")).join(""));
   check("第一段爬升 118 米（28 → 146）",
     Math.round(climbLegs[0].metrics.rise) === 118, climbLegs[0].metrics.rise);
-  check("第二段是下坡，爬升为 0（146 → 107）",
-    climbLegs[1].metrics.rise === 0, climbLegs[1].metrics.rise);
-  check("第三段有 12 米爬升（107 → 119）",
-    Math.round(climbLegs[2].metrics.rise) === 12, climbLegs[2].metrics.rise);
-  check("第四段又是下坡（119 → 99）",
-    climbLegs[3].metrics.rise === 0, climbLegs[3].metrics.rise);
+  check("第二段同样从「我的位置」出发，爬升 79 米（28 → 107）",
+    Math.round(climbLegs[1].metrics.rise) === 79, climbLegs[1].metrics.rise);
+  check("第三段爬升 91 米（28 → 119）",
+    Math.round(climbLegs[2].metrics.rise) === 91, climbLegs[2].metrics.rise);
+  check("第四段爬升 71 米（28 → 99）",
+    Math.round(climbLegs[3].metrics.rise) === 71, climbLegs[3].metrics.rise);
   check("每一段的起点都带着海拔",
     climbLegs.every((l) => !l.fromPoint || typeof l.fromPoint.elevation === "number"),
     climbLegs.map((l) => l.fromPoint && typeof l.fromPoint.elevation).join(","));
@@ -2435,8 +2438,8 @@ console.log("\n[29] 指定补录的楼栋 + 简图上的圈与字");
   const mapSource = fs.readFileSync(path.join(root, "js", "map.js"), "utf8");
   const realMapSource = fs.readFileSync(path.join(root, "js", "realmaps.js"), "utf8");
   const pageCss = fs.readFileSync(path.join(root, "styles.css"), "utf8");
-  check("简图的楼栋圈放大到 18 / 15",
-    /var r = s\.isNext \? 18 : 15;/.test(mapSource));
+  check("简图的楼栋圈缩小成记号 11 / 9",
+    /var r = s\.isNext \? 11 : 9;/.test(mapSource));
   check("简图的我的位置圆点放大到 10、脉冲环 13",
     /class="me-ring"[\s\S]{0,140}?r="13"/.test(mapSource) &&
     /class="me-dot"[\s\S]{0,140}?r="10"/.test(mapSource));
@@ -2485,8 +2488,8 @@ console.log("\n[29] 指定补录的楼栋 + 简图上的圈与字");
   check("楼名和时间改成小一号（17 / 13）",
     fontSizeOf(".bld-label") === 17 && fontSizeOf(".bld-time") === 13,
     [fontSizeOf(".bld-label"), fontSizeOf(".bld-time")].join(" / "));
-  check("圈里的编号和「我的位置」还是大的",
-    fontSizeOf(".bld-order") === 17 && fontSizeOf(".me-label") === 19,
+  check("楼栋圈里不再写编号（.bld-order 的样式也删干净了）",
+    fontSizeOf(".bld-order") === null && fontSizeOf(".me-label") === 19,
     [fontSizeOf(".bld-order"), fontSizeOf(".me-label")].join(" / "));
   check("校巴站名也小了一号", fontSizeOf(".bus-stop-label") === 12);
 
@@ -2501,8 +2504,8 @@ console.log("\n[29] 指定补录的楼栋 + 简图上的圈与字");
     /radius:\s*5,/.test(realMapSource));
   check("真实底图的标签字号缩小到 11px",
     /\.leaflet-tooltip\.rm-tip\s*\{[\s\S]*?font-size:\s*11px/.test(pageCss));
-  check("两个尺寸确实是反着来的（简图比真实底图大）",
-    /var r = s\.isNext \? 18 : 15;/.test(mapSource) && /iconSize:\s*\[24, 24\]/.test(realMapSource));
+  check("两边都收小了（简图 11 / 9，真实底图 24px）",
+    /var r = s\.isNext \? 11 : 9;/.test(mapSource) && /iconSize:\s*\[24, 24\]/.test(realMapSource));
 
   /* --- 简图的字：地名半透明做底衬，圆点编号 /「下一节」/「我的位置」保持不透明 --- */
   const textRule = /\.bld-label,\s*\.bld-time,\s*\.bld-flag,\s*\.dist-label,\s*\.me-label,\s*\.map-note\s*\{([^}]*)\}/.exec(pageCss);
@@ -3265,15 +3268,14 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   check("「正在上」排在「未开始」之前，而且只有真正上完的才淡化",
     /var ORDER = \{ ongoing: 0, upcoming: 1, past: 2 \}/.test(appSrc) &&
     /var isPastLeg = function \(leg\) \{ return leg\.status === "past"; \}/.test(appSrc));
-  check("起点开关：关 = 当前位置，开 = 上一节课的地点",
-    /departFrom: "here"/.test(defaultsSrc) &&
-    /data\.settings\.departFrom === "prev"/.test(appSrc) &&
-    /P\.buildLegs\(data, pos, state\.now, label\)/.test(appSrc));
-  check("开关是圆形滑扭 + 凹槽轨道（不是复选框）",
-    pageHtml.indexOf('id="swDepartFrom"') > 0 &&
-    /role="switch"/.test(pageHtml) &&
-    /\.switch-knob \{[\s\S]{0,260}border-radius: 50%/.test(css) &&
-    /\.switch \{[\s\S]{0,340}inset 0 2px 4px/.test(css));
+  check("校巴整块可折叠，收起就完全不显示可乘路线",
+    /'<details class="leg-bus"' \+ \(data\.settings\.busCollapsed \? "" : " open"\)/.test(appSrc) &&
+    /busCollapsed: false/.test(defaultsSrc) &&
+    /data\.settings\.busCollapsed = !el\.open;/.test(appSrc));
+  check("折叠状态记进设置，下次打开还是收着的；标题整行可点",
+    /addEventListener\("toggle"[\s\S]{0,240}leg-bus/.test(appSrc) &&
+    /summary\.leg-bus-head \{[\s\S]{0,200}cursor: pointer/.test(css) &&
+    /\.bus-count \{/.test(css));
   check("徽章字色按底色亮度挑（亮黄配白字看不清）",
     ["#f2e421", "#3f438f", "#ffc55a"].every((c) => /^#[0-9a-f]{6}$/i.test(OP.Shuttle.inkOn(c))));
 }

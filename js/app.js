@@ -292,25 +292,7 @@
 
   function nextInfo() {
     var pos = effectivePosition();
-    var label = "我的位置";
-
-    /* 「从上一节课出发」开关（路线页那个滑扭）：打开时把起点换成今天
-       **正在上或刚上完**的那节课的楼栋，而不是 GPS 位置。
-       教室里定位经常飘、或者干脆没开定位，这时候更需要它。 */
-    if (data.settings.departFrom === "prev") {
-      var prevCourse = null;
-      P.todayCourses(data, state.now).forEach(function (c) {
-        var st = P.statusOf(c, state.now);
-        if (st === "ongoing" || st === "past") prevCourse = c;
-      });
-      var pb = prevCourse ? P.buildingById(data, prevCourse.buildingId) : null;
-      if (pb && typeof pb.lat === "number") {
-        pos = { lat: pb.lat, lng: pb.lng, elevation: pb.elevation };
-        label = pb.name;
-      }
-    }
-
-    var legs = P.buildLegs(data, pos, state.now, label);
+    var legs = P.buildLegs(data, pos, state.now);
     /* 顺序：**正在上 → 未开始 → 已下课**。
        "正在上"排最前是用户要求的：此刻最相关的是你现在待的那节课。
        过去的一律沉到最后。sort 是稳定的，同类之间保持 buildLegs 给的先后。 */
@@ -627,7 +609,12 @@
         stopped.map(renderGroup).join("") + "</details>";
     }
 
-    return '<div class="leg-bus"><div class="leg-bus-head">校巴</div>' + html + "</div>";
+    /* 整块做成可折叠的：收起来就完全不显示规划出来的校巴（用户要求）。
+       状态记在设置里，下次打开页面还是收着的。
+       计数写在标题上，收起来也知道有几条可乘。 */
+    return '<details class="leg-bus"' + (data.settings.busCollapsed ? "" : " open") + ">" +
+      '<summary class="leg-bus-head">校巴<span class="bus-count">' +
+        groups.length + " 条可乘</span></summary>" + html + "</details>";
   }
 
   /* 去教室那一段的校巴方案 */
@@ -638,14 +625,6 @@
   }
 
   function renderRoute() {
-    /* 起点开关的状态。滑扭的样子由 aria-checked 驱动（见 styles.css），
-       所以这里只要把属性刷对就行。 */
-    var swDepart = $("#swDepartFrom");
-    if (swDepart) {
-      swDepart.setAttribute("aria-checked",
-        data.settings.departFrom === "prev" ? "true" : "false");
-    }
-
     var info = nextInfo();
     var buildings = (data.campus && data.campus.buildings) || [];
     var buffer = Number(data.settings.bufferMinutes) || 0;
@@ -3208,6 +3187,15 @@
       pickers.forEach(function (p) { p.hideIfOutside(ev.target); });
     });
 
+    /* 校巴那块折叠/展开：把状态记进设置，下次打开还是收着的。
+       toggle 事件不冒泡，所以第三个参数要 true（捕获阶段听）。 */
+    document.addEventListener("toggle", function (ev) {
+      var el = ev.target;
+      if (!el || el.tagName !== "DETAILS" || !el.classList.contains("leg-bus")) return;
+      data.settings.busCollapsed = !el.open;
+      save();
+    }, true);
+
     /* --- 点选校巴方案 ---
        点一下选中：地图只画那一条的站和连线，卡片上高亮。再点一下取消。
        用事件委托——方案列表每次 render() 都会重建，逐条绑会丢。 */
@@ -3730,12 +3718,6 @@
     $("#langPicker").addEventListener("click", function (ev) {
       var btn = ev.target && ev.target.closest ? ev.target.closest(".lang-btn") : null;
       if (btn) OP.I18N.set(btn.getAttribute("data-lang"));
-    });
-
-    /* 路线规划的起点开关：关=我的位置，开=上一节课的地点 */
-    $("#swDepartFrom").addEventListener("click", function () {
-      data.settings.departFrom = data.settings.departFrom === "prev" ? "here" : "prev";
-      saveAndRender();
     });
 
     /* --- 切回前台立刻刷新 --- */
