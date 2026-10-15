@@ -241,6 +241,24 @@ check("代码里不再使用 geo: 协议（iOS 不支持）",
     return !l.url || l.url.indexOf("geo:") !== 0;
   }));
 
+/* 起点可以指定：校巴分步导航里「从终点校巴站到教室」那一段的起点是**车站**，
+   不是当前位置——不给的话点进去会变成"从我这儿出发"（用户报过这个）。
+   不指定起点的场景（去教室、回宿舍、走到上车站）保持原样，让地图 App
+   自己取当前位置，比我们塞一个可能过期的坐标更准。 */
+const fromLinks = Geo.navLinks("教室", 22.42, 114.21, { lat: 22.41, lng: 114.2, name: "大學站" });
+check("给了起点：高德 from / 百度 origin / Google origin / 苹果 saddr 都带上",
+  /* 高德 / 百度那两家写的是火星 / 百度坐标，数值会挪一点，所以只认
+     "起点在车站那一侧（114.2x）"以及后面跟着的车站名 */
+  /from=114\.2\d+,22\.4\d+,%E5%A4%A7/.test(fromLinks[0].url) &&
+  /origin=latlng:22\.4\d+,114\.2\d+\|name:%E5%A4%A7/.test(fromLinks[1].url) &&
+  fromLinks[2].url.indexOf("origin=22.410000,114.200000") > 0 &&
+  fromLinks[3].url.indexOf("saddr=22.410000,114.200000") > 0,
+  fromLinks.map((l) => l.url).join(" | "));
+check("起点的中文名字也编码了", fromLinks[1].url.indexOf("%E5%A4%A7") > 0);
+check("不给起点时四家都不写起点（保持「从我这儿出发」的原行为）",
+  links[0].url.indexOf("from=") === -1 && links[1].url.indexOf("origin=") === -1 &&
+  links[2].url.indexOf("origin=") === -1 && links[3].url.indexOf("saddr=") === -1);
+
 console.log("\n[7] 地图渲染");
 const fakeSvg = { innerHTML: "" };
 OP.MapView.render(fakeSvg, {
@@ -3390,6 +3408,15 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.bus-steps-topin \{ overflow: hidden; min-height: 0; \}/.test(css) &&
     /\.bus-steps\.is-pending > \.bus-steps-top \{ grid-template-rows: 0fr; \}/.test(css) &&
     /el\.classList\.remove\("is-pending"\);/.test(appSrc));
+
+  /* 第二段「从终点校巴站到教室」的起点是**那个车站**，不是当前位置：
+     外置地图要是按当前位置算，这一段就白规划了（用户报过）。 */
+  check("「从终点校巴站到教室」的外置导航从车站出发，不是从当前位置",
+    /from: g\.alight && g\.alight\.stop,/.test(appSrc) &&
+    /navActionsHtml\(Geo\.navLinks\(name, t\.lat, t\.lng, from\)\)/.test(appSrc) &&
+    /row\.from && typeof row\.from\.lat === "number"/.test(appSrc) &&
+    /* 第一段（走到上车站）本来就是从我这儿走，不给起点 */
+    /target: g\.board && g\.board\.stop, min: g\.walkBeforeMin \}/.test(appSrc));
   check("标题那一行是内容高，不是跟身子均分（1fr 1fr 会把标题撑成一半高）",
     !/\.bus-steps \{[\s\S]{0,200}?grid-template-rows: 1fr 1fr/.test(css));
   check("手动折叠时标题行留着（没类 = 标题可见、身子收着）",
@@ -4415,6 +4442,12 @@ console.log("\n[44] 自定义路线 / 去掉两个选项");
   check("起点终点可以一键对调",
     /btnCustomSwap"\)\.addEventListener/.test(appCode) &&
     /data\.settings\.customFrom = data\.settings\.customTo;/.test(appCode));
+
+  /* 起点挑了具体楼栋时，"步行"那排按钮也要从那栋楼出发（跟校巴分步导航同一个毛病）；
+     起点是「我的位置」就不给起点，让地图 App 自己取位置。 */
+  check("自定义路线选了几号楼当起点，步行按钮也从那栋楼出发",
+    /var walkFrom = fromBuilding && typeof fromBuilding\.lat === "number"/.test(appCode) &&
+    /navActionsHtml\(Geo\.navLinks\(to\.name, to\.lat, to\.lng, walkFrom\)\)/.test(appCode));
 
   /* 顺带修掉的：复制坐标以前只绑在行程列表上，返回宿舍 / 自定义路线里点了没反应 */
   check("「复制坐标」改成全局委托（三个卡片都能用）",

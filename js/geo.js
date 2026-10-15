@@ -101,23 +101,47 @@ window.OP = window.OP || {};
 
   /* ---------- 导航链接 ---------- */
 
-  function navLinks(name, lat, lng) {
+  /**
+   * 一排外置地图的导航链接。
+   *
+   * @param name 目的地名字（写进链接里，地图 App 会显示成"XX"）
+   * @param lat,lng 目的地坐标（WGS-84）
+   * @param from 可选的**起点**：{ lat, lng, name }。
+   *             不给就是"从我这儿出发"——那才是多数场景（去教室、回宿舍），
+   *             让地图 App 自己取当前位置比我们塞一个坐标更准。
+   *             但像校巴分步导航里"从终点校巴站到教室"这种，起点是一个
+   *             明确的车站，不是当前位置，就得给（用户报过这个）。
+   */
+  function navLinks(name, lat, lng, from) {
     var gcj = wgs84ToGcj02(lat, lng);
     var bd = gcj02ToBd09(gcj.lat, gcj.lng);
     var label = encodeURIComponent(name);
 
+    /* 起点是车站/楼栋，一样要转成各家坐标系 */
+    var fGcj = from ? wgs84ToGcj02(from.lat, from.lng) : null;
+    var fBd = fGcj ? gcj02ToBd09(fGcj.lat, fGcj.lng) : null;
+    var fLabel = from ? encodeURIComponent(from.name || "") : "";
+
     return [
       {
         label: "高德地图",
-        url:
-          "https://uri.amap.com/navigation?to=" +
+        /* uri.amap.com 不写 from 就是"从当前位置出发" */
+        url: "https://uri.amap.com/navigation?" +
+          (fGcj
+            ? "from=" + fGcj.lng.toFixed(6) + "," + fGcj.lat.toFixed(6) + "," + fLabel + "&"
+            : "") +
+          "to=" +
           gcj.lng.toFixed(6) + "," + gcj.lat.toFixed(6) + "," + label +
           "&mode=walk&coordinate=gaode&callnative=1"
       },
       {
         label: "百度地图",
-        url:
-          "https://api.map.baidu.com/direction?destination=latlng:" +
+        url: "https://api.map.baidu.com/direction?" +
+          (fBd
+            ? "origin=latlng:" + fBd.lat.toFixed(6) + "," + fBd.lng.toFixed(6) +
+              "|name:" + fLabel + "&"
+            : "") +
+          "destination=latlng:" +
           bd.lat.toFixed(6) + "," + bd.lng.toFixed(6) + "|name:" + label +
           "&mode=walking&region=%E5%85%A8%E5%9B%BD&output=html&src=webapp.olympic-protocol"
       },
@@ -128,13 +152,17 @@ window.OP = window.OP || {};
            香港用标准 WGS-84 坐标，不需要转换。 */
         /* primary：不问就跳这家。"现在出发"按钮用的就是它 */
         primary: true,
-        url: "https://www.google.com/maps/dir/?api=1&destination=" +
+        url: "https://www.google.com/maps/dir/?api=1" +
+          (from ? "&origin=" + from.lat.toFixed(6) + "," + from.lng.toFixed(6) : "") +
+          "&destination=" +
           lat.toFixed(6) + "," + lng.toFixed(6) + "&travelmode=walking"
       },
       {
         label: "苹果地图",
         /* maps.apple.com 也是通用链接，会直接唤起「地图」App */
-        url: "https://maps.apple.com/?daddr=" + lat.toFixed(6) + "," + lng.toFixed(6) + "&dirflg=w"
+        url: "https://maps.apple.com/?" +
+          (from ? "saddr=" + from.lat.toFixed(6) + "," + from.lng.toFixed(6) + "&" : "") +
+          "daddr=" + lat.toFixed(6) + "," + lng.toFixed(6) + "&dirflg=w"
       },
       {
         label: "复制坐标",

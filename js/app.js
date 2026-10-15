@@ -628,7 +628,14 @@
       { title: "从当前位置到起始校巴站", target: g.board && g.board.stop, min: g.walkBeforeMin }
     ];
     if (dest && typeof dest.lat === "number") {
-      rows.push({ title: "从终点校巴站到" + (dest.label || "终点"), target: dest, min: g.walkAfterMin });
+      /* 这一段的起点是**下车的那个校巴站**，不是当前位置——
+         外置地图要按这个起点算路线（用户报过：点进去默认从我这儿出发）。 */
+      rows.push({
+        title: "从终点校巴站到" + (dest.label || "终点"),
+        target: dest,
+        from: g.alight && g.alight.stop,
+        min: g.walkAfterMin
+      });
     }
 
     var opened = mode === "open" || mode === "stale";
@@ -650,12 +657,16 @@
           var t = row.target;
           if (!t || typeof t.lat !== "number") return "";
           var name = t.zh || t.name || t.label || "目的地";
+          /* 起点给了站/楼就按它走；没给就是"我这儿出发"，交给地图 App */
+          var from = row.from && typeof row.from.lat === "number"
+            ? { lat: row.from.lat, lng: row.from.lng, name: row.from.zh || row.from.en || "" }
+            : null;
           return '<div class="bus-step">' +
             '<div class="bus-step-title">' + esc(row.title) +
               (typeof row.min === "number" && isFinite(row.min)
                 ? " · 步行 " + Math.round(row.min) + " 分钟" : "") +
             "</div>" +
-            navActionsHtml(Geo.navLinks(name, t.lat, t.lng)) +
+            navActionsHtml(Geo.navLinks(name, t.lat, t.lng, from)) +
           "</div>";
         }).join("") +
       "</div></div></div>";
@@ -1766,8 +1777,13 @@
         "</div>"
       : "";
 
+    /* 起点挑了具体楼栋时，这一排"步行"也要从那栋楼出发；
+       起点是「我的位置」就不给起点——让地图 App 自己取当前位置更准。 */
+    var walkFrom = fromBuilding && typeof fromBuilding.lat === "number"
+      ? { lat: fromBuilding.lat, lng: fromBuilding.lng, name: fromBuilding.name }
+      : null;
     var actions = '<div class="leg-walk-head">步行</div>' +
-      navActionsHtml(Geo.navLinks(to.name, to.lat, to.lng));
+      navActionsHtml(Geo.navLinks(to.name, to.lat, to.lng, walkFrom));
 
     box.innerHTML = '<div class="leg custom-leg">' +
       '<div class="leg-head">' +
