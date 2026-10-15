@@ -933,6 +933,57 @@ body {
 
 .leg-warn { margin-top: 9px; font-size: 12px; color: var(--warn); }
 
+/* ---------- 开关（圆形滑扭 + 凹槽轨道） ---------- */
+
+.switch-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.switch-row > span { font-size: var(--text-sm); color: var(--text-dim); }
+
+.switch {
+  flex: none;
+  position: relative;
+  width: 46px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--line);
+  /* 凹槽：内阴影压出"陷下去"的轨道 */
+  box-shadow: inset 0 2px 4px rgba(120, 80, 100, 0.22);
+  cursor: pointer;
+  transition: background var(--dur-hover) var(--ease-out),
+    border-color var(--dur-hover) var(--ease-out);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--paper-warm);
+  box-shadow: 0 1px 3px rgba(120, 80, 100, 0.35);
+  transition: transform var(--dur-hover) var(--ease-out);
+}
+
+.switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch[aria-checked="true"] .switch-knob { transform: translateX(20px); }
+
+@media (hover: hover) {
+  .switch:hover { border-color: var(--accent); }
+}
+
 /* ---------- 返回宿舍 / 自定义路线 ---------- */
 
 .dorm-plan, .custom-plan { margin-top: 12px; }

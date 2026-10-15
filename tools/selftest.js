@@ -3259,6 +3259,21 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
      这个 bug 排查了一整轮，这里钉住它。 */
   check("连线的 style 拼在 class 引号之外（引号套引号会把 style 整条吃掉）",
     /\(link\.ride \? " is-ride" : ""\) \+ '"' \+ stroke/.test(mapSrc));
+
+  /* ---------- 行程顺序 + 起点开关 ---------- */
+  const defaultsSrc = fs.readFileSync(path.join(root, "data", "defaults.js"), "utf8");
+  check("「正在上」排在「未开始」之前，而且只有真正上完的才淡化",
+    /var ORDER = \{ ongoing: 0, upcoming: 1, past: 2 \}/.test(appSrc) &&
+    /var isPastLeg = function \(leg\) \{ return leg\.status === "past"; \}/.test(appSrc));
+  check("起点开关：关 = 当前位置，开 = 上一节课的地点",
+    /departFrom: "here"/.test(defaultsSrc) &&
+    /data\.settings\.departFrom === "prev"/.test(appSrc) &&
+    /P\.buildLegs\(data, pos, state\.now, label\)/.test(appSrc));
+  check("开关是圆形滑扭 + 凹槽轨道（不是复选框）",
+    pageHtml.indexOf('id="swDepartFrom"') > 0 &&
+    /role="switch"/.test(pageHtml) &&
+    /\.switch-knob \{[\s\S]{0,260}border-radius: 50%/.test(css) &&
+    /\.switch \{[\s\S]{0,340}inset 0 2px 4px/.test(css));
   check("徽章字色按底色亮度挑（亮黄配白字看不清）",
     ["#f2e421", "#3f438f", "#ffc55a"].every((c) => /^#[0-9a-f]{6}$/i.test(OP.Shuttle.inkOn(c))));
 }

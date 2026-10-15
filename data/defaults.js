@@ -62,6 +62,11 @@ window.OP.DEFAULT_DATA = {
     dormId: "",
     addedDorms: [],
 
+    /* 路线规划的起点：
+         "here" 用当前位置（默认）
+         "prev" 用今天正在上/刚上完那节课的楼栋——教室里定位飘、或者没开定位时用 */
+    departFrom: "here",
+
     /* 自定义路线：上次选的起点/终点楼栋 id。空字符串表示起点用「我的位置」 */
     customFrom: "",
     customTo: "",

@@ -290,7 +290,7 @@ window.OP = window.OP || {};
    * 生成当天的路线链：当前位置 → 第一节 → 第二节 → …
    * 每段带上「必须几点出发」，出发时间不会早于上一节课下课。
    */
-  function buildLegs(data, position, date) {
+  function buildLegs(data, position, date, originLabel) {
     var list = todayCourses(data, date);
     /* 已经下课的也留着：用户要求"即使课程结束也要显示"。
        以前这里会用 c.end > now 把下课的先滤掉，于是已下课的课
@@ -300,7 +300,9 @@ window.OP = window.OP || {};
 
     var legs = [];
     var fromPoint = position || null;
-    var fromName = position ? "我的位置" : null;
+    /* originLabel 让调用方换掉第一段的起点叫法——比如"从上一节课出发"时
+       起点是那栋教学楼，不该还写着"我的位置" */
+    var fromName = position ? (originLabel || "我的位置") : null;
     var prevEnd = date;
     var prevBuilding = null;
 

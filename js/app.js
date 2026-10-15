@@ -292,12 +292,29 @@
 
   function nextInfo() {
     var pos = effectivePosition();
-    var legs = P.buildLegs(data, pos, state.now);
-    /* 不只要"还没开始"的那几段。课已经上了、甚至已经下了，那一段仍然有用
-       （教室在哪、刚才该几点走），用户要求继续显示。顺序：
-       未开始 → 正在上 → 已下课，过去的一律沉到最后。
-       sort 是稳定的，同类之间保持 buildLegs 给的先后。 */
-    var ORDER = { upcoming: 0, ongoing: 1, past: 2 };
+    var label = "我的位置";
+
+    /* 「从上一节课出发」开关（路线页那个滑扭）：打开时把起点换成今天
+       **正在上或刚上完**的那节课的楼栋，而不是 GPS 位置。
+       教室里定位经常飘、或者干脆没开定位，这时候更需要它。 */
+    if (data.settings.departFrom === "prev") {
+      var prevCourse = null;
+      P.todayCourses(data, state.now).forEach(function (c) {
+        var st = P.statusOf(c, state.now);
+        if (st === "ongoing" || st === "past") prevCourse = c;
+      });
+      var pb = prevCourse ? P.buildingById(data, prevCourse.buildingId) : null;
+      if (pb && typeof pb.lat === "number") {
+        pos = { lat: pb.lat, lng: pb.lng, elevation: pb.elevation };
+        label = pb.name;
+      }
+    }
+
+    var legs = P.buildLegs(data, pos, state.now, label);
+    /* 顺序：**正在上 → 未开始 → 已下课**。
+       "正在上"排最前是用户要求的：此刻最相关的是你现在待的那节课。
+       过去的一律沉到最后。sort 是稳定的，同类之间保持 buildLegs 给的先后。 */
+    var ORDER = { ongoing: 0, upcoming: 1, past: 2 };
     var route = legs.filter(function (l) {
       return ORDER[l.status] !== undefined;
     }).sort(function (a, b) {
@@ -621,6 +638,14 @@
   }
 
   function renderRoute() {
+    /* 起点开关的状态。滑扭的样子由 aria-checked 驱动（见 styles.css），
+       所以这里只要把属性刷对就行。 */
+    var swDepart = $("#swDepartFrom");
+    if (swDepart) {
+      swDepart.setAttribute("aria-checked",
+        data.settings.departFrom === "prev" ? "true" : "false");
+    }
+
     var info = nextInfo();
     var buildings = (data.campus && data.campus.buildings) || [];
     var buffer = Number(data.settings.bufferMinutes) || 0;
@@ -661,10 +686,10 @@
       collectBus(leg.busPlan, leg.fromPoint, leg.toPoint, bus, "plan");
     });
 
-    /* 排序已经在 nextInfo() 里做完了（未开始 → 正在上 → 已下课）。
-       这里只负责标出哪些该置灰：以 planner 判好的状态为准，
-       不再自己拿开始时间比一遍——两边标准必须一致。 */
-    var isPastLeg = function (leg) { return leg.status !== "upcoming"; };
+    /* 排序已经在 nextInfo() 里做完了（正在上 → 未开始 → 已下课）。
+       这里只负责标出哪些该置灰：**只有真正上完的才淡化**。
+       正在上的那节不变灰——用户要求，它此刻反而是最该看清的一段。 */
+    var isPastLeg = function (leg) { return leg.status === "past"; };
 
     /* 选中了哪条校巴，地图就只画那一段：我的位置 → 那节课的地点。
        用户要求"不显示今天其他课程的路线"，所以 stops 收窄成一栋。
@@ -3705,6 +3730,12 @@
     $("#langPicker").addEventListener("click", function (ev) {
       var btn = ev.target && ev.target.closest ? ev.target.closest(".lang-btn") : null;
       if (btn) OP.I18N.set(btn.getAttribute("data-lang"));
+    });
+
+    /* 路线规划的起点开关：关=我的位置，开=上一节课的地点 */
+    $("#swDepartFrom").addEventListener("click", function () {
+      data.settings.departFrom = data.settings.departFrom === "prev" ? "here" : "prev";
+      saveAndRender();
     });
 
     /* --- 切回前台立刻刷新 --- */
