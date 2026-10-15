@@ -3321,6 +3321,11 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /busOffOpen: false/.test(appSrc) &&
     /state\.busOffOpen \? " is-open" : ""/.test(appSrc) &&
     /if \(box\.classList\.contains\("bus-off"\)\) state\.busOffOpen = open;/.test(appSrc));
+  /* 「分步导航」四个字是跟着元素插进 DOM 的，得单独给入场动画，
+     而且要跟身子的 180ms 那一拍对齐。 */
+  check("「分步导航」四个字也有入场动画，跟身子同一节拍（180ms 后淡入上移）",
+    /\.bus-steps-head \{[\s\S]{0,400}animation: bus-steps-in var\(--dur-panel\) var\(--ease-out\) 180ms both/.test(css) &&
+    /@keyframes bus-steps-in \{[\s\S]{0,120}opacity: 0; transform: translateY\(-4px\)/.test(css));
 }
 
 

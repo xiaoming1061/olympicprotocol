@@ -1138,6 +1138,16 @@ button.leg-bus-head::after,
   color: var(--accent-ink);
   font-weight: 600;
   font-size: var(--text-sm);
+  /* 「分步导航」这四个字也是跟着元素一起插进 DOM 的，不给动画就会"啪"地出现。
+     跟身子的展开同一节拍：先停 180ms（跟 js 里那个 180 对齐）再淡入上移。
+     用 animation 而不是 transition，是因为它只在元素插入时播一次——
+     手动收放那四个字时不会再闪一下。both 让它在延迟期间保持透明。 */
+  animation: bus-steps-in var(--dur-panel) var(--ease-out) 180ms both;
+}
+
+@keyframes bus-steps-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
 }
 
 .bus-step { margin-top: 10px; }
