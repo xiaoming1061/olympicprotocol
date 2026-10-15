@@ -483,6 +483,10 @@
     return kind + "|" + g.route.no + "|" + g.board.id + "|" + g.alight.id;
   }
 
+  /* 三张卡片各自的方案列表容器。渲染时要按 data-bus 回头查旧 DOM，
+     所以得知道查哪个盒子（三张卡片的 id 可能撞车）。 */
+  var BUS_BOX = { plan: "#routeList", dorm: "#dormPlan", custom: "#customPlan" };
+
   /* 方案在卡片上的**显示顺序**：现在在开的排前面，其余保持时间顺序。
      默认选中和卡片渲染必须共用这一套——各用各的顺序就会出现
      "选中的不是看到的第一条"（实测踩过，而且很难看出原因）。 */
@@ -535,17 +539,55 @@
     /* 三张卡片各自的选中项都要开。以前只取第一个匹配的，
        所以在「返回宿舍」「自定义路线」上点线路时，那边根本没反应。 */
     var pending = $$(".bus-group.is-picked .bus-steps").filter(function (el) {
-      return !el.classList.contains("is-open");
+      return el.classList.contains("is-pending");
     });
-    if (!pending.length) return;
+    /* 刚换选中的那条：高亮的内边距也压到这一拍才长出来 */
+    var flat = $$(".bus-group.is-flat");
+    if (!pending.length && !flat.length) return;
     /* 顿一拍再展开：先让选中态落定，再滑出分步导航。
        曲线走 --ease-out（cubic-bezier(0.16, 1, 0.3, 1)），由快至慢。 */
     setTimeout(function () {
       requestAnimationFrame(function () {
+        flat.forEach(function (g) { g.classList.remove("is-flat"); });
         pending.forEach(function (el) {
+          /* is-pending 是"连标题行一起收着"，展开时才摘掉 */
+          el.classList.remove("is-pending");
           el.classList.add("is-open");
           var head = el.querySelector(".bus-steps-head");
           if (head) head.setAttribute("aria-expanded", "true");
+        });
+      });
+    }, 180);
+  }
+
+  /* 「刚被换下去的那条」的分步导航：上一帧还开着，这一帧要收起来。
+
+     为什么要绕这么一圈：整块 HTML 是重建的，直接按"收起"画的话，
+     它那 130px 会瞬间消失，下面所有内容跟着往上一跳（用户报的）。
+     所以渲染时先按展开画、高度钉在切换前那一刻的真实值（见 busWalkSteps
+     的 stale），这里再把那个高度收到 0，让 height 的过渡把它平滑送走。
+
+     节拍跟 autoOpenBusSteps() 对齐（同样 180ms 后 + 下一帧）：
+     收的那条在缩短、开的那条在变长，一上一下正好抵消掉，
+     两块**下面**的内容其实是不动的，看着就是"换了一下"。 */
+  function collapseStaleBusSteps() {
+    if (state.view !== "route") return;
+    var stale = $$(".bus-group.is-stale");
+    if (!stale.length) return;
+    setTimeout(function () {
+      requestAnimationFrame(function () {
+        stale.forEach(function (group) {
+          /* 高亮那块内边距也要收（跟分步导航同一拍、同一曲线），
+             这样收掉的高度才跟新选中那条长出来的对得上 */
+          group.classList.remove("is-stale");
+          var el = group.querySelector(".bus-steps");
+          if (!el) return;
+          /* 高度在渲染时就钉住了（= 切换前那一刻的高度），这里收到 0。
+             不动 is-open：让里的内容是"被裁掉"而不是重新排一遍，
+             收起来的过程才跟切换前无缝接上。 */
+          el.style.height = "0px";
+          var head = el.querySelector(".bus-steps-head");
+          if (head) head.setAttribute("aria-expanded", "false");
         });
       });
     }, 180);
@@ -567,8 +609,21 @@
   /* 选中某条校巴之后展开的两段步行：
        「从当前位置到起始校巴站」和「从终点校巴站到教室」，
      每段下面配上外置地图导航按钮——点开就是那一段的步行导航。
-     dest 是终点（教室 / 宿舍 / 自定义终点），没有坐标就不给按钮。 */
-  function busWalkSteps(g, dest) {
+     dest 是终点（教室 / 宿舍 / 自定义终点），没有坐标就不给按钮。
+
+     mode 决定这块**怎么画**，全是为了"高度别在某一帧里凭空冒出来/消失"
+     （整块 HTML 是每次渲染重建的，按最终态直接画就会跳）：
+
+       pending  刚选中的那条：连标题行一起高度为 0，下一拍由
+                autoOpenBusSteps() 加上 is-open 整块长出来。标题行按常显画的话
+                会先多出约 30px（10px 间距 + 一行字），下面内容被顶一下。
+       open     已经开着了（每 30 秒一次的重渲染走到这里）：直接按展开画，
+                不播入场动画——否则它每半分钟就自己闪一下。
+       shut     用户自己手动收起来的：标题留着（那是重新展开的入口）。
+       stale    刚被换下去的那条：还按展开画，但高度用内联样式钉在
+                切换前那一刻的真实高度（staleH），下一拍收到 0。
+                钉高度是因为它当时可能正展开到一半，按全开画反而会往上蹦。 */
+  function busWalkSteps(g, dest, mode, staleH) {
     var rows = [
       { title: "从当前位置到起始校巴站", target: g.board && g.board.stop, min: g.walkBeforeMin }
     ];
@@ -576,10 +631,20 @@
       rows.push({ title: "从终点校巴站到" + (dest.label || "终点"), target: dest, min: g.walkAfterMin });
     }
 
-    /* 先按"收起"渲染，选中的那一刻由 autoOpenBusSteps() 下一帧加 is-open，
-       这样它是"滑"出来的，而不是凭空出现。 */
-    return '<div class="bus-steps">' +
-      '<button type="button" class="bus-steps-head" aria-expanded="false">分步导航</button>' +
+    var opened = mode === "open" || mode === "stale";
+    var cls = mode === "pending" ? " is-pending is-entering"
+      : mode === "stale" ? " is-open is-stale"
+      : opened ? " is-open" : "";
+    var style = mode === "stale" && staleH > 0
+      ? ' style="height:' + Math.round(staleH) + 'px"' : "";
+
+    return '<div class="bus-steps' + cls + '"' + style + '">' +
+      /* 标题自己包一层可收放的盒子：is-pending 时连它一起收掉，
+         手动折叠时留着（那是重新展开的入口）。 */
+      '<div class="bus-steps-top"><div class="bus-steps-topin">' +
+        '<button type="button" class="bus-steps-head" aria-expanded="' +
+          (opened ? "true" : "false") + '">分步导航</button>' +
+      "</div></div>" +
       '<div class="bus-steps-body"><div class="bus-steps-inner">' +
         rows.map(function (row) {
           var t = row.target;
@@ -645,7 +710,49 @@
         : "";
 
       var pickId = busPickId(g, kind);
-      return '<div class="bus-group' + (state.busPick[kind] === pickId ? " is-picked" : "") +
+      var isPicked = state.busPick[kind] === pickId;
+
+      /* 换选中的那一瞬间，最怕的是"高度在某一帧里凭空冒出来/消失"。
+         整块 HTML 是每次渲染重建的，所以这里**先回头看一眼旧 DOM**
+         （innerHTML 还没换掉）：这一条上面那份现在是什么样，新的一份
+         就接着它画。比在别处记一份状态稳：连点几条时每一条都在收，
+         记一份的话前一条就漏了。
+
+           is-stale  不是选中项、但旧那份本来是选中的 → 正被换下去：选中才有的
+                     上下留白先留着，下一拍跟分步导航一起收掉（见
+                     collapseStaleBusSteps）。**只有"分步导航还开着"才算的话，
+                     它刚选上、还没滑出来那半秒里被换掉时会漏掉这 20px。**
+           open      是选中项、旧那份已经开着 → 直接按开着画，不重放展开动画
+                     （每 30 秒一次的重渲染就靠这条，不然它先塌下去再滑出来）
+           shut      是选中项、旧那份在但收着、又不是刚插进来的 → 用户自己收的
+           pending   其余情况（刚选中 / 第一次画）→ 滑出来一次 */
+      var prev = $(BUS_BOX[kind] + ' [data-bus="' + pickId + '"]');
+      var prevSteps = prev ? prev.querySelector(".bus-steps") : null;
+      var prevWasPicked = !!(prev && prev.classList.contains("is-picked"));
+      /* 上一份就已经是"正被换下去"了（连点几条时会这样）：它的内边距和
+         分步导航都还在收，这一份得接着收，不能当没事发生 */
+      var prevStale = !!(prev && prev.classList.contains("is-stale"));
+      /* 它上一份还"没长齐内边距"（刚选上那半秒就被换掉）：这一份也别长，
+         否则收的过程中会先 +10，又是一次跳 */
+      var prevFlat = !!(prev && prev.classList.contains("is-flat"));
+      var prevOpen = !!(prevSteps && prevSteps.classList.contains("is-open"));
+      var prevH = prevSteps ? prevSteps.getBoundingClientRect().height : 0;
+
+      var isStale = !isPicked && (prevWasPicked || prevStale);
+      /* 它那份分步导航还开着的话，也要接着收（高度按旧的钉住，见下） */
+      var stepsStale = isStale && prevOpen && prevH > 0;
+      /* 旧 DOM 里压根没有过这一条（首屏那次、或者刚换课表）→ 按"滑出来"画 */
+      var stepsMode = !prevSteps ? "pending"
+        : prevOpen ? "open"
+          : prevSteps.classList.contains("is-pending") ? "pending" : "shut";
+      /* 内边距这份留白（选中时上下各 10px）也不能在某一帧里凭空涨落：
+         新选中的那条先按"还没有留白"画（is-flat），刚被换下去的那条先
+         按"留白还在"画（is-stale）——两个都下一拍才动。 */
+      var keepFlat = (isPicked && !prevWasPicked) || (isStale && prevFlat);
+      var cls = "bus-group" + (isPicked ? " is-picked" : "") +
+        (keepFlat ? " is-flat" : "") +
+        (isStale ? " is-stale" : "");
+      return '<div class="' + cls +
         '" data-bus="' + esc(pickId) + '" role="button" tabindex="0">' +
         '<div class="bus-where">' +
           /* 线路号徽章用官方线路色打底，字色按底色亮度挑黑或白 */
@@ -668,7 +775,8 @@
         depsLine +
         (flags.length ? '<div class="bus-breakdown">' + esc(flags.join(" · ")) + "</div>" : "") +
         /* 选中的那条才展开分步导航：不选就不铺开，免得一堆按钮 */
-        (state.busPick[kind] === pickId ? busWalkSteps(g, destPoint) : "") +
+        (isPicked ? busWalkSteps(g, destPoint, stepsMode)
+          : stepsStale ? busWalkSteps(g, destPoint, "stale", prevH) : "") +
       "</div>";
     }
 
@@ -2347,6 +2455,8 @@
     settleBusPick();
     /* 选中的那条，分步导航自动滑出来 */
     autoOpenBusSteps();
+    /* 刚被换下去的那条，分步导航收回去（跟上面同一拍，位移互相抵消） */
+    collapseStaleBusSteps();
     /* 内容变了，页尾留白要重新核对 */
     scheduleClearanceCheck();
   }
@@ -3286,6 +3396,8 @@
       if (!box || !box.querySelector(".leg-bus-body, .bus-steps-body, .bus-off-body")) return;
 
       var open = box.classList.toggle("is-open");
+      /* 还没滑出来就被点了：把 is-pending 摘掉，否则标题行仍按 0 高度画 */
+      box.classList.remove("is-pending");
       head.setAttribute("aria-expanded", open ? "true" : "false");
 
       /* 只有校巴整块的状态要记进设置，分步导航每次都是自动展开的 */
@@ -3317,6 +3429,9 @@
       /* 点一下就换成这条。**不再支持"取消选中"**——用户要求随时都有一条
          选中的，地图上也就总有明确的路线可看。再点已选中的那条就什么都不做。 */
       if (!id || id === state.busPick[kind]) return;
+      /* 换选中的那条：旧那条这会儿还开着（连它展开的分步导航一起），
+         下面 renderGroup 会回头查旧 DOM，把它按原高度接着画、下一拍再收回，
+         免得整块 HTML 一重建、下面内容就跳一下。 */
       state.busPick[kind] = id;
       render();
     }

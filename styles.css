@@ -1146,10 +1146,32 @@ button.leg-bus-head::after,
   /* 字体见上面跟 .leg-bus-head 共用的那条规则 */
 }
 
-/* 选中校巴后的「分步导航」：两段走路各一组按钮 */
-.bus-steps {
-  margin-top: 10px;
-  font-size: var(--text-sm);
+/* 选中校巴后的「分步导航」：上面一行标题 + 下面两段走路各一组按钮。
+
+   标题那一行单独包了一层，也要能收放——整块是重建出来的，只让身子能收
+   是不够的：标题行会瞬间占掉约 40px（10px 间距 + 一行字），切换线路时
+   下面内容就被顶一下（实测过）。
+   但**手动**折叠时标题必须留着（那是重新展开的入口），所以：
+     is-pending（刚选中/刚被换下去）→ 标题也收，整块从 0 长出来或收回 0
+     没类（用户手动折叠）          → 标题留着，只有身子收
+   注意别把两层写成一个 grid 的 1fr 1fr：自动高度下两行会被**均分**，
+   标题行会变成和身子一样高（踩过）。 */
+.bus-steps { font-size: var(--text-sm); }
+
+.bus-steps-top {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-panel) var(--ease-out);
+}
+.bus-steps-topin { overflow: hidden; min-height: 0; }
+.bus-steps.is-pending > .bus-steps-top { grid-template-rows: 0fr; }
+
+/* 「刚被换下去的那条」：高度钉在切换前那一刻的真实值（内联样式），
+   下一拍收到 0。用 height 过渡而不是让它按收起重排，是因为它当时
+   可能正展开到一半（实测过：按全开画会往上蹦一截）。 */
+.bus-steps.is-stale {
+  overflow: hidden;
+  transition: height var(--dur-panel) var(--ease-out);
 }
 
 /* 放在重置规则之后，把颜色/字重盖回来 */
@@ -1157,10 +1179,20 @@ button.leg-bus-head::after,
   color: var(--accent-ink);
   font-weight: 600;
   font-size: var(--text-sm);
-  /* 「分步导航」这四个字也是跟着元素一起插进 DOM 的，不给动画就会"啪"地出现。
-     跟身子的展开同一节拍：先停 180ms（跟 js 里那个 180 对齐）再淡入上移。
-     用 animation 而不是 transition，是因为它只在元素插入时播一次——
-     手动收放那四个字时不会再闪一下。both 让它在延迟期间保持透明。 */
+  /* 间距原来挂在 .bus-steps 的 margin 上：那样折叠时它照样占 10px，
+     也算一次"瞬间多出来的高度"。挪进标题里，收起来就一起收掉。 */
+  padding-top: 10px;
+}
+
+/* 「分步导航」这四个字是跟着元素一起插进 DOM 的，不给动画就会"啪"地出现。
+   跟身子的展开同一节拍：先停 180ms（跟 js 里那个 180 对齐）再淡入上移。
+
+   挂在 is-entering 上（只有"刚选中、正要滑出来"那一条才有）而不是直接挂在
+   标题上：整页每 30 秒会重渲染一次，那一次是按"已经开着"画的（没有这个类），
+   四个字就不会每半分钟自己淡入一次。
+   用 animation 而不是 transition，是因为它只在元素插入时播一次——
+   手动收放那四个字时不会再闪一下。both 让它在延迟期间保持透明。 */
+.bus-steps.is-entering .bus-steps-head {
   animation: bus-steps-in var(--dur-panel) var(--ease-out) 180ms both;
 }
 
@@ -1192,21 +1224,38 @@ button.leg-bus-head::after,
 }
 
 /* 校巴方案可以点选：点一下 → 地图只画那一条线，卡片上这块也亮起来。
-   负外边距是为了让高亮底色有左右内边距、文字又还在原来的对齐线上。 */
+   负外边距是为了让高亮底色有左右内边距、文字又还在原来的对齐线上。
+   **左右那份对所有方案都是常驻的**：只有选中时才加，切换的那一帧
+   文字会左右横移 12px（也是"跳"）。上下那份留给选中态，但要能过渡——
+   见下面 is-picked 那条。 */
 .bus-group {
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: background-color var(--dur-hover) var(--ease-out);
+  padding-left: var(--space-sm);
+  padding-right: var(--space-sm);
+  margin-left: calc(-1 * var(--space-sm));
+  margin-right: calc(-1 * var(--space-sm));
+  transition: background-color var(--dur-hover) var(--ease-out),
+    padding-top var(--dur-panel) var(--ease-out),
+    padding-bottom var(--dur-panel) var(--ease-out);
 }
 .bus-group.is-picked {
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
   /* 上下也得留白：原来只有左右内边距，高亮的边界直接贴着里头的
      文字、图标和按钮，很挤 */
-  padding: 10px var(--space-sm);
-  margin-left: calc(-1 * var(--space-sm));
-  margin-right: calc(-1 * var(--space-sm));
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
+/* 刚选中的那条：选中才有的上下留白先不给（下一拍跟分步导航一起长出来）。
+   不给的话，切换的那一帧整块会突然变高，下面的内容就跳一下。
+   注意只能动"选中多出来的那份"：每条之间那 10px（.bus-group + .bus-group）
+   必须留着，否则中间那些方案被选中时会少 10px，一样是跳。 */
+.bus-group.is-flat { padding-bottom: 0; }
+.bus-group.is-flat:first-child { padding-top: 0; }
+/* 刚被换下去的那条：内边距先留着，跟分步导航一起收（见 app.js）。
+   要是它当时都还没长齐（is-flat），就照原样留着，别先补上那 10px。 */
+.bus-group.is-stale:not(.is-flat) { padding-top: 10px; padding-bottom: 10px; }
 @media (hover: hover) {
   .bus-group:not(.is-picked):hover { background: var(--accent-soft); }
 }

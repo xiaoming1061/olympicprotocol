@@ -3294,10 +3294,11 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /class="leg-walk-head">步行<\/div>'\s*\+\s*navActionsHtml\(links\)/.test(appSrc) &&
     /\.leg-walk-head \{/.test(css));
   check("选中校巴后展开分步导航：去上车站 + 下车站去教室，各配导航按钮",
-    /function busWalkSteps\(g, dest\)/.test(appSrc) &&
+    /function busWalkSteps\(g, dest, mode, staleH\)/.test(appSrc) &&
     /从当前位置到起始校巴站/.test(appSrc) &&
     /从终点校巴站到/.test(appSrc) &&
-    /state\.busPick\[kind\] === pickId \? busWalkSteps\(g, destPoint\) : ""/.test(appSrc) &&
+    /\(isPicked \? busWalkSteps\(g, destPoint, stepsMode\)/.test(appSrc) &&
+    /stepsStale \? busWalkSteps\(g, destPoint, "stale", prevH\) : ""\)/.test(appSrc) &&
     /\.bus-steps-head \{/.test(css));
   check("选中线路时分步导航自动滑出来（下一帧才加 is-open，过渡才会触发）",
     /function autoOpenBusSteps\(\)/.test(appSrc) &&
@@ -3318,7 +3319,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,320}font-family: inherit;/.test(css) &&
     /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,400}color: inherit;/.test(css) === false);
   check("分步导航顿一拍再展开（180ms 后才加 is-open）",
-    /setTimeout\(function \(\) \{[\s\S]{0,500}requestAnimationFrame[\s\S]{0,400}\}, 180\);/.test(appSrc));
+    /setTimeout\(function \(\) \{[\s\S]{0,500}requestAnimationFrame[\s\S]{0,700}\}, 180\);/.test(appSrc));
   check("切到「返回宿舍」「自定义路线」时也会自动选中并展开分步导航",
     /routeSlide = kind;[\s\S]{0,500}settleBusPick\(\);[\s\S]{0,500}autoOpenBusSteps\(\);/.test(appSrc));
   check("点停运线路后那块不会自己折回去（展开状态要记着）",
@@ -3331,6 +3332,85 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.bus-steps-head \{[\s\S]{0,400}animation: bus-steps-in var\(--dur-panel\) var\(--ease-out\) 180ms both/.test(css) &&
     /@keyframes bus-steps-in \{[\s\S]{0,120}opacity: 0; transform: translateY\(-4px\)/.test(css));
 
+  /* ---------- 换一条线路时，下面的内容不许"跳" ----------
+     整块 HTML 是重建的，旧那条连着它展开的分步导航一起被删掉、同时
+     新那条又多出分步导航和高亮的内边距——按"默认画法"渲染的话，这些高度
+     会在同一帧里凭空消失/冒出来，下面所有内容跟着跳一下（用户报的就是这个）。
+     做法：切换那一刻，旧那条按"还开着"画（is-stale），新那条按"还没撑开"画
+     （is-flat / is-pending），下一拍两边一起动——**位移互相抵消**，
+     两块下面的内容其实一动不动（实测：整列高度只在点击那一帧差了一个
+     flex 间距 4px，动画全过程中不再变）。 */
+  check("换线路时旧那条先按展开画出来，下一拍才收回去（不再瞬间少一截）",
+    /function collapseStaleBusSteps\(\)/.test(appSrc) &&
+    /var stale = \$\$\("\.bus-group\.is-stale"\);/.test(appSrc) &&
+    /group\.classList\.remove\("is-stale"\);/.test(appSrc) &&
+    /el\.style\.height = "0px";/.test(appSrc));
+  check("旧那条的高度按切换那一刻的真实值钉住（它可能正展开到一半）",
+    /var prevH = prevSteps \? prevSteps\.getBoundingClientRect\(\)\.height : 0;/.test(appSrc) &&
+    /mode === "stale" && staleH > 0\s*\n\s*\? ' style="height:' \+ Math\.round\(staleH\) \+ 'px"' : "";/.test(appSrc) &&
+    /\.bus-steps\.is-stale \{[\s\S]{0,120}?transition: height var\(--dur-panel\) var\(--ease-out\)/.test(css));
+  check("「旧的那条还开着吗」是渲染前现问旧 DOM 的（连点几条也不会漏）",
+    /var prev = \$\(BUS_BOX\[kind\] \+ ' \[data-bus="' \+ pickId \+ '"\]'\);/.test(appSrc) &&
+    /var prevOpen = !!\(prevSteps && prevSteps\.classList\.contains\("is-open"\)\);/.test(appSrc) &&
+    /var isStale = !isPicked && \(prevWasPicked \|\| prevStale\);/.test(appSrc) &&
+    /* 刚选上、还没滑出来就被换掉时也算"要收"：那半秒里它已经有选中才有的留白 */
+    /var stepsStale = isStale && prevOpen && prevH > 0;/.test(appSrc) &&
+    /var BUS_BOX = \{ plan: "#routeList", dorm: "#dormPlan", custom: "#customPlan" \};/.test(appSrc));
+  check("收起与展开同一节拍（都是 180ms 后 + 下一帧），上面的位移正好抵消下面的",
+    /function collapseStaleBusSteps\(\)[\s\S]*?\}, 180\);/.test(appSrc) &&
+    /function collapseStaleBusSteps\(\)[\s\S]*?requestAnimationFrame/.test(appSrc));
+  check("渲染完照旧把分步导航推开、把旧的收回去",
+    /autoOpenBusSteps\(\);\s*\n\s*\/\* 刚被换下去的那条/.test(appSrc) &&
+    /collapseStaleBusSteps\(\);\s*\n\s*\/\* 内容变了/.test(appSrc));
+  check("旧那条不重播入场动画（它本来就在屏幕上，只是要收回去）",
+    /var cls = mode === "pending" \? " is-pending is-entering"/.test(appSrc) &&
+    /\.bus-steps\.is-entering \.bus-steps-head \{/.test(css));
+  check("旧那条收起时 aria-expanded 也变回 false（屏幕阅读器不会以为它还开着）",
+    /el\.style\.height = "0px";[\s\S]{0,240}?head\.setAttribute\("aria-expanded", "false"\);/.test(appSrc) &&
+    /\(opened \? "true" : "false"\) \+ '">分步导航<\/button>'/.test(appSrc));
+
+  /* 整页每 30 秒重渲染一次（tick → checkAlerts）。不记住分步导航的开合状态，
+     那一次重渲染会把它按"刚选中"重画：先塌下去、再滑出来（实测：
+     静置 35 秒里高度从 157 掉到 0 又长回来）。手动收起的结果也会被覆盖。 */
+  check("重渲染不会让分步导航重放一次展开动画（30 秒一刷的那次）",
+    /var stepsMode = !prevSteps \? "pending"\s*\n\s*: prevOpen \? "open"/.test(appSrc) &&
+    /* 只有"刚选中"（is-pending）才滑出来，已经开着的别碰 */
+    /return el\.classList\.contains\("is-pending"\);/.test(appSrc) &&
+    /* 已经开着的那份没有 is-entering，入场动画不会再播一次 */
+    /mode === "pending" \? " is-pending is-entering"/.test(appSrc));
+  check("用户手动收起的，重渲染也保持收着（以前 30 秒后自己又摊开）",
+    /: prevSteps\.classList\.contains\("is-pending"\) \? "pending" : "shut";/.test(appSrc) &&
+    /box\.classList\.remove\("is-pending"\);/.test(appSrc));
+
+  /* 标题这一行也要能收放（整块是重建的，标题会瞬间占掉约 40px）；
+     但手动折叠时标题得留着——那是重新展开的入口。 */
+  check("「分步导航」标题自己一层可收放：刚选中时连它一起从 0 长出来",
+    /'<div class="bus-steps-top"><div class="bus-steps-topin">'/.test(appSrc) &&
+    /\.bus-steps-top \{[\s\S]{0,220}?grid-template-rows: 1fr/.test(css) &&
+    /\.bus-steps-topin \{ overflow: hidden; min-height: 0; \}/.test(css) &&
+    /\.bus-steps\.is-pending > \.bus-steps-top \{ grid-template-rows: 0fr; \}/.test(css) &&
+    /el\.classList\.remove\("is-pending"\);/.test(appSrc));
+  check("标题那一行是内容高，不是跟身子均分（1fr 1fr 会把标题撑成一半高）",
+    !/\.bus-steps \{[\s\S]{0,200}?grid-template-rows: 1fr 1fr/.test(css));
+  check("手动折叠时标题行留着（没类 = 标题可见、身子收着）",
+    /\.bus-steps \{ font-size: var\(--text-sm\); \}/.test(css) &&
+    /box\.classList\.remove\("is-pending"\);/.test(appSrc));
+
+  /* 高亮那块内边距也要同一拍，否则切换的一帧整块突然高 10~20px */
+  check("高亮的上下内边距跟着一起过渡，而不是瞬间跳",
+    /padding-top var\(--dur-panel\) var\(--ease-out\)/.test(css) &&
+    /\.bus-group\.is-picked \{[\s\S]{0,300}?padding-top: 10px/.test(css) &&
+    /\.bus-group\.is-flat \{ padding-bottom: 0; \}/.test(css) &&
+    /\.bus-group\.is-flat:first-child \{ padding-top: 0; \}/.test(css) &&
+    /\.bus-group\.is-stale:not\(\.is-flat\) \{ padding-top: 10px; padding-bottom: 10px; \}/.test(css) &&
+    /var keepFlat = \(isPicked && !prevWasPicked\) \|\| \(isStale && prevFlat\);/.test(appSrc) &&
+    /flat\.forEach\(function \(g\) \{ g\.classList\.remove\("is-flat"\); \}\);/.test(appSrc));
+  check("方案之间的 10px 间距不会被 is-flat 一起抹掉（抹掉就是另一种跳）",
+    /\.bus-group \+ \.bus-group \{ border-top: 1px solid var\(--line\); padding-top: 10px; \}/.test(css));
+  check("左右内边距常驻（只让选中态加的话，切换时文字会左右横移 12px）",
+    /\.bus-group \{[\s\S]{0,260}?padding-left: var\(--space-sm\);\s*\n\s*padding-right: var\(--space-sm\);/.test(css) &&
+    /\.bus-group\.is-picked \{[\s\S]{0,200}?padding-top: 10px/.test(css));
+
   /* ---------- 提示的位置与文案 / 高亮留白 / 分界线 ---------- */
   check("已下课不提示余量；正在上课时只说「正在上课」",
     /if \(leg\.status === "ongoing"\) \{\s*\n\s*warn = '<div class="leg-warn is-now">正在上课<\/div>';/.test(appSrc) &&
@@ -3339,7 +3419,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   check("提示挪到「步行」的外置导航按钮下方",
     /navActionsHtml\(links\) \+\s*\n\s*\/\* 提示挪到/.test(appSrc));
   check("选中高亮上下也留白（边界不再挤着文字和按钮）",
-    /\.bus-group\.is-picked \{[\s\S]{0,260}padding: 10px var\(--space-sm\)/.test(css));
+    /\.bus-group\.is-picked \{[\s\S]{0,300}padding-top: 10px;\s*\n\s*padding-bottom: 10px;/.test(css));
   check("课程之间的分界线加粗",
     /\.leg \+ \.leg \{ border-top: 2px solid var\(--line-strong\); \}/.test(css));
 
