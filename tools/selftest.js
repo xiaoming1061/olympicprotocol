@@ -5819,6 +5819,18 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
   check("屏幕排版脚本跑通：5 种画面都没画出界、没有字库外的字符",
     run.status === 0 && String(run.stdout).indexOf("屏幕排版自检通过") >= 0,
     run.status === 0 ? "" : (run.stdout || "") + (run.stderr || ""));
+
+  /* 到货第一天用的那个"先在电脑上试接口"的小工具：不联网也要能跑 */
+  const probe = cp.spawnSync(process.execPath,
+    [path.join(hw, "tools", "check-endpoint.mjs"), "--fixture"], { encoding: "utf8" });
+  const probeOut = String(probe.stdout || "");
+  check("接口自检工具能在不联网的情况下讲清一包数据（下一节 / 课表 / 体积）",
+    probe.status === 0 && probeOut.indexOf("下一节：") >= 0 &&
+    probeOut.indexOf("4096") > 0 && probeOut.indexOf("字节") > 0,
+    probe.status === 0 ? "" : (probeOut + String(probe.stderr || "")));
+  check("到货清单第 0 步让用户先验接口（不是直接开板子）",
+    fs.readFileSync(path.join(hw, "BRINGUP.md"), "utf8")
+      .indexOf("check-endpoint.mjs") > 0);
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");

@@ -10,7 +10,8 @@
 | 设备取数接口（手表要的那一小包数据） | 写好，41 条单测盯着 | `worker/device-payload.js`、`worker/timetable-proxy.js` |
 | 固件（联网 → 解析 → 画屏 → 深度睡眠） | 写好，**没上过真机** | `hardware/firmware/` |
 | 屏幕排版预览（电脑上看真机会画成什么样） | 写好，5 种画面可看 | `hardware/preview/` |
-| 实物板子 | **还没买** | 见下面采购清单 |
+| 到货第一天清单（从零到第一屏） | 板子到了就照它走 | `hardware/BRINGUP.md` |
+| 实物板子 | 已到货 | 见下面采购清单 |
 
 没有实物的情况下，能验的都验了：接口逻辑跑单测，排版用固件里**同一份**字库和
 排版参数在电脑上画成 PNG，连"有没有画出界"都是脚本在查（`--check`）。
@@ -152,18 +153,16 @@
 
 ## 上电与刷机
 
-1. 装好 VS Code + PlatformIO 插件（或命令行装 `platformio`）。
-2. 进 `hardware/firmware/`，把 `include/config.example.h` 复制成 `include/config.h`，
-   填 WiFi、设备地址、学号密码。
-3. 板子用 Type-C 连电脑（第一次要按着 BOOT 再上电才进下载模式）。
-4. `pio run -t upload`；`pio device monitor` 看日志。
-5. 第一次上电屏幕应该是这几种之一：
-   - `NO WIFI` → WiFi 名字/密码不对，或者热点是 5GHz（板子只认 2.4GHz）；
-   - `NO DATA` + 一行原因 → 连上了但取数失败，看那行字（`missing_credentials` /
-     `upstream_timeout` / `payload too big`…）；
-   - 正常画出课表 → 恭喜，看一眼页脚时间对不对。
+按 **[BRINGUP.md](BRINGUP.md)** 那份清单走，每一步都写了「怎么算这步成功了」：
 
-细节和排错在 `hardware/firmware/README.md`。
+0. **先在电脑上验通接口**（`node hardware/tools/check-endpoint.mjs <地址>`）——
+   这一步不碰板子，能把地址/口令/账号这三样一次验掉；
+1. 装 VS Code + PlatformIO；
+2. 把 `include/config.example.h` 复制成 `include/config.h` 填四个值；
+3. 按住 BOOT 插 Type-C 进下载模式；
+4. Upload，然后开串口监视器看第一屏（预期画面和失败怎么查都写在清单里）。
+
+排错表在 `hardware/firmware/README.md`。
 
 ## 已知的坑
 

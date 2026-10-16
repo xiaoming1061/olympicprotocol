@@ -12,6 +12,10 @@ pio run -t upload
 pio device monitor
 ```
 
+> 第一次上手先看 `../BRINGUP.md`（到货第一天清单）。里面第 0 步是**先别碰板子**，
+> 在电脑上跑 `node hardware/tools/check-endpoint.mjs <设备地址>` 把接口验通——
+> 不然屏幕上只显示几个字符，分不清是配置错了还是线没插好。
+
 没装 PlatformIO 的话：VS Code 装 PlatformIO 插件，用它打开这个目录，然后点 Upload。
 
 > `platformio.ini` 里的 platform 不是官网那条 `espressif32`：ESP32-C6 需要

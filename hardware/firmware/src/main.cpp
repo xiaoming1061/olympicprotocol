@@ -210,10 +210,12 @@ void setup() {
 
   if (haveDoc) {
     Ui::renderPayload(doc, battery, !fetched, gCachedAt);
+  } else if (result.code == 1) {
+    /* 连不上网：多半是 config.h 里的 WiFi 名字/密码没填对，或者热点是 5GHz */
+    Ui::renderNotice("NO WIFI", "check config.h", "retry in 30 min", battery);
   } else {
-    const char *big = (result.code == 1) ? "NO WIFI" : "NO DATA";
-    Ui::renderNotice(big, result.message[0] ? result.message : "no cache yet",
-                     "will retry soon", battery);
+    Ui::renderNotice("NO DATA", result.message[0] ? result.message : "no cache yet",
+                     "retry in 30 min", battery);
   }
 
   goToSleep(planSleepMinutes(doc, haveDoc, fetched, now, clockOk, battery));
