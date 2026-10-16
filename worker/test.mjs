@@ -338,6 +338,16 @@ console.log("\n[worker] 手表入口 /d/<口令>：小、准、不泄密");
   check("这学期没课：ok 仍是 true，用 empty 标出来，next 为 null",
     none.ok === true && none.empty === true && none.next === null);
 
+  /* 屏上那套字库只有 ASCII 32–126，多一个字节就会画成问号 */
+  const long = await watchAt("2026-10-12T09:00:00+08:00", [row({
+    DESCR: "Advanced Biomedical Engineering Seminar Series 2026",
+    FDESCR: "Ho Sin Hang Engineering Building 303"
+  })]);
+  const longText = JSON.stringify(long);
+  check("截断长课名用的是 ASCII 的两个点，不是中文省略号",
+    long.next.title.indexOf("\u2026") === -1 && /\.\.$/.test(long.next.title) &&
+    longText.indexOf("\u2026") === -1);
+
   /* 七天 × 每天八节、标题地点都写满，逼它把体积裁下来 */
   const flags = ["MON", "TUES", "WED", "THURS", "FRI", "SAT", "SUN"];
   const fat = [];

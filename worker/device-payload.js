@@ -185,7 +185,9 @@ export function hkNow(nowMs) {
 function trimTo(text, limit) {
   const value = String(text || "").trim().replace(/\s+/g, " ");
   if (value.length <= limit) return value;
-  return value.slice(0, limit - 1).trim() + "…";
+  /* 省略号必须是 ASCII 的两个点：屏幕字库只有 ASCII 32–126，
+     用了「…」真机会显示成三个问号（自检里有一条盯着这个） */
+  return value.slice(0, Math.max(1, limit - 2)).trim() + "..";
 }
 
 /**

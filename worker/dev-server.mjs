@@ -4,7 +4,7 @@
  *     → http://127.0.0.1:8788/timetable
  *
  * 用环境变量改配置，跟线上那套一一对应：
- *     PROXY_TOKEN / ALLOWED_ORIGINS / UPSTREAM_MODE / DEBUG
+ *     PROXY_TOKEN / DEVICE_TOKEN / ALLOWED_ORIGINS / UPSTREAM_MODE / DEBUG
  *     ALLOW_EMPTY_CREDENTIALS=1   ← 只想确认"管道通不通"时开一下（空凭据登不进去）
  */
 
@@ -15,6 +15,7 @@ const PORT = Number(process.env.PORT || 8788);
 
 const ENV = {
   PROXY_TOKEN: process.env.PROXY_TOKEN || "",
+  DEVICE_TOKEN: process.env.DEVICE_TOKEN || "",
   ALLOWED_ORIGINS: process.env.ALLOWED_ORIGINS ||
     "https://rhythmhill.com,http://localhost:5173,http://127.0.0.1:5173",
   UPSTREAM_MODE: process.env.UPSTREAM_MODE || "soap-plain",
