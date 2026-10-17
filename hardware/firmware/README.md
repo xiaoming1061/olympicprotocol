@@ -110,6 +110,9 @@ arduino-cli monitor -p COM5 -b esp32:esp32:esp32c6:CDCOnBoot=cdc,FlashSize=16M,P
 | `NO DATA` + `upstream_timeout` | 学校那头上游慢（10–20 秒是常态），下次醒来会重试 |
 | 刷不进去 | 按着 BOOT 再上电进下载模式；换根能传数据的 Type-C 线 |
 | 深度睡眠时电流偏大 | 确认刷完屏有 `display.powerOff()` + 屏幕那一路断电（代码里已经做了） |
+| 按 PWR 不唤醒 | 确认唤醒用的是 **EXT1**（`esp_sleep_enable_ext1_wakeup(1<<GPIO2, ALL_LOW)`）。曾经写成 `#if defined(ESP_GPIO_WAKEUP_GPIO_LOW)`——那是枚举不是宏，整段代码会被预处理器删掉 |
+| 用电池时整机没反应、连 USB 也不认 | 先看是不是误触发了「开机长按 PWR 关机」（`OP_PWR_LONG_PRESS_OFF` 默认已关）；它会拉低电池开关并深睡 |
+| 屏幕不动、串口能开但没日志 | 芯片可能停在 ROM 下载模式：BOOT 被按住/外壳卡住。松开 BOOT、断电重插 |
 
 ## 没接板子也能验的
 
