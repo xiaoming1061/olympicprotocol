@@ -95,7 +95,12 @@ console.log("\n[worker] 来源、路径、方法");
     noToken.status === 400 && (await noToken.json()).error === "missing_credentials");
 
   const got = await ask(withToken(), { method: "GET" });
-  check("GET 返回 405（只收 POST）", got.status === 405);
+  const gotBody = await got.json();
+  check("GET 回部署版本信息（用来确认线上是不是新代码）",
+    got.status === 200 && gotBody.deviceRoute === true && gotBody.build === "2026-10-17");
+
+  const put = await ask(withToken(), { method: "PUT" });
+  check("POST 以外的方法（PUT）仍然 405", put.status === 405);
 
   const badBody = await ask(withToken(), { body: "not json" });
   check("请求体不是 JSON 返回 400", badBody.status === 400 && (await badBody.json()).error === "bad_json");
@@ -281,7 +286,9 @@ console.log("\n[worker] 手表入口 /d/<口令>：小、准、不泄密");
   check("手表口令不对同样是 404", wrongEntry.status === 404);
 
   const gotEntry = await ask(withDevice(), { method: "GET" });
-  check("手表入口只收 POST（GET 返回 405）", gotEntry.status === 405);
+  const gotEntryBody = await gotEntry.json();
+  check("手表入口用 GET 也能自查（会告诉你 DEVICE_TOKEN 配了没有）",
+    gotEntry.status === 200 && gotEntryBody.hasDeviceToken === true);
 
   const noCredsEntry = await askWatch({ sid: "1155000000" });
   check("手表入口缺密码也返回 400",

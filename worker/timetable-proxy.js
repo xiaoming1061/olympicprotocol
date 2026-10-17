@@ -309,6 +309,19 @@ export default {
     /* 路径不对就装作没有这个服务，别告诉扫描器"这里有个代理" */
     if (!isDevice && !pathAllowed(url, env)) return done({ ok: false, error: "not_found" }, 404);
 
+    /* GET 只用来回答"线上跑的是哪一版"，方便部署后自查。
+       这条路也是先过了口令校验才走到这里的，不会给扫描器透露什么。
+       旧版代码没有这一段（会对 GET 回 405），所以它正好能区分新旧。 */
+    if (request.method === "GET") {
+      return done({
+        ok: true,
+        service: "cuhk-timetable-proxy",
+        build: "2026-10-17",
+        deviceRoute: true,
+        hasDeviceToken: !!(env && env.DEVICE_TOKEN)
+      }, 200);
+    }
+
     if (request.method !== "POST") return done({ ok: false, error: "method_not_allowed" }, 405);
 
     if (!rateAllow(clientIp(request))) {

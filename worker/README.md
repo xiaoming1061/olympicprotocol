@@ -71,11 +71,21 @@ npx wrangler secret put PROXY_TOKEN        # 口令用 secret 配，不写进文
 | --- | --- | --- |
 | 400 | `bad_json` / `missing_credentials` / `unknown_mode` | 请求本身有问题 |
 | 404 | `not_found` | 路径（口令）不对 |
-| 405 | `method_not_allowed` | 只收 POST |
+| 405 | `method_not_allowed` | 只收 POST（GET 是给部署自查用的，见下） |
 | 413 | `body_too_large` | 请求体超过 1KB |
 | 429 | `too_many_requests` | 限流（每 IP 每分钟 6 次） |
 | 502 | `upstream_status` / `upstream_unparseable` | 上游报错或回了个不是 JSON 的东西（会带一小段原文） |
 | 504 | `upstream_timeout` / `upstream_unreachable` | 20 秒没等到上游 |
+
+**部署后自查**：用浏览器打开 `https://<域名>/t/<网页口令>`（GET 就行）。新代码会回
+
+```json
+{ "ok": true, "service": "cuhk-timetable-proxy", "build": "2026-10-17", "deviceRoute": true, "hasDeviceToken": true }
+```
+
+- 回 `405 method_not_allowed` → **线上还是旧代码**，没贴上去或没点 Deploy；
+- 回 `404` → 口令/域名不对；
+- 回 200 但 `hasDeviceToken: false` → 代码是新的，但 `DEVICE_TOKEN` 还没配。
 
 ## 墨水屏手表那条入口（`/d/<口令>`）
 
