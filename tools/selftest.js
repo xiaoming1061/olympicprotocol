@@ -5808,10 +5808,14 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
     /DEFAULT_LIMIT_BYTES = 4096/.test(payloadCode) &&
     /kCacheBytes = 4\d{3}\b/.test(mainCode));
 
-  /* 这条是"别把密码提交上去"的闸门 */
+  /* 这条是"别把密码提交上去"的闸门。文件本身可以是存在的（本地要填密码），
+     关键是它被 .gitignore 排除、并且不在 Git 索引里。 */
+  const tracked = cp.spawnSync("git",
+    ["ls-files", "--error-unmatch", "hardware/firmware/include/config.h"],
+    { cwd: root, encoding: "utf8" });
   check("固件本地配置不进 Git（里面有 WiFi 密码和学号密码）",
     gitignore.indexOf("hardware/firmware/include/config.h") >= 0 &&
-    !fs.existsSync(path.join(hw, "firmware", "include", "config.h")));
+    (tracked.error || tracked.status !== 0));
 
   /* 真的把 5 种画面画一遍：有没有画出界、有没有字库里没有的字符 */
   const run = cp.spawnSync(process.execPath,

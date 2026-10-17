@@ -110,6 +110,7 @@ export function formatDiagnosis(diag) {
       : "❌ " + item.reason;
     lines.push(`#${String(item.index).padStart(2)}  ${(item.code || "(无代号)").padEnd(9)} ` +
       `${(item.type || "").padEnd(10)} ${days.padEnd(9)} ${range.padEnd(19)} ${time.padEnd(11)} ${verdict}`);
+    if (item.note) lines.push(`      ↳ ${item.note}`);
     if (item.venue) lines.push(`      ${item.venue}${item.teacher ? "  ·  " + item.teacher : ""}`);
   });
   const ok = diag.result.filter((item) => item.ok).length;
@@ -130,7 +131,7 @@ export function fixtureRawRows() {
       SUBJECT: "BMEG", CATALOG_NBR: "2210", DESCR: "Biomedical Engineering",
       COMDESC: "Lecture", FDESCR: "Science Centre L3", INSTRUCTORS: "CHAN TAI MAN",
       STRM: "2610", STRM_DESCR: "2026-27 Term 1",
-      START_DT: "20260907", END_DT: "20261204",
+      START_DT: "20260907", END_DT: "20261016",
       MEETING_TIME_START: "09:30", MEETING_TIME_END: "10:15"
     }, flags(["MON", "WED"])),
     /* 周四，时间带秒：以前会被整行丢掉，现在能认 */
@@ -165,6 +166,15 @@ export function fixtureRawRows() {
       STRM: "2610", START_DT: "20260907", END_DT: "20261204",
       MEETING_TIME_START: "", MEETING_TIME_END: ""
     }, flags(["THURS"]))
+    ,
+    /* 同一节的后半学期：日期范围不同，要合并而不是当成重复丢掉 */
+    Object.assign({
+      SUBJECT: "BMEG", CATALOG_NBR: "2210", DESCR: "Biomedical Engineering",
+      COMDESC: "Lecture", FDESCR: "Science Centre L3", INSTRUCTORS: "CHAN TAI MAN",
+      STRM: "2610", STRM_DESCR: "2026-27 Term 1",
+      START_DT: "20261019", END_DT: "20261204",
+      MEETING_TIME_START: "09:30", MEETING_TIME_END: "10:15"
+    }, flags(["MON", "WED"]))
   ];
 }
 

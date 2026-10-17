@@ -313,18 +313,28 @@ function toMeeting(row) {
   return toMeetingWithReason(row).meeting;
 }
 
-/* 同一门课同一节，上游可能给两条（不同周次/不同备注），设备上看不出区别，
-   留一条就够了 */
+/* 同一门课同一节，上游会给多条，而且**日期范围可能不同**（前六周一间教室、
+   后七周同一时段同一教室）。所以"是不是同一节"的判据里不能含日期；
+   但也不能只留第一条——要把各条的日期范围**合并**起来，否则后面的周次整段消失。 */
 function meetingKey(meeting) {
   return [meeting.code, meeting.type, meeting.start, meeting.end,
     meeting.venue, meeting.weekdays.join("")].join("|");
 }
 
+/* 多段日期范围里只要有一段罩住这一天就算（缺 from/to 视为那一边不限） */
+function covers(ranges, ymd) {
+  for (let i = 0; i < ranges.length; i++) {
+    const range = ranges[i];
+    if (range.from && ymd < range.from) continue;
+    if (range.to && ymd > range.to) continue;
+    return true;
+  }
+  return false;
+}
+
 function occursOn(meeting, ymd, weekday) {
   if (meeting.weekdays.indexOf(weekday) < 0) return false;
-  if (meeting.from && ymd < meeting.from) return false;
-  if (meeting.to && ymd > meeting.to) return false;
-  return true;
+  return covers(meeting.ranges, ymd);
 }
 
 /* ---------- 组装 ---------- */
@@ -337,14 +347,34 @@ export function buildDevicePayload(rows, nowMs, options) {
   const now = hkNow(nowMs);
 
   const meetings = [];
-  const seen = Object.create(null);
+  const byKey = Object.create(null);
   (Array.isArray(rows) ? rows : []).forEach(function (row) {
     const meeting = toMeeting(row);
     if (!meeting) return;
     const key = meetingKey(meeting);
-    if (seen[key]) return;
-    seen[key] = true;
-    meetings.push(meeting);
+    const at = byKey[key];
+    if (at === undefined) {
+      byKey[key] = meetings.length;
+      meetings.push({
+        code: meeting.code,
+        type: meeting.type,
+        title: meeting.title,
+        venue: meeting.venue,
+        building: meeting.building,
+        room: meeting.room,
+        teacher: meeting.teacher,
+        start: meeting.start,
+        end: meeting.end,
+        weekdays: meeting.weekdays,
+        ranges: [{ from: meeting.from, to: meeting.to }]
+      });
+      return;
+    }
+    /* 已有同一条：把这一段日期并进去，而不是丢掉 */
+    const target = meetings[at];
+    target.ranges.push({ from: meeting.from, to: meeting.to });
+    if (!target.title && meeting.title) target.title = meeting.title;
+    if (!target.teacher && meeting.teacher) target.teacher = meeting.teacher;
   });
 
   const todayWeekday = weekdayOf(now.ymd);
@@ -441,8 +471,6 @@ export function diagnoseRows(rows, nowMs, options) {
   const days = Math.max(1, Math.min(14, Number(opt.days) || DEFAULT_DAYS));
   const now = hkNow(nowMs);
   const list = Array.isArray(rows) ? rows : [];
-  const seen = Object.create(null);
-  const result = [];
 
   /* 体积上限也会让行"消失"：真的跑一遍打包，看哪些日子被裁掉了 */
   const packed = buildDevicePayload(list, nowMs, { days: days });
@@ -453,57 +481,80 @@ export function diagnoseRows(rows, nowMs, options) {
     });
   });
 
-  list.forEach(function (row, index) {
-    const parsed = toMeetingWithReason(row);
-    const idx = keyIndex(row);
-    const term = [pick(idx, row, NAMES.term), pick(idx, row, NAMES.termDescr)]
+  /* 先解析、再按"同一节"分组：同一组里几段日期范围合并起来看 */
+  const parsedRows = list.map(function (row) { return toMeetingWithReason(row); });
+  const groups = Object.create(null);
+  parsedRows.forEach(function (parsed, index) {
+    if (!parsed.meeting) return;
+    const key = meetingKey(parsed.meeting);
+    if (!groups[key]) groups[key] = { ranges: [], first: index + 1 };
+    groups[key].ranges.push({ from: parsed.meeting.from, to: parsed.meeting.to });
+  });
+
+  const windowHits = function (weekdays, ranges) {
+    const hits = [];
+    for (let offset = 0; offset < days; offset++) {
+      const date = shiftDate(now.ymd, offset);
+      if (weekdays.indexOf(weekdayOf(date)) < 0) continue;
+      if (covers(ranges, date)) hits.push(date);
+    }
+    return hits;
+  };
+
+  const result = parsedRows.map(function (parsed, index) {
+    const rawRow = list[index];
+    const idx = keyIndex(rawRow);
+    const term = [pick(idx, rawRow, NAMES.term), pick(idx, rawRow, NAMES.termDescr)]
       .filter(Boolean).join(" ");
     const item = {
       index: index + 1,
       ok: false,
       reason: parsed.reason,
+      note: "",
       hits: [],
       start: "", end: "", from: "", to: "",
       weekdays: [], code: "", type: "", venue: "", teacher: "", term: term
     };
+    if (!parsed.meeting) return item;
 
-    if (parsed.meeting) {
-      const m = parsed.meeting;
-      item.start = m.start;
-      item.end = m.end;
-      item.from = m.from;
-      item.to = m.to;
-      item.weekdays = m.weekdays;
-      item.code = m.code;
-      item.type = m.type;
-      item.venue = m.venue;
-      item.teacher = m.teacher;
+    const m = parsed.meeting;
+    item.start = m.start;
+    item.end = m.end;
+    item.from = m.from;
+    item.to = m.to;
+    item.weekdays = m.weekdays;
+    item.code = m.code;
+    item.type = m.type;
+    item.venue = m.venue;
+    item.teacher = m.teacher;
 
-      const key = meetingKey(m);
-      if (seen[key]) {
-        item.reason = "和前面第 " + seen[key] + " 行完全相同，只保留一条";
-      } else {
-        seen[key] = item.index;
-        for (let offset = 0; offset < days; offset++) {
-          const date = shiftDate(now.ymd, offset);
-          if (occursOn(m, date, weekdayOf(date))) item.hits.push(date);
-        }
-        if (item.hits.length) {
-          item.ok = true;
-          item.reason = "";
-          const survived = item.hits.some(function (date) {
-            return kept[date + "|" + item.start + "|" + item.code];
-          });
-          if (!survived) {
-            item.ok = false;
-            item.reason = "包超过 4096 字节，这几天被裁掉了（从最后一天往回丢）";
-          }
-        } else {
-          item.reason = "日期范围不覆盖接下来 " + days + " 天";
-        }
-      }
+    const group = groups[meetingKey(m)];
+    const ownHits = windowHits(m.weekdays, [{ from: m.from, to: m.to }]);
+    const mergedHits = windowHits(m.weekdays, group.ranges);
+
+    if (group.first !== item.index) {
+      item.note = "和第 " + group.first + " 行同课同时段，日期范围合并处理";
     }
-    result.push(item);
+    if (mergedHits.length === 0) {
+      item.reason = "日期范围不覆盖接下来 " + days + " 天";
+      return item;
+    }
+
+    const survived = mergedHits.some(function (date) {
+      return kept[date + "|" + m.start + "|" + m.code];
+    });
+    if (!survived) {
+      item.reason = "包超过 4096 字节，这几天被裁掉了（从最后一天往回丢）";
+      return item;
+    }
+
+    item.ok = true;
+    item.reason = "";
+    item.hits = ownHits.length ? ownHits : mergedHits;
+    if (!ownHits.length) {
+      item.note = "这行自己的日期不在窗口里；和同一节的其他行合并后仍会显示";
+    }
+    return item;
   });
 
   return { now: now.iso, today: now.ymd, total: list.length, result: result };

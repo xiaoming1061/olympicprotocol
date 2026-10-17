@@ -326,6 +326,25 @@ console.log("\n[worker] 手表入口 /d/<口令>：小、准、不泄密");
   const dup = await watchAt("2026-10-12T09:00:00+08:00", [row({}), row({})]);
   check("同一门课重复的行只出现一次", dup.count === 1 && dup.days[0].classes.length === 1);
 
+  /* 用户报的那个 bug：同一节的多条日期范围不同，以前只留第一条，
+     后半学期整段消失。正确做法是合并日期范围。 */
+  const splitRange = await watchAt("2026-10-17T09:00:00+08:00", [
+    row({ START_DT: "20260907", END_DT: "20261016" }),
+    row({ START_DT: "20261019", END_DT: "20261204" })
+  ]);
+  const nextMonday = splitRange.days.find((day) => day.date === "20261019");
+  check("同一节、两段日期范围：后半学期那节不会被当成重复丢掉",
+    splitRange.count === 1 && nextMonday &&
+    nextMonday.classes.filter((item) => item.code === "BMEG2210").length === 1);
+
+  const overlapping = await watchAt("2026-10-17T09:00:00+08:00", [
+    row({ START_DT: "20260907", END_DT: "20261030" }),
+    row({ START_DT: "20261019", END_DT: "20261204" })
+  ]);
+  const overlapMonday = overlapping.days.find((day) => day.date === "20261019");
+  check("两段日期范围有重叠时，同一天也只出现一条（不会重复）",
+    overlapMonday && overlapMonday.classes.filter((item) => item.code === "BMEG2210").length === 1);
+
   const sorted = await watchAt("2026-10-12T07:00:00+08:00", [
     row({ MEETING_TIME_START: "14:30", MEETING_TIME_END: "15:15" }),
     row({ MEETING_TIME_START: "09:30", MEETING_TIME_END: "10:15" }),
@@ -440,6 +459,14 @@ console.log("\n[worker] 解析层的宽容度与诊断");
   const broken = diagnoseRows([row({ MEETING_TIME_START: "" })], at, {});
   check("没有上课时间的行会被单独指出（不是悄悄消失）",
     broken.result[0].ok === false && /没有上课时间/.test(broken.result[0].reason));
+
+  const splitDiag = diagnoseRows([
+    row({ START_DT: "20260907", END_DT: "20261016" }),
+    row({ START_DT: "20261019", END_DT: "20261204" })
+  ], at, {});
+  check("诊断里两段日期范围都算「进得去」，并注明是合并处理",
+    splitDiag.result[0].ok === true && splitDiag.result[1].ok === true &&
+    /合并/.test(splitDiag.result[1].note));
 }
 
 globalThis.fetch = realFetch;
