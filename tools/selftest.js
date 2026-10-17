@@ -5808,6 +5808,10 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
     /OP_WIFI_USERNAME_SUFFIX/.test(firmwareCode) &&
     /String\(OP_SID\) \+ OP_WIFI_USERNAME_SUFFIX/.test(firmwareCode) &&
     /request\["sid"\] = sid;/.test(firmwareCode));
+  /* 页脚时间曾经把 "16:34" 切成了 "6::4+"：镜像预览和固件时指针偏了一位 */
+  check("页脚从 ISO 时间取的是 T 后第 1、4 位（16:34 而不是 6::4+）",
+    /snprintf\(out, capacity, "%\.2s:%\.2s", hit \+ 1, hit \+ 4\)/.test(
+      fs.readFileSync(path.join(hw, "firmware", "src", "ui.cpp"), "utf8")));
 
   /* 设备接口那包数据的上限，要和固件的缓冲区对得上 */
   const mainCode = fs.readFileSync(path.join(hw, "firmware", "src", "main.cpp"), "utf8");

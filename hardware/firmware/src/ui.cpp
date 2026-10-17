@@ -199,7 +199,9 @@ void clockOf(const char *hhmm, char *out, size_t capacity) {
 void clockOfIso(const char *iso, char *out, size_t capacity) {
   const char *hit = iso ? strchr(iso, 'T') : nullptr;
   if (hit && strlen(hit) >= 6) {
-    snprintf(out, capacity, "%.2s:%.2s", hit + 2, hit + 5);
+    /* "2026-10-17T16:34+08:00"：T 后面第 1、4 个字符才是 "16" 和 "34"。
+       之前写成 +2/+5，页脚会变成 "6::4+"——预览那侧是对的，这里是镜像时写偏了。 */
+    snprintf(out, capacity, "%.2s:%.2s", hit + 1, hit + 4);
   } else {
     snprintf(out, capacity, "--:--");
   }
