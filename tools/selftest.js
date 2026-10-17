@@ -5804,6 +5804,10 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
 
   check("固件支持学校 802.1X Wi-Fi（PEAP），家用 Wi-Fi 仍可切换",
     /WPA2_AUTH_PEAP/.test(firmwareCode) && /OP_WIFI_ENTERPRISE/.test(firmwareCode));
+  check("Wi-Fi 用户名会拼上学校后缀，课表那边仍用裸学号",
+    /OP_WIFI_USERNAME_SUFFIX/.test(firmwareCode) &&
+    /String\(OP_SID\) \+ OP_WIFI_USERNAME_SUFFIX/.test(firmwareCode) &&
+    /request\["sid"\] = sid;/.test(firmwareCode));
 
   /* 设备接口那包数据的上限，要和固件的缓冲区对得上 */
   const mainCode = fs.readFileSync(path.join(hw, "firmware", "src", "main.cpp"), "utf8");

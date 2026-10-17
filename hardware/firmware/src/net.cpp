@@ -17,14 +17,20 @@ bool Net::connectWifi(uint32_t timeoutMs) {
 
 #if OP_WIFI_ENTERPRISE
   /* 学校 Wi-Fi 是 WPA2-Enterprise（PEAP/MSCHAPv2）：不只是"一个密码"，
-     还要一个用户名。港中大的用户名就是学号、密码就是学校密码，
-     跟查课表用的是同一组，所以默认直接复用 OP_SID / OP_PWD。
-     identity 一般和用户名相同；eduroam 有时要 学号@cuhk.edu.hk。 */
-  const char *identity = (OP_WIFI_IDENTITY[0] != '\0') ? OP_WIFI_IDENTITY : OP_SID;
-  const char *username = (OP_WIFI_USERNAME[0] != '\0') ? OP_WIFI_USERNAME : OP_SID;
+     还要一个用户名。注意两边长得不一样：
+       Wi-Fi 用户名 = 学号 + @link.cuhk.edu.hk（CUHK1x）
+       查课表     = 裸学号
+     所以这里只在 Wi-Fi 用户名后面拼后缀，课表那边仍然是 OP_SID 原样。 */
+  String username = (OP_WIFI_USERNAME[0] != '\0')
+    ? String(OP_WIFI_USERNAME)
+    : String(OP_SID) + OP_WIFI_USERNAME_SUFFIX;
+  const char *identity = (OP_WIFI_IDENTITY[0] != '\0') ? OP_WIFI_IDENTITY : username.c_str();
   const char *password = (OP_WIFI_PASSWORD[0] != '\0') ? OP_WIFI_PASSWORD : OP_PWD;
+#if OP_SERIAL_LOG
+  Serial.printf("[net] Wi-Fi 用户名 %s\n", username.c_str());
+#endif
   WiFi.disconnect(true);         /* 官方示例里也是先断开再配企业级参数 */
-  WiFi.begin(OP_WIFI_SSID, WPA2_AUTH_PEAP, identity, username, password);
+  WiFi.begin(OP_WIFI_SSID, WPA2_AUTH_PEAP, identity, username.c_str(), password);
 #else
   WiFi.begin(OP_WIFI_SSID, OP_WIFI_PASS);
 #endif

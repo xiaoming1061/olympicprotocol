@@ -55,7 +55,7 @@ node hardware/tools/check-endpoint.mjs https://<你的worker域名>/d/w7k2m9xq
 
 | 填什么 | 从哪来 |
 | --- | --- |
-| WiFi | 学校网填 `CUHK1x` 并把 `OP_WIFI_ENTERPRISE` 设为 `1`（用户名/密码自动复用学号/学校密码）；家用 WiFi 设为 `0` 再填名字密码。**必须是 2.4GHz** |
+| WiFi | 学校网填 `CUHK1x` 并把 `OP_WIFI_ENTERPRISE` 设为 `1`（用户名自动拼成 `学号@link.cuhk.edu.hk`，密码复用学校密码）；家用 WiFi 设为 `0` 再填名字密码。**必须是 2.4GHz** |
 | `OP_DEVICE_ENDPOINT` | 第 0 步里那条完整地址 |
 | `OP_SID` / `OP_PWD` | 你的学号和密码 |
 

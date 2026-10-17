@@ -19,8 +19,9 @@
 #define OP_WIFI_ENTERPRISE 1
 #define OP_WIFI_SSID "CUHK1x"
 #define OP_WIFI_PASS ""
-#define OP_WIFI_IDENTITY ""      /* 一般留空（= 学号）；eduroam 有时要 学号@cuhk.edu.hk */
-#define OP_WIFI_USERNAME ""      /* 留空 = 用 OP_SID */
+#define OP_WIFI_USERNAME_SUFFIX "@link.cuhk.edu.hk"  /* Wi-Fi 用户名 = 学号 + 这个后缀 */
+#define OP_WIFI_IDENTITY ""      /* 一般留空（= 拼好的用户名） */
+#define OP_WIFI_USERNAME ""      /* 留空 = 学号 + 上面的后缀；要特例再填完整用户名 */
 #define OP_WIFI_PASSWORD ""      /* 留空 = 用 OP_PWD */
 
 /* ---------- 取数地址 ----------

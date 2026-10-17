@@ -59,14 +59,16 @@ pio device monitor
 | `OP_WIFI_ENTERPRISE` | `1` | `0` |
 | `OP_WIFI_SSID` | `CUHK1x`（不行再试 `eduroam`） | 你的 WiFi 名 |
 | `OP_WIFI_PASS` | 留空 | 你的 WiFi 密码 |
-| `OP_WIFI_IDENTITY` | 留空（= 学号）；eduroam 试 `学号@cuhk.edu.hk` | 不用 |
-| `OP_WIFI_USERNAME` / `OP_WIFI_PASSWORD` | 留空 → 自动用 `OP_SID` / `OP_PWD` | 不用 |
+| `OP_WIFI_USERNAME_SUFFIX` | `@link.cuhk.edu.hk`（Wi-Fi 用户名 = 学号 + 它） | 不用 |
+| `OP_WIFI_IDENTITY` | 留空（= 拼好的用户名） | 不用 |
+| `OP_WIFI_USERNAME` / `OP_WIFI_PASSWORD` | 留空 → 自动用「学号+后缀」/ `OP_PWD` | 不用 |
 
 几个实际会遇到的情况：
 
-- 用户名/密码和查课表是**同一组**，不用填两遍；
+- **密码**和查课表是同一组，不用填两遍；**用户名不一样**：Wi-Fi 是
+  `学号@link.cuhk.edu.hk`，查课表是裸学号——固件会自动拼，别手动把课表的 SID 改成带后缀的；
 - 首次连接要跟认证服务器来回，5–10 秒是正常的，20 秒超时够用；
-- 连不上按顺序试：SSID 换 `eduroam` → identity 填 `学号@cuhk.edu.hk` → 确认账号没开二次验证；
+- 连不上按顺序试：SSID 换 `eduroam`（后缀可能要改成 `@cuhk.edu.hk`）→ 确认账号没开二次验证；
 - 学校可能限制**同一账号的并发设备数**（手机 + 电脑 + 手表）。认证失败时先把别的设备断开试试；
 - 和 HTTPS 一样，这里不校验服务器证书（板子第一次上电没有可信时间）。真在意可以在
   `net.cpp` 里加 `esp_wifi_sta_wpa2_ent_set_ca_cert`，属于进阶操作。
