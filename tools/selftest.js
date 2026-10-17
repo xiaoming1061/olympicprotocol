@@ -5802,6 +5802,9 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
   check("固件里用到的配置项都在 config.example.h 里有名有姓（用户照抄就能编）",
     missingConfig.length === 0, missingConfig.join("、"));
 
+  check("固件支持学校 802.1X Wi-Fi（PEAP），家用 Wi-Fi 仍可切换",
+    /WPA2_AUTH_PEAP/.test(firmwareCode) && /OP_WIFI_ENTERPRISE/.test(firmwareCode));
+
   /* 设备接口那包数据的上限，要和固件的缓冲区对得上 */
   const mainCode = fs.readFileSync(path.join(hw, "firmware", "src", "main.cpp"), "utf8");
   check("设备接口硬上限 4096 字节，固件缓冲区留了余量且不小于它",

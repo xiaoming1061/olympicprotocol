@@ -49,6 +49,28 @@ pio device monitor
 断网时会用 RTC 内存里那一包继续显示，页脚标 `OFFLINE`；半小时后重试。
 一块屏显示旧课表，总比白屏强。
 
+## 学校 Wi-Fi（802.1X）怎么连
+
+学校那种「用户名 + 密码」的 Wi-Fi（`CUHK1x` / `eduroam`）不是家用 Wi-Fi，光填一个
+密码是连不上的。固件里把开关打开即可：
+
+| 配置项 | 学校 Wi-Fi | 家用 Wi-Fi |
+| --- | --- | --- |
+| `OP_WIFI_ENTERPRISE` | `1` | `0` |
+| `OP_WIFI_SSID` | `CUHK1x`（不行再试 `eduroam`） | 你的 WiFi 名 |
+| `OP_WIFI_PASS` | 留空 | 你的 WiFi 密码 |
+| `OP_WIFI_IDENTITY` | 留空（= 学号）；eduroam 试 `学号@cuhk.edu.hk` | 不用 |
+| `OP_WIFI_USERNAME` / `OP_WIFI_PASSWORD` | 留空 → 自动用 `OP_SID` / `OP_PWD` | 不用 |
+
+几个实际会遇到的情况：
+
+- 用户名/密码和查课表是**同一组**，不用填两遍；
+- 首次连接要跟认证服务器来回，5–10 秒是正常的，20 秒超时够用；
+- 连不上按顺序试：SSID 换 `eduroam` → identity 填 `学号@cuhk.edu.hk` → 确认账号没开二次验证；
+- 学校可能限制**同一账号的并发设备数**（手机 + 电脑 + 手表）。认证失败时先把别的设备断开试试；
+- 和 HTTPS 一样，这里不校验服务器证书（板子第一次上电没有可信时间）。真在意可以在
+  `net.cpp` 里加 `esp_wifi_sta_wpa2_ent_set_ca_cert`，属于进阶操作。
+
 ## 想调的地方
 
 | 想改 | 改哪儿 |

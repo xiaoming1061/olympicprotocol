@@ -14,14 +14,28 @@ bool Net::connectWifi(uint32_t timeoutMs) {
   WiFi.persistent(false);        /* 不要把配网信息写进 Flash，费寿命 */
   WiFi.mode(WIFI_STA);
   WiFi.setSleep(true);           /* 等回包的时候允许休眠，能省不少电 */
+
+#if OP_WIFI_ENTERPRISE
+  /* 学校 Wi-Fi 是 WPA2-Enterprise（PEAP/MSCHAPv2）：不只是"一个密码"，
+     还要一个用户名。港中大的用户名就是学号、密码就是学校密码，
+     跟查课表用的是同一组，所以默认直接复用 OP_SID / OP_PWD。
+     identity 一般和用户名相同；eduroam 有时要 学号@cuhk.edu.hk。 */
+  const char *identity = (OP_WIFI_IDENTITY[0] != '\0') ? OP_WIFI_IDENTITY : OP_SID;
+  const char *username = (OP_WIFI_USERNAME[0] != '\0') ? OP_WIFI_USERNAME : OP_SID;
+  const char *password = (OP_WIFI_PASSWORD[0] != '\0') ? OP_WIFI_PASSWORD : OP_PWD;
+  WiFi.disconnect(true);         /* 官方示例里也是先断开再配企业级参数 */
+  WiFi.begin(OP_WIFI_SSID, WPA2_AUTH_PEAP, identity, username, password);
+#else
   WiFi.begin(OP_WIFI_SSID, OP_WIFI_PASS);
+#endif
 
   const uint32_t started = millis();
   while (WiFi.status() != WL_CONNECTED && (millis() - started) < timeoutMs) {
     delay(100);
   }
 #if OP_SERIAL_LOG
-  Serial.printf("[net] WiFi %s，用时 %lu ms\n",
+  Serial.printf("[net] WiFi(%s) %s，用时 %lu ms\n",
+                OP_WIFI_ENTERPRISE ? "802.1X" : "普通",
                 WiFi.status() == WL_CONNECTED ? "已连接" : "连不上",
                 (unsigned long)(millis() - started));
 #endif

@@ -9,9 +9,19 @@
 #ifndef OP_CONFIG_H
 #define OP_CONFIG_H
 
-/* ---------- WiFi（手机热点也行，2.4GHz） ---------- */
-#define OP_WIFI_SSID "你的WiFi名"
-#define OP_WIFI_PASS "你的WiFi密码"
+/* ---------- WiFi ----------
+ * 学校那种「用户名 + 密码」的 Wi-Fi（CUHK1x / eduroam）是 802.1X：
+ *   把 OP_WIFI_ENTERPRISE 填 1，SSID 填 CUHK1x，剩下三个留空
+ *   → 自动用下面的 OP_SID / OP_PWD（用户名就是学号）
+ * 家里的 Wi-Fi 是普通密码：
+ *   填 0，把名字和密码写进 OP_WIFI_SSID / OP_WIFI_PASS
+ */
+#define OP_WIFI_ENTERPRISE 1
+#define OP_WIFI_SSID "CUHK1x"
+#define OP_WIFI_PASS ""
+#define OP_WIFI_IDENTITY ""      /* 一般留空（= 学号）；eduroam 有时要 学号@cuhk.edu.hk */
+#define OP_WIFI_USERNAME ""      /* 留空 = 用 OP_SID */
+#define OP_WIFI_PASSWORD ""      /* 留空 = 用 OP_PWD */
 
 /* ---------- 取数地址 ----------
  * 就是 Cloudflare Worker 上那条给手表用的入口：
