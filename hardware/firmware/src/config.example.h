@@ -45,4 +45,7 @@
 /* 开机时按住 PWR 超过 2.5 秒就关机。默认关：PWR 同时是唤醒键，容易误判。 */
 #define OP_PWR_LONG_PRESS_OFF 0
 
+/* 诊断用：开机后打印 20 秒按键电平。平时保持 0。 */
+#define OP_BUTTON_PROBE 0
+
 #endif /* OP_CONFIG_H */

@@ -130,10 +130,12 @@ void goToSleep(int minutes) {
   Ui::sleepPanel();
   Board::panelPower(false);   /* 屏幕那一路也断掉：墨水屏断电还留着画面 */
   esp_sleep_enable_timer_wakeup((uint64_t)minutes * 60ULL * 1000000ULL);
-#if defined(ESP_GPIO_WAKEUP_GPIO_LOW)
-  /* 按一下 PWR 就醒来刷新（低电平唤醒） */
-  esp_deep_sleep_enable_gpio_wakeup(1ULL << PWR_BUTTON_PIN, ESP_GPIO_WAKEUP_GPIO_LOW);
-#endif
+  /* 按一下 PWR（GPIO2，低电平）就醒来刷新。
+   *
+   * 这里原来写的是 `#if defined(ESP_GPIO_WAKEUP_GPIO_LOW)`——但那是个**枚举**，
+   * 不是宏，defined() 永远为假，整段代码被预处理器删掉了，所以设备其实只有
+   * 定时唤醒，PWR 键按了也不会醒。改用 C6 支持的 EXT1（GPIO2 拉低触发）。 */
+  esp_sleep_enable_ext1_wakeup(1ULL << PWR_BUTTON_PIN, ESP_EXT1_WAKEUP_ALL_LOW);
   esp_deep_sleep_start();
 }
 
@@ -149,6 +151,24 @@ void setup() {
 #endif
 
   Board::begin();
+
+#if OP_BUTTON_PROBE
+  /* 诊断用：20 秒内每 0.5 秒打印一次两个按键的电平。
+     1 = 松开（上拉），0 = 按下。按 PWR / BOOT 看数字变不变，
+     就能区分"按键没接通"还是"唤醒源没生效"。 */
+  Serial.println("[probe] press PWR / BOOT and watch the levels (1=released, 0=pressed)");
+  bool pwrSeen = false;
+  bool bootSeen = false;
+  for (int i = 0;; i++) {          /* 一直打印，方便随时接上串口看 */
+    const int pwr = (int)digitalRead(PWR_BUTTON_PIN);
+    const int boot = (int)digitalRead(BOOT_BUTTON_PIN);
+    if (pwr == LOW) pwrSeen = true;     /* 记住"曾经按下过"，不用盯着实时看 */
+    if (boot == LOW) bootSeen = true;
+    Serial.printf("[probe] %4d  PWR=%d  BOOT=%d  | seen: PWR=%d BOOT=%d\n", i,
+                  pwr, boot, (int)pwrSeen, (int)bootSeen);
+    delay(400);
+  }
+#endif
 
   /* 「开机时长按 PWR = 关机」这个功能默认关掉：
      PWR 同时是唤醒键，用电池开机时芯片启动的那一刻键还按着，很容易被
