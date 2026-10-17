@@ -5737,7 +5737,7 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
 {
   const cp = require("child_process");
   const hw = path.join(root, "hardware");
-  const boardCode = fs.readFileSync(path.join(hw, "firmware", "include", "board_config.h"), "utf8");
+  const boardCode = fs.readFileSync(path.join(hw, "firmware", "src", "board_config.h"), "utf8");
   const themeCode = fs.readFileSync(path.join(hw, "firmware", "src", "ui_theme.h"), "utf8");
   const previewCode = fs.readFileSync(path.join(hw, "preview", "layout.mjs"), "utf8");
   const payloadCode = fs.readFileSync(path.join(root, "worker", "device-payload.js"), "utf8");
@@ -5779,7 +5779,7 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
   const firmwareFiles = [
     "src/main.cpp", "src/board.cpp", "src/board.h", "src/net.cpp", "src/net.h",
     "src/ui.cpp", "src/ui.h", "src/ui_theme.h", "src/font8x8.h",
-    "include/board_config.h", "include/config.example.h"
+    "src/board_config.h", "src/config.example.h"
   ].map((rel) => path.join(hw, "firmware", rel));
   const firmwareCode = firmwareFiles.map((file) => fs.readFileSync(file, "utf8")).join("\n");
   const defined = new Set(
@@ -5818,10 +5818,10 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
   /* 这条是"别把密码提交上去"的闸门。文件本身可以是存在的（本地要填密码），
      关键是它被 .gitignore 排除、并且不在 Git 索引里。 */
   const tracked = cp.spawnSync("git",
-    ["ls-files", "--error-unmatch", "hardware/firmware/include/config.h"],
+    ["ls-files", "--error-unmatch", "hardware/firmware/src/config.h"],
     { cwd: root, encoding: "utf8" });
   check("固件本地配置不进 Git（里面有 WiFi 密码和学号密码）",
-    gitignore.indexOf("hardware/firmware/include/config.h") >= 0 &&
+    gitignore.indexOf("hardware/firmware/src/config.h") >= 0 &&
     (tracked.error || tracked.status !== 0));
 
   /* 真的把 5 种画面画一遍：有没有画出界、有没有字库里没有的字符 */

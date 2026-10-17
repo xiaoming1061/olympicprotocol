@@ -1,39 +1,54 @@
 # 固件：墨水屏课表牌
 
-平台是 **PlatformIO + Arduino 框架**，目标板 **微雪 ESP32-C6-ePaper-1.54**。
+工具链是 **Arduino 官方 CLI（arduino-cli）+ ESP32 Arduino 内核 3.x**，
+目标板 **微雪 ESP32-C6-ePaper-1.54**。
 
 ## 快速开始
 
 ```bash
 cd hardware/firmware
-cp include/config.example.h include/config.h     # Windows: copy include\config.example.h include\config.h
-# 编辑 include/config.h：WiFi、设备地址、学号密码
-pio run -t upload
-pio device monitor
+# Windows: copy src\config.example.h src\config.h
+cp src/config.example.h src/config.h
+# 编辑 src/config.h：WiFi（学校网会自动拼用户名）、设备地址、学号密码
+
+# 编译 + 烧录 + 看日志（把 COM5 换成你的串口）
+..\tools\flash.cmd COM5
 ```
 
 > 第一次上手先看 `../BRINGUP.md`（到货第一天清单）。里面第 0 步是**先别碰板子**，
 > 在电脑上跑 `node hardware/tools/check-endpoint.mjs <设备地址>` 把接口验通——
 > 不然屏幕上只显示几个字符，分不清是配置错了还是线没插好。
 
-没装 PlatformIO 的话：VS Code 装 PlatformIO 插件，用它打开这个目录，然后点 Upload。
+> **为什么不用 PlatformIO**：ESP32-C6 需要 Arduino-ESP32 3.x，而 PlatformIO 官方
+> 平台里带的还是 2.0.17（编译会报 "This board doesn't support arduino framework"）；
+> 社区分支 pioarduino 的包又缺 PlatformIO 要的 `package.json`。Arduino 官方 CLI
+> 对 C6 是原生支持的，所以改用这条工具链。
 
-> `platformio.ini` 里的 platform 不是官网那条 `espressif32`：ESP32-C6 需要
-> Arduino-ESP32 3.x 内核，官方平台还停在 2.0.x。这里用的是社区维护的
-> pioarduino 分支包，**版本锁死**，别人拿到也能编出一样的东西。
+不跑脚本、想手打命令的话：
+
+```bash
+arduino-cli compile --fqbn esp32:esp32:esp32c6:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=no_ota --build-path D:\op-build .
+arduino-cli upload -p COM5 --fqbn esp32:esp32:esp32c6:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=no_ota --input-dir D:\op-build .
+arduino-cli monitor -p COM5 -b esp32:esp32:esp32c6:CDCOnBoot=cdc,FlashSize=16M,PartitionScheme=no_ota --config baudrate=115200
+```
+
+> 构建目录一定要放在**没有空格**的路径（`D:\op-build`）。放在
+> `...\Olympic Protocal\...` 这种带空格的路径下，Windows 的 `ar` 会在最后一步
+> 打包 `core.a` 时报 "Invalid argument"。
 
 ## 文件都是干什么的
 
 | 文件 | 作用 |
 | --- | --- |
+| `firmware.ino` | Arduino sketch 入口（空的；setup/loop 在 `src/main.cpp`） |
 | `src/main.cpp` | 主流程：取数 → 画屏 → 算下次醒的时间 → 睡 |
 | `src/board.h/.cpp` | 供电（I/O 扩展芯片）、按键、电池电压、板载实时时钟 |
 | `src/net.h/.cpp` | 连 WiFi、向课表代理 POST、把响应原文交给调用方 |
 | `src/ui.h/.cpp` | 把那一小包数据画到 200×200 屏上 |
 | `src/font8x8.h` | 8×8 点阵字库（ASCII 32–126，公有领域） |
 | `src/ui_theme.h` | 排版参数（坐标、边距、放大倍数）。**预览工具会读它** |
-| `include/board_config.h` | 板级引脚，抄自官方仓库 |
-| `include/config.example.h` | 配置模板（WiFi / 地址 / 账号） |
+| `src/board_config.h` | 板级引脚，抄自官方仓库 |
+| `src/config.example.h` | 配置模板（WiFi / 地址 / 账号） |
 
 ## 一次"醒来"发生了什么
 
@@ -77,11 +92,11 @@ pio device monitor
 
 | 想改 | 改哪儿 |
 | --- | --- |
-| 上课前提前多久醒 | `include/config.h` 的 `OP_LEAD_MINUTES` |
+| 上课前提前多久醒 | `src/config.h` 的 `OP_LEAD_MINUTES` |
 | 每天几点有个固定刷新 | `main.cpp` 里 `planSleepMinutes` 的 `07:00` |
 | 屏幕排版 | `src/ui_theme.h`（改完跑一次预览就能看到效果） |
 | 换墨水屏驱动 | `src/ui.cpp` 顶部的 `EPD_PANEL` |
-| 串口日志开关 | `include/config.h` 的 `OP_SERIAL_LOG` |
+| 串口日志开关 | `src/config.h` 的 `OP_SERIAL_LOG` |
 
 ## 排错
 

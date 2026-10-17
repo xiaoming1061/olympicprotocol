@@ -1,7 +1,7 @@
 /* 复制成 config.h 再填（config.h 不进 Git，密码别提交）
  *
- *     cp include/config.example.h include/config.h      (Linux / macOS)
- *     copy include\config.example.h include\config.h    (Windows)
+ *     cp src/config.example.h src/config.h      (Linux / macOS)
+ *     copy src\config.example.h src\config.h    (Windows)
  *
  * 里面有 WiFi、取数地址、学号密码。填完直接 `pio run -t upload`。
  */

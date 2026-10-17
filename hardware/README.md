@@ -8,7 +8,7 @@
 | 部分 | 状态 | 在哪儿 |
 | --- | --- | --- |
 | 设备取数接口（手表要的那一小包数据） | 写好，41 条单测盯着 | `worker/device-payload.js`、`worker/timetable-proxy.js` |
-| 固件（联网 → 解析 → 画屏 → 深度睡眠） | 写好，**没上过真机** | `hardware/firmware/` |
+| 固件（联网 → 解析 → 画屏 → 深度睡眠） | 写好，**已用 arduino-cli 编译通过**，还没上真机 | `hardware/firmware/` |
 | 屏幕排版预览（电脑上看真机会画成什么样） | 写好，5 种画面可看 | `hardware/preview/` |
 | 到货第一天清单（从零到第一屏） | 板子到了就照它走 | `hardware/BRINGUP.md` |
 | 实物板子 | 已到货 | 见下面采购清单 |
@@ -102,7 +102,7 @@
 体积大，手表每次醒来只有十几秒和一点点电。压小这一步放在 Worker 上，
 手表只做「解析 → 画」。压缩规则和几条约定都写在 `worker/README.md`。
 
-**关于密码**：板子把学号和密码存在自己的 Flash 里（`include/config.h`，不进 Git），
+**关于密码**：板子把学号和密码存在自己的 Flash 里（`src/config.h`，不进 Git），
 每次醒来都要发给 Worker 去登学校系统。这是最直接的方案，代价是"密码在设备里"。
 想避免的话有个干净的升级路径：让 Worker 把课表**缓存**起来（KV 或 Cache API），
 网页上登一次、点一下"同步到手表"，之后手表只凭设备口令读快照，自己不再拿密码。
@@ -157,10 +157,11 @@
 
 0. **先在电脑上验通接口**（`node hardware/tools/check-endpoint.mjs <地址>`）——
    这一步不碰板子，能把地址/口令/账号这三样一次验掉；
-1. 装 VS Code + PlatformIO；
-2. 把 `include/config.example.h` 复制成 `include/config.h` 填四个值；
+1. 装 arduino-cli + ESP32 内核（你机器上已经装好，在 `D:\arduino-data`）；
+2. 把 `src/config.example.h` 复制成 `src/config.h`，填学号和密码；
 3. 按住 BOOT 插 Type-C 进下载模式；
-4. Upload，然后开串口监视器看第一屏（预期画面和失败怎么查都写在清单里）。
+4. 双击 `hardware/tools/flash.cmd`（或带串口参数 `flash.cmd COM5`），
+   它会编译 → 烧录 → 打开串口日志。
 
 排错表在 `hardware/firmware/README.md`。
 

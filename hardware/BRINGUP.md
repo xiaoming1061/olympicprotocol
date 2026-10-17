@@ -35,22 +35,30 @@ node hardware/tools/check-endpoint.mjs https://<你的worker域名>/d/w7k2m9xq
 
 ---
 
-## 第 1 步：装开发工具（约 10 分钟）
+## 第 1 步：装 arduino-cli 和 ESP32 内核（一次性）
 
-装 **VS Code** + **PlatformIO** 插件：
+**你机器上这一步已经做完了**（arduino-cli 在 `%LOCALAPPDATA%\arduino-cli`，
+ESP32 内核在 `D:\arduino-data`，两个库也装好了）。换一台电脑的话：
 
-1. 装 VS Code（官网下载即可）；
-2. 打开 VS Code → 左边扩展图标 → 搜 `PlatformIO IDE` → Install；
-3. 装完左边会多一个蚂蚁头图标，点开能看到 `PIO Home` 就成了。
+1. 下载 arduino-cli 的 Windows 64 位 zip，解压到任意目录；
+2. 先把数据目录指到空间大的盘（C 盘最容易满）：
 
-> 插件自带编译器和烧录工具，不用另外装别的。第一次会下几百 MB 的工具链，
-> 国内网络可能要等一会儿。
+```powershell
+$env:ARDUINO_DIRECTORIES_DATA = "D:\arduino-data"
+$env:ARDUINO_DIRECTORIES_USER = "D:\arduino-user"
+```
+
+3. `arduino-cli core install esp32:esp32`（约 2GB）；
+4. `arduino-cli lib install GxEPD2 ArduinoJson`。
+
+> 为什么不用 PlatformIO：PIO 官方平台带的 Arduino 内核是 2.0.17，不支持 C6；
+> pioarduino 的包又缺 PIO 要的清单文件。arduino-cli 是原生支持 C6 的。
 
 ---
 
 ## 第 2 步：填配置（约 5 分钟）
 
-在仓库里进到 `hardware/firmware/`，把 `include/config.example.h` **复制**一份、
+在仓库里进到 `hardware/firmware/`，把 `src/config.example.h` **复制**一份、
 改名成 `config.h`（同一个目录），然后填四个值：
 
 | 填什么 | 从哪来 |
@@ -77,11 +85,14 @@ PlatformIO 找到的端口号）。
 
 ---
 
-## 第 4 步：烧进去（约 5 分钟）
+## 第 4 步：烧进去（约 2 分钟）
 
-在 PlatformIO 里点 **Upload**（或按它底部的箭头），等它编译并烧录完。
+双击 **`hardware/tools/flash.cmd`**，按提示输入板子的串口（例如 `COM5`）。
+它会依次做三件事：编译 → 烧录 → 打开串口日志。
 
-第一次编译要下依赖、编译一大堆东西，3–8 分钟很正常；之后再改就快了。
+也可以带参数直接跑：`hardware\tools\flash.cmd COM5`。
+
+第一次编译约 2–3 分钟，之后再改就快了。
 
 **烧录失败**：拔线，按住 BOOT 再插，重试一次；还不行就换根 Type-C 线。
 

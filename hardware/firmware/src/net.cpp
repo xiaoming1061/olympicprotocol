@@ -6,7 +6,7 @@
 #include <WiFiClientSecure.h>
 
 #if !__has_include("config.h")
-#error "缺少 include/config.h：把 include/config.example.h 复制一份改名成 config.h，填上 WiFi 和账号。"
+#error "缺少 src/config.h：把 src/config.example.h 复制一份改名成 config.h，填上 WiFi 和账号。"
 #endif
 #include "config.h"
 

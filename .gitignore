@@ -23,8 +23,9 @@ docs/timetable-export.png
 .wrangler/
 
 # 硬件固件：本地配置（有 WiFi 密码和学号密码）与编译产物
-hardware/firmware/include/config.h
+hardware/firmware/src/config.h
 hardware/firmware/.pio/
+hardware/firmware/.build/
 # 预览图：放大版当文档留着，1:1 那份是每次生成的产物
 hardware/preview/out/*-1x.png
 

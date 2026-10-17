@@ -309,7 +309,7 @@ async function main() {
   }
 
   console.log("\n" + describe(payload) + "\n");
-  console.log("这条入口是通的。接下来把同一个地址填进固件的 include/config.h 里就能烧板子了。");
+  console.log("这条入口是通的。接下来把同一个地址填进固件的 src/config.h 里就能烧板子了。");
   return 0;
 }
 
