@@ -150,8 +150,11 @@ void setup() {
 
   Board::begin();
 
-  /* 开机时按着 PWR 有两种意思：刚才就是按它唤醒的（那要等它松手），
-     或者一直按住不放 = 想关机。用"按住多久"区分：两秒半内松手就继续干活。 */
+  /* 「开机时长按 PWR = 关机」这个功能默认关掉：
+     PWR 同时是唤醒键，用电池开机时芯片启动的那一刻键还按着，很容易被
+     误判成"想关机"→ 拉低电池开关 + 深睡，表现成"按什么都没反应、电脑也不认"。
+     想用这个功能就把 config.h 里的 OP_PWR_LONG_PRESS_OFF 改成 1。 */
+#if OP_PWR_LONG_PRESS_OFF
   bool wantsOff = false;
   if (Board::pwrButtonHeld()) {
     const uint32_t pressedAt = millis();
@@ -164,6 +167,7 @@ void setup() {
     delay(1200);
     Board::powerOff();
   }
+#endif
 
   Ui::begin();
   const int battery = Board::batteryPercent();

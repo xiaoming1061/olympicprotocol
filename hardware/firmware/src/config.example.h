@@ -42,4 +42,7 @@
 #define OP_HTTP_TIMEOUT_MS 25000
 #define OP_SERIAL_LOG 1         /* 串口打印流程日志；省电可以关掉 */
 
+/* 开机时按住 PWR 超过 2.5 秒就关机。默认关：PWR 同时是唤醒键，容易误判。 */
+#define OP_PWR_LONG_PRESS_OFF 0
+
 #endif /* OP_CONFIG_H */
