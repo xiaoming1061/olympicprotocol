@@ -25,9 +25,13 @@ curl -s -X POST http://127.0.0.1:8788/timetable \
 ### 2. Cloudflare 控制台（最省事，不用装命令行）
 
 1. 登录 Cloudflare → **Workers & Pages** → **Create** → **Worker** → 取个名字（例如 `cuhk-timetable-proxy`）
-2. 把 `worker/timetable-proxy.js` 的内容整个粘进编辑器 → **Deploy**
+2. 把 **`worker/timetable-proxy.bundle.js`** 的内容整个粘进编辑器 → **Deploy**
+   （控制台的编辑器一次只认一个文件。源文件拆成了两个模块，直接贴
+   `timetable-proxy.js` 会报「找不到 ./device-payload.js」；单文件版是
+   `node worker/make-bundle.mjs` 机械拼出来的，内容一样）
 3. 进 **Settings → Variables and Secrets**，加两个变量：
    - `PROXY_TOKEN` = 一段随机串（例如 `k7fq2m9x`），**类型选 Secret**，别用可读的明文变量
+   - `DEVICE_TOKEN` = 另一段随机串（手表那条入口用；不配的话 `/d/…` 是 404）
    - `ALLOWED_ORIGINS` = `https://rhythmhill.com,http://localhost:5173`
 4. 部署完你会拿到 `https://<名字>.<你的账号>.workers.dev`
 5. 你的代理地址就是：`https://<名字>.<你的账号>.workers.dev/t/k7fq2m9x`

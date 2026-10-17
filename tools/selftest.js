@@ -5831,6 +5831,13 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
   check("到货清单第 0 步让用户先验接口（不是直接开板子）",
     fs.readFileSync(path.join(hw, "BRINGUP.md"), "utf8")
       .indexOf("check-endpoint.mjs") > 0);
+
+  /* 控制台粘贴用的单文件版必须是"刚生成"的状态，不然线上跑的和仓库里的对不上 */
+  const bundleCheck = cp.spawnSync(process.execPath,
+    [path.join(root, "worker", "make-bundle.mjs"), "--check"], { encoding: "utf8" });
+  check("控制台粘贴用的单文件版没有过期（改完 worker 记得重新生成）",
+    bundleCheck.status === 0,
+    String(bundleCheck.stderr || "").trim());
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");

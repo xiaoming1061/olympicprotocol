@@ -7,6 +7,7 @@
  */
 
 import worker from "./timetable-proxy.js";
+import bundleWorker from "./timetable-proxy.bundle.js";
 
 const PROXY = "https://proxy.example.workers.dev";
 const ORIGIN = "https://rhythmhill.com";
@@ -386,6 +387,17 @@ console.log("\n[worker] 手表入口 /d/<口令>：小、准、不泄密");
     console.log = realLog;
   }
   check("手表拿到的这包里没有学号密码，DEBUG 日志里也没有", leaked === false);
+
+  /* 控制台只能贴一个文件，所以还有一份机械拼出来的单文件版 */
+  serveRows([row({})]);
+  const bundled = await bundleWorker.fetch(new Request(PROXY + withDevice(), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "CF-Connecting-IP": "10.9.9.9" },
+    body: JSON.stringify({ sid: "1155000000", pwd: "pw", now: "2026-10-12T09:00:00+08:00" })
+  }), ENV);
+  const bundledData = await bundled.json();
+  check("控制台粘贴用的单文件版能跑通同一条手表入口",
+    bundled.status === 200 && bundledData.next && bundledData.next.code === "BMEG2210");
 }
 
 /* ---------- 收尾 ---------- */

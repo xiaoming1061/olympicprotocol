@@ -1701,6 +1701,8 @@ cuhk-buildings.json   港中文 7 栋教学楼的坐标，可直接导入
 tools/places-live.js  联网实测一次地图取点
 tools/deploy.js       同步到 clubwebsite 仓库并推送，发布到 rhythmhill.com
 worker/timetable-proxy.js  CUHK 课表代理（Cloudflare Worker，见下）
+worker/timetable-proxy.bundle.js  同一份代码的单文件版（控制台粘贴用，由 make-bundle.mjs 生成）
+worker/make-bundle.mjs     把上面两个模块拼成单文件，顺便检查有没有过期
 worker/device-payload.js   给墨水屏手表压出「今天 / 接下来」那一小包（纯逻辑，可单测）
 worker/dev-server.mjs      本地跑同一个代理（不用注册 Cloudflare 账号）
 worker/test.mjs            代理的 41 条单元测试（上游用替身，不联网）
