@@ -37,7 +37,10 @@ const NAMES = {
   startTime: ["MEETING_TIME_START", "START_TIME"],
   endTime: ["MEETING_TIME_END", "END_TIME"],
   teacher: ["INSTRUCTORS", "INSTRUCTOR", "TEACHER"],
-  section: ["CLASS_SECTION", "SECTION"]
+  section: ["CLASS_SECTION", "SECTION"],
+  term: ["STRM", "TERM", "TERM_CODE"],
+  termDescr: ["STRM_DESCR", "TERM_DESCR", "TERM_DESCRIPTION"],
+  meetingDay: ["MEETING_DAY", "DAY_OF_WEEK", "WEEKDAY", "MEETDAY"]
 };
 
 const DAY_FLAGS = [
@@ -128,16 +131,28 @@ function daysInMonth(year, month) {
 export function normTime(value) {
   const raw = String(value === null || value === undefined ? "" : value).trim();
   if (!raw) return null;
-  const digits = raw.replace(/[^0-9]/g, "");
-  if (!digits || digits.length > 4) return null;
+
   let hour;
   let minute;
-  if (digits.length <= 2) {
-    hour = Number(digits);
-    minute = 0;
+  /* 有分隔符的（`9:30` / `14:30:00` / `9.30`）先按分隔符切；秒直接忽略 */
+  const withSeparator = /^(\d{1,2})\s*[:.]\s*(\d{1,2})(?:\s*[:.]\s*\d{1,2})?/.exec(raw);
+  if (withSeparator) {
+    hour = Number(withSeparator[1]);
+    minute = Number(withSeparator[2]);
   } else {
-    hour = Number(digits.slice(0, digits.length - 2));
-    minute = Number(digits.slice(-2));
+    /* 没有分隔符的（`0930` / `930` / `143000`）按位数推 */
+    const digits = raw.replace(/[^0-9]/g, "");
+    if (!digits || digits.length > 6) return null;
+    if (digits.length <= 2) {
+      hour = Number(digits);
+      minute = 0;
+    } else if (digits.length <= 4) {
+      hour = Number(digits.slice(0, digits.length - 2));
+      minute = Number(digits.slice(-2));
+    } else {
+      hour = Number(digits.slice(0, 2));
+      minute = Number(digits.slice(2, 4));
+    }
   }
   const pm = /pm/i.test(raw);
   const am = /am/i.test(raw);
@@ -145,6 +160,26 @@ export function normTime(value) {
   if (am && hour === 12) hour = 0;
   if (hour > 23 || minute > 59) return null;
   return pad2(hour) + pad2(minute);
+}
+
+/* 有的学期上游只给一个 `MEETING_DAY` 文本（"THU" / "Thursday" / "星期四"），
+   网页那边认这个名字，这边也跟着认——不然同一门课网页有、手表没有 */
+function weekdayFromText(value) {
+  const text = String(value || "").trim().toUpperCase();
+  if (!text) return 0;
+  const table = [
+    [1, ["MON", "MONDAY", "星期一", "周一", "週一"]],
+    [2, ["TUE", "TUES", "TUESDAY", "星期二", "周二", "週二"]],
+    [3, ["WED", "WEDNESDAY", "星期三", "周三", "週三"]],
+    [4, ["THU", "THUR", "THURS", "THURSDAY", "星期四", "周四", "週四"]],
+    [5, ["FRI", "FRIDAY", "星期五", "周五", "週五"]],
+    [6, ["SAT", "SATURDAY", "星期六", "周六", "週六"]],
+    [7, ["SUN", "SUNDAY", "星期日", "星期天", "周日", "週日"]]
+  ];
+  for (let i = 0; i < table.length; i++) {
+    if (table[i][1].indexOf(text) >= 0) return table[i][0];
+  }
+  return 0;
 }
 
 function ymdToUtc(ymd) {
@@ -221,10 +256,18 @@ function minutesOf(hhmm) {
  * 星期读七列开关（MON…SUN），不拿 START_DT 去猜——START_DT 是这套上课
  * 安排的起止日期，不等于「第一节课那天」（js/timetable.js 里也是这么判的）。
  */
-function toMeeting(row) {
+/* 返回 { meeting } 或者 { meeting: null, reason }——reason 给诊断工具用，
+   手表拿到的包里不会有它 */
+function toMeetingWithReason(row) {
   const index = keyIndex(row);
-  const start = normTime(pick(index, row, NAMES.startTime));
-  if (!start) return null;
+  const rawStart = pick(index, row, NAMES.startTime);
+  const start = normTime(rawStart);
+  if (!start) {
+    return {
+      meeting: null,
+      reason: rawStart ? "上课时间认不出（" + rawStart + "）" : "这一行没有上课时间"
+    };
+  }
 
   const startDate = normDate(pick(index, row, NAMES.startDate));
   const endDate = normDate(pick(index, row, NAMES.endDate)) || startDate;
@@ -234,9 +277,15 @@ function toMeeting(row) {
     const key = index[bare(pair[1])];
     if (key !== undefined && isYes(row[key])) weekdays.push(pair[0]);
   });
-  /* 一个开关都没勾，就退回"按开始日期那天算"，但只在日期合法时才信 */
+  /* 一个开关都没勾，再退两步：先看 MEETING_DAY 文本，最后才按开始日期推 */
+  if (!weekdays.length) {
+    const fromText = weekdayFromText(pick(index, row, NAMES.meetingDay));
+    if (fromText) weekdays = [fromText];
+  }
   if (!weekdays.length && startDate) weekdays = [weekdayOf(startDate)];
-  if (!weekdays.length) return null;
+  if (!weekdays.length) {
+    return { meeting: null, reason: "星期七列都没勾，也没有可用的 MEETING_DAY / 开始日期" };
+  }
 
   const subject = pick(index, row, NAMES.subject);
   const catalog = pick(index, row, NAMES.catalog);
@@ -244,7 +293,7 @@ function toMeeting(row) {
   const venue = splitRoom(pick(index, row, NAMES.venue));
   const end = normTime(pick(index, row, NAMES.endTime));
 
-  return {
+  return { meeting: {
     code: trimTo(code, 16),
     type: trimTo(pick(index, row, NAMES.type), MAX_TYPE),
     title: trimTo(pick(index, row, NAMES.descr), MAX_TITLE),
@@ -257,7 +306,11 @@ function toMeeting(row) {
     weekdays: weekdays,
     from: startDate || "",
     to: endDate || ""
-  };
+  }, reason: "" };
+}
+
+function toMeeting(row) {
+  return toMeetingWithReason(row).meeting;
 }
 
 /* 同一门课同一节，上游可能给两条（不同周次/不同备注），设备上看不出区别，
@@ -379,6 +432,81 @@ export function buildDevicePayload(rows, nowMs, options) {
   }
 
   return payload;
+}
+
+/* ---------- 诊断：逐行说明它为什么进得来 / 进不来 ---------- */
+
+export function diagnoseRows(rows, nowMs, options) {
+  const opt = options || {};
+  const days = Math.max(1, Math.min(14, Number(opt.days) || DEFAULT_DAYS));
+  const now = hkNow(nowMs);
+  const list = Array.isArray(rows) ? rows : [];
+  const seen = Object.create(null);
+  const result = [];
+
+  /* 体积上限也会让行"消失"：真的跑一遍打包，看哪些日子被裁掉了 */
+  const packed = buildDevicePayload(list, nowMs, { days: days });
+  const kept = Object.create(null);
+  packed.days.forEach(function (bucket) {
+    bucket.classes.forEach(function (item) {
+      kept[bucket.date + "|" + item.start + "|" + item.code] = true;
+    });
+  });
+
+  list.forEach(function (row, index) {
+    const parsed = toMeetingWithReason(row);
+    const idx = keyIndex(row);
+    const term = [pick(idx, row, NAMES.term), pick(idx, row, NAMES.termDescr)]
+      .filter(Boolean).join(" ");
+    const item = {
+      index: index + 1,
+      ok: false,
+      reason: parsed.reason,
+      hits: [],
+      start: "", end: "", from: "", to: "",
+      weekdays: [], code: "", type: "", venue: "", teacher: "", term: term
+    };
+
+    if (parsed.meeting) {
+      const m = parsed.meeting;
+      item.start = m.start;
+      item.end = m.end;
+      item.from = m.from;
+      item.to = m.to;
+      item.weekdays = m.weekdays;
+      item.code = m.code;
+      item.type = m.type;
+      item.venue = m.venue;
+      item.teacher = m.teacher;
+
+      const key = meetingKey(m);
+      if (seen[key]) {
+        item.reason = "和前面第 " + seen[key] + " 行完全相同，只保留一条";
+      } else {
+        seen[key] = item.index;
+        for (let offset = 0; offset < days; offset++) {
+          const date = shiftDate(now.ymd, offset);
+          if (occursOn(m, date, weekdayOf(date))) item.hits.push(date);
+        }
+        if (item.hits.length) {
+          item.ok = true;
+          item.reason = "";
+          const survived = item.hits.some(function (date) {
+            return kept[date + "|" + item.start + "|" + item.code];
+          });
+          if (!survived) {
+            item.ok = false;
+            item.reason = "包超过 4096 字节，这几天被裁掉了（从最后一天往回丢）";
+          }
+        } else {
+          item.reason = "日期范围不覆盖接下来 " + days + " 天";
+        }
+      }
+    }
+    result.push(item);
+  });
+
+  return { now: now.iso, today: now.ymd, total: list.length, result: result };
 }
 
 export const __internal = {

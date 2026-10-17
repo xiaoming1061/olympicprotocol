@@ -8,6 +8,7 @@
 
 import worker from "./timetable-proxy.js";
 import bundleWorker from "./timetable-proxy.bundle.js";
+import { diagnoseRows, normTime } from "./device-payload.js";
 
 const PROXY = "https://proxy.example.workers.dev";
 const ORIGIN = "https://rhythmhill.com";
@@ -401,6 +402,38 @@ console.log("\n[worker] 手表入口 /d/<口令>：小、准、不泄密");
 }
 
 /* ---------- 收尾 ---------- */
+
+/* ================= 5. 解析层的宽容度与诊断 ================= */
+
+console.log("\n[worker] 解析层的宽容度与诊断");
+{
+  const row = (over) => Object.assign({
+    SUBJECT: "BMEG", CATALOG_NBR: "2210", DESCR: "Biomedical Engineering",
+    COMDESC: "Lecture", FDESCR: "Science Centre L3",
+    START_DT: "20260907", END_DT: "20261204",
+    MEETING_TIME_START: "14:30", MEETING_TIME_END: "15:15",
+    MON: "N", TUES: "N", WED: "N", THURS: "Y", FRI: "N", SAT: "N", SUN: "N"
+  }, over);
+  const at = Date.parse("2026-10-17T09:00:00+08:00");   /* 周六 */
+
+  check("带秒的时间（14:30:00）能认成 1430",
+    normTime("14:30:00") === "1430" && normTime("9:05:00 AM") === "0905");
+
+  const past = diagnoseRows([row({ STRM: "2520", START_DT: "20260105", END_DT: "20260430" })], at, {});
+  check("上学期的周四课被排除，诊断里写明是日期范围",
+    past.result[0].ok === false && /日期范围/.test(past.result[0].reason));
+
+  const textual = diagnoseRows([row({
+    MON: "N", THURS: "N", MEETING_DAY: "THU"
+  })], at, {});
+  check("七列开关都没勾、只给 MEETING_DAY 文本时也能认出周四",
+    textual.result[0].ok === true && textual.result[0].weekdays[0] === 4 &&
+    textual.result[0].hits[0] === "20261022");
+
+  const broken = diagnoseRows([row({ MEETING_TIME_START: "" })], at, {});
+  check("没有上课时间的行会被单独指出（不是悄悄消失）",
+    broken.result[0].ok === false && /没有上课时间/.test(broken.result[0].reason));
+}
 
 globalThis.fetch = realFetch;
 console.log("\n" + (fail === 0 ? "worker 全部通过" : "worker 有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项");
