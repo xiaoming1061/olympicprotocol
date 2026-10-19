@@ -1979,7 +1979,7 @@
       if (!pull.courses.length) {
         $("#pullStatus").textContent = rows.length
           ? "读到 " + rows.length + " 行，但一行都没解析出来"
-          : "上游返回 0 条——密码错和这学期没选课，学校给的结果是一样的";
+          : "上游返回 0 条——密码错误或当前学期没有课程安排";
         $("#pullDebugSummary").textContent =
           "字段名（" + built.report.keys.length + " 个）：" + built.report.keys.join("、");
         $("#pullDebugText").textContent = JSON.stringify(rows.slice(0, 2), null, 1);
