@@ -230,7 +230,8 @@ window.OP = window.OP || {};
     });
 
     if (!all.length) {
-      svg.innerHTML = '<text x="500" y="350" class="bld-label">还没有楼栋坐标，去「设置」里添加</text>';
+      svg.innerHTML = '<text x="500" y="350" class="bld-label">' +
+        esc(OP.t ? OP.t("map.noBuildings") : "还没有楼栋坐标，去「设置」里添加") + "</text>";
       return;
     }
 
@@ -247,7 +248,7 @@ window.OP = window.OP || {};
       /* 这张地图现在是"跟着当前那张卡片走"的：路线规划/返回宿舍/自定义路线
          各有各的起终点，所以没东西可画时的说法由调用方给。 */
       svg.innerHTML = '<text x="500" y="350" class="bld-label">' +
-        esc(opts.empty || "今天没有要去的地方") + "</text>";
+        esc(opts.empty || (OP.t ? OP.t("map.empty") : "今天没有要去的地方")) + "</text>";
       return;
     }
 

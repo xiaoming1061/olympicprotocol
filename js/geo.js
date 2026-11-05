@@ -195,12 +195,13 @@ window.OP = window.OP || {};
   }
 
   function readableError(err) {
-    if (!err) return "定位失败";
+    var text = function (key, fallback) { return OP.t ? OP.t(key) : fallback; };
+    if (!err) return text("geo.err.failed", "定位失败");
     switch (err.code) {
-      case 1: return "定位权限被拒绝，请在浏览器或系统设置里允许位置访问";
-      case 2: return "暂时拿不到位置信号，换个开阔一点的地方再试";
-      case 3: return "定位超时，重试一次";
-      default: return err.message || "定位失败";
+      case 1: return text("geo.err.denied", "定位权限被拒绝，请在浏览器或系统设置里允许位置访问");
+      case 2: return text("geo.err.signal", "暂时拿不到位置信号，换个开阔一点的地方再试");
+      case 3: return text("geo.err.timeout", "定位超时，重试一次");
+      default: return err.message || text("geo.err.failed", "定位失败");
     }
   }
 
@@ -215,7 +216,7 @@ window.OP = window.OP || {};
 
   function watch(onUpdate, onError) {
     if (!supported()) {
-      onError(new Error("此浏览器不支持定位"));
+      onError(new Error(OP.t ? OP.t("geo.err.unsupported") : "此浏览器不支持定位"));
       return null;
     }
     stop();
@@ -237,7 +238,7 @@ window.OP = window.OP || {};
   function once() {
     return new Promise(function (resolve, reject) {
       if (!supported()) {
-        reject(new Error("此浏览器不支持定位"));
+    reject(new Error(OP.t ? OP.t("geo.err.unsupported") : "此浏览器不支持定位"));
         return;
       }
       navigator.geolocation.getCurrentPosition(

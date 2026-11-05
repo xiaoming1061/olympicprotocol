@@ -332,7 +332,8 @@ window.OP = window.OP || {};
     var placeRoom = room - (nameLines * (nameSize + 5));
     var placeLines = Math.max(2, Math.min(PLACE_MAX_LINES, Math.floor(placeRoom / (placeSize + 4))));
 
-    var out = [{ text: course.name || "（没有课名）", weight: 600, size: nameSize, lines: nameLines }];
+    var out = [{ text: course.name ||
+      (OP.t ? OP.t("shot.noName") : "（没有课名）"), weight: 600, size: nameSize, lines: nameLines }];
     out.push({ text: course.start + "–" + course.end, weight: 400, size: timeSize, color: "textDim", lines: 1 });
     if (place) {
       out.push({
@@ -411,7 +412,8 @@ window.OP = window.OP || {};
     ctx.textAlign = "center";
     ctx.fillStyle = palette.accent;
     model.days.forEach(function (day, i) {
-      ctx.fillText(OP.Planner.WEEKDAYS_SHORT[day] || ("第" + day + "天"),
+      ctx.fillText(OP.Planner.WEEKDAYS_SHORT[day] ||
+        (OP.t ? OP.t("shot.dayN", { n: day }) : "第" + day + "天"),
         gridLeft + i * colW + colW / 2, gridTop - m.headH / 2 + 5);
     });
 

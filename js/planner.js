@@ -21,6 +21,24 @@ window.OP = window.OP || {};
   refreshWeekdayNames();
   if (OP.I18N && OP.I18N.onChange) OP.I18N.onChange(refreshWeekdayNames);
 
+  /* 取播报稿：有 i18n 模块就用表里的句子，没有（自检环境）就用传进来的中文兜底。
+     注意兜底不是"多余的重复"——js/i18n.js 在自检里不加载，播报用例要能单跑。 */
+  function tr(key, vars, fallback) {
+    if (OP.t) return OP.t(key, vars);
+    var text = fallback;
+    if (vars) {
+      Object.keys(vars).forEach(function (k) {
+        text = text.split("{" + k + "}").join(String(vars[k]));
+      });
+    }
+    return text;
+  }
+
+  /* 中文句子自带「。」，直接接起来就行；英文句与句之间要补空格 */
+  function joinSep() {
+    return (OP.I18N && OP.I18N.lang() === "en") ? " " : "";
+  }
+
   /* ---------- 时间工具 ---------- */
 
   function hm(text) {
@@ -455,19 +473,21 @@ window.OP = window.OP || {};
    * 例如「李兆基樓 Lee Shau Kee」。只有一种语言时就用那一种。
    */
   function spokenName(building) {
-    if (!building) return "未知地点";
+    if (!building) return tr("speech.unknownPlace", null, "未知地点");
 
     var names = buildingNames(building);
     var en = shortEnglishName(names.en);
 
     if (names.zh && en) return names.zh + " " + en;
-    return names.zh || en || building.name || "未知地点";
+    return names.zh || en || building.name || tr("speech.unknownPlace", null, "未知地点");
   }
 
   function spokenPlace(course, building) {
     var where = spokenName(building);
     /* 播报里用逗号断开，念出来有个自然停顿 */
-    return course.room ? where + "，" + course.room : where;
+    return course.room
+      ? tr("speech.roomJoin", { place: where, room: course.room }, "{place}，{room}")
+      : where;
   }
 
   function nextLine(leg) {
@@ -486,25 +506,30 @@ window.OP = window.OP || {};
     var list = todayCourses(data, date);
     var parts = [];
 
-    parts.push(
-      "现在是 " + (date.getMonth() + 1) + " 月 " + date.getDate() + " 日，" +
-      WEEKDAYS[isoDow(date)] + "，" +
-      cnTime(pad2(date.getHours()) + ":" + pad2(date.getMinutes())) + "。"
-    );
+    parts.push(tr("speech.now", {
+      month: date.getMonth() + 1,
+      day: date.getDate(),
+      weekday: WEEKDAYS[isoDow(date)],
+      time: timeText(pad2(date.getHours()) + ":" + pad2(date.getMinutes()))
+    }, "现在是 {month} 月 {day} 日，{weekday}，{time}。"));
 
     if (!list.length) {
-      parts.push("今天没有安排课程，好好休息。");
-      return parts.join("");
+      parts.push(tr("speech.noClasses", null, "今天没有安排课程，好好休息。"));
+      return parts.join(joinSep());
     }
 
-    parts.push("今天共有 " + list.length + " 节课。");
+    parts.push(tr("speech.total", { n: list.length }, "今天共有 {n} 节课。"));
 
     list.forEach(function (c, i) {
       var b = buildingById(data, c.buildingId);
-      var line = "第 " + (i + 1) + " 节，" + c.name + "，" + cnTime(c.start) +
-        "，在" + spokenPlace(c, b);
-      if (c.teacher) line += "，" + c.teacher;
-      parts.push(line + "。");
+      var vars = { i: i + 1, name: c.name, start: timeText(c.start), place: spokenPlace(c, b) };
+      if (c.teacher) {
+        vars.teacher = c.teacher;
+        parts.push(tr("speech.lessonTeacher", vars,
+          "第 {i} 节，{name}，{start}，在{place}，{teacher}。"));
+      } else {
+        parts.push(tr("speech.lesson", vars, "第 {i} 节，{name}，{start}，在{place}。"));
+      }
     });
 
     var next = nextCourse(data, date);
@@ -512,24 +537,28 @@ window.OP = window.OP || {};
       var metrics = walkMetrics(position, buildingById(data, next.course.buildingId), data.settings || {});
       if (metrics) {
         var left = minutesBetween(date, at(date, next.course.start));
-        parts.push(
-          "下一节课" + next.course.name + "还有 " + Math.max(0, Math.round(left)) + " 分钟开始，" +
-          "距离你大约 " + OP.Geo.formatDistance(metrics.distance) + "，" +
-          "步行约 " + OP.Geo.formatDuration(metrics.minutes) + "。"
-        );
+        parts.push(tr("speech.nextSoon", {
+          name: next.course.name,
+          n: Math.max(0, Math.round(left)),
+          dist: OP.Geo.formatDistance(metrics.distance),
+          walk: OP.Geo.formatDuration(metrics.minutes)
+        }, "下一节课 {name} 还有 {n} 分钟开始，距离你大约 {dist}，步行约 {walk}。"));
         var depart = at(date, fmtHM(hm(next.course.start) - metrics.minutes - (Number((data.settings || {}).bufferMinutes) || 0)));
-        parts.push("建议 " + cnTime(pad2(depart.getHours()) + ":" + pad2(depart.getMinutes())) + " 出发。");
+        parts.push(tr("speech.advice", {
+          time: timeText(pad2(depart.getHours()) + ":" + pad2(depart.getMinutes()))
+        }, "建议 {time} 出发。"));
       }
     } else if (next) {
-      parts.push("下一节课是" + next.course.name + "。打开定位后我可以帮你算步行时间。");
+      parts.push(tr("speech.nextNoPos", { name: next.course.name },
+        "下一节课是 {name}。打开定位后我可以帮你算步行时间。"));
     }
 
-    return parts.join("");
+    return parts.join(joinSep());
   }
 
   function nextText(data, date, position) {
     var found = nextCourse(data, date);
-    if (!found) return "今天的课已经全部结束了，没有需要前往的教室。";
+    if (!found) return tr("speech.allDone", null, "今天的课已经全部结束了，没有需要前往的教室。");
 
     var c = found.course;
     var b = buildingById(data, c.buildingId);
@@ -537,45 +566,53 @@ window.OP = window.OP || {};
 
     if (found.status === "ongoing") {
       var endLeft = Math.round(minutesBetween(date, at(date, c.end)));
-      return c.name + "正在" + spokenPlace(c, b) + "进行，还有大约 " + Math.max(0, endLeft) + " 分钟下课。";
+      return tr("speech.ongoing", {
+        name: c.name, place: spokenPlace(c, b), n: Math.max(0, endLeft)
+      }, "{name} 正在{place}进行，还有大约 {n} 分钟下课。");
     }
 
-    var text = "下一节课是" + c.name + "，" + cnTime(c.start) + "开始，还有大约 " +
-      Math.max(0, left) + " 分钟，在" + spokenPlace(c, b) + "。";
+    var parts = [tr("speech.upcoming", {
+      name: c.name, start: timeText(c.start), n: Math.max(0, left), place: spokenPlace(c, b)
+    }, "下一节课是 {name}，{start} 开始，还有大约 {n} 分钟，在{place}。")];
 
     var metrics = walkMetrics(position, b, data.settings || {});
     if (metrics) {
-      text += "距离你大约 " + OP.Geo.formatDistance(metrics.distance) + "，步行约 " +
-        OP.Geo.formatDuration(metrics.minutes) + "。";
+      parts.push(tr("speech.distance", {
+        dist: OP.Geo.formatDistance(metrics.distance),
+        walk: OP.Geo.formatDuration(metrics.minutes)
+      }, "距离你大约 {dist}，步行约 {walk}。"));
       var buffer = Number((data.settings || {}).bufferMinutes) || 0;
       var departMin = hm(c.start) - metrics.minutes - buffer;
       if (departMin <= hm(pad2(date.getHours()) + ":" + pad2(date.getMinutes()))) {
-        text += "该出发了。";
+        parts.push(tr("speech.leaveNow", null, "该出发了。"));
       } else {
-        text += "建议 " + cnTime(fmtHM(departMin)) + " 出发。";
+        parts.push(tr("speech.advice", { time: timeText(fmtHM(departMin)) }, "建议 {time} 出发。"));
       }
       if (metrics.hasElevation && metrics.rise >= 3) {
-        text += "中间要爬升 " + Math.round(metrics.rise) + " 米。";
+        parts.push(tr("speech.climb", { n: Math.round(metrics.rise) }, "中间要爬升 {n} 米。"));
       }
     } else {
-      text += "打开定位后我可以帮你算步行时间。";
+      parts.push(tr("speech.noPosition", null, "打开定位后我可以帮你算步行时间。"));
     }
-    return text;
+    return parts.join(joinSep());
   }
 
   function leaveText(leg, date) {
     var c = leg.course;
     var left = Math.round(minutesBetween(date, leg.start));
-    var text = "该出发了。" + c.name + "还有 " + Math.max(0, left) + " 分钟开始，在" +
-      spokenPlace(c, leg.building) + "。";
+    var parts = [tr("speech.leave", {
+      name: c.name, n: Math.max(0, left), place: spokenPlace(c, leg.building)
+    }, "该出发了。{name} 还有 {n} 分钟开始，在{place}。")];
     if (leg.metrics) {
-      text += "距离大约 " + OP.Geo.formatDistance(leg.metrics.distance) + "，步行约 " +
-        OP.Geo.formatDuration(leg.metrics.minutes) + "。";
+      parts.push(tr("speech.leaveDistance", {
+        dist: OP.Geo.formatDistance(leg.metrics.distance),
+        walk: OP.Geo.formatDuration(leg.metrics.minutes)
+      }, "距离大约 {dist}，步行约 {walk}。"));
       if (leg.metrics.hasElevation && leg.metrics.rise >= 3) {
-        text += "要爬升 " + Math.round(leg.metrics.rise) + " 米。";
+        parts.push(tr("speech.leaveClimb", { n: Math.round(leg.metrics.rise) }, "要爬升 {n} 米。"));
       }
     }
-    return text;
+    return parts.join(joinSep());
   }
 
   function weekText(course) {

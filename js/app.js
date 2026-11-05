@@ -1136,7 +1136,7 @@
     var start = dormStart();
     var none = {
       stops: [], position: effectivePosition(), busStops: [], busLinks: [],
-      empty: "先选一个宿舍，才有起终点可画"
+      empty: t("map.dormEmpty")
     };
     if (!dorm || !start) return none;
 
@@ -1154,7 +1154,7 @@
       position: start.fromClass ? null : start.point,
       busStops: bus.busStops,
       busLinks: bus.busLinks,
-      empty: "先选一个宿舍，才有起终点可画"
+      empty: t("map.dormEmpty")
     };
   }
 
@@ -1162,7 +1162,7 @@
   function customMapData() {
     var none = {
       stops: [], position: effectivePosition(), busStops: [], busLinks: [],
-      empty: "选好起点和终点，这里就会画出来"
+      empty: t("map.customEmpty")
     };
     var to = data.settings.customTo ? P.buildingById(data, data.settings.customTo) : null;
     if (!to || typeof to.lat !== "number") return none;
@@ -1184,7 +1184,7 @@
       return {
         stops: [markOf({ lat: to.lat, lng: to.lng, elevation: to.elevation }, to.name, "终")],
         position: null, busStops: [], busLinks: [],
-        empty: "还没定位，起点先选一栋楼"
+        empty: t("map.customNoPos")
       };
     }
 
@@ -1202,7 +1202,7 @@
       position: fromIsBuilding ? null : fromPoint,
       busStops: bus.busStops,
       busLinks: bus.busLinks,
-      empty: "选好起点和终点，这里就会画出来"
+      empty: t("map.customEmpty")
     };
   }
 
@@ -2644,7 +2644,7 @@
   function openCourseForm(course) {
     buildWeekdayPicker();
     buildBuildingOptions(course ? course.buildingId : null);
-    $("#courseFormTitle").textContent = course ? "编辑课程" : "新增课程";
+    $("#courseFormTitle").textContent = course ? t("course.editTitle") : t("course.add");
     $("#cfId").value = course ? course.id : "";
     $("#cfName").value = course ? course.name : "";
     $("#cfRoom").value = course ? (course.room || "") : "";
@@ -3229,7 +3229,7 @@
     var clearFirst = $("#ocrReplace").checked;
 
     if (clearFirst && !skipConfirm) {
-      askConfirm("会用识别结果覆盖现在的全部课程，确定吗？", function () {
+      askConfirm(t("confirm.ocrOverwrite"), function () {
         importOcrCourses(true);
       });
       return;
@@ -3251,7 +3251,7 @@
       var buildingId = row.querySelector(".ocr-building").value;
 
       if (buildingId === "__new__") {
-        var newName = row.getAttribute("data-building-name") || "新楼栋";
+    var newName = row.getAttribute("data-building-name") || t("toast.newBuildingTag");
         var created = { id: Store.uid("b"), name: newName, alias: [], lat: null, lng: null };
         data.campus.buildings.push(created);
         buildingId = created.id;
@@ -3276,8 +3276,8 @@
     $("#ocrStatus").textContent = "已导入 " + added + " 条";
 
     var detail = [];
-    if (skipped) detail.push("跳过 " + skipped + " 条（信息不全）");
-    if (createdBuildings.length) detail.push("新建了 " + createdBuildings.length + " 栋楼");
+    if (skipped) detail.push(t("toast.ocrSkipped", { n: skipped }));
+    if (createdBuildings.length) detail.push(t("toast.ocrCreated", { n: createdBuildings.length }));
     toast(t("toast.importedCourses", { n: added }), detail.join("；"), "ok");
 
     if (createdBuildings.length) {
@@ -3587,7 +3587,7 @@
     });
 
     $("#btnBrief").addEventListener("click", function () {
-      say(P.briefingText(data, state.now, effectivePosition()), "今日课表");
+      say(P.briefingText(data, state.now, effectivePosition()), t("speechTest.brief"));
     });
 
     /* --- 定位 --- */
@@ -3618,7 +3618,7 @@
     });
 
     $("#btnTestVoice").addEventListener("click", function () {
-      say("这是 Olympic Protocol 的语音测试。今天有课，记得按时出发。", "试听");
+      say(t("speechTest.title"), t("settings.voice.test"));
     });
 
     $("#btnStopVoice").addEventListener("click", function () {
@@ -3648,7 +3648,7 @@
     $("#btnTestAlert").addEventListener("click", function () {
       var info = nextInfo();
       if (!info.leg) {
-        say("现在没有要前往的教室。", "测试");
+      say(t("speechTest.none"), t("speechTest.noneAction"));
         return;
       }
       say(P.leaveText(info.leg, state.now), "出发提醒");
@@ -3769,12 +3769,7 @@
         return list.some(function (b) { return b.id === c.buildingId; });
       }).length;
 
-      var message = "会删掉全部 " + list.length + " 栋楼，包括已经录好的坐标。\n\n" +
-        "课表不会被动，但之后就重新对应地点了。";
-      if (affected) {
-        message += "\n\n注意：有 " + affected + " 条课程安排在这些楼里，删掉后会显示成「未知地点」。";
-      }
-      message += "\n\n确定清空吗？";
+      var message = t("confirm.clearBuildings", { n: list.length, courses: affected });
 
       askConfirm(message, function () {
         data.campus.buildings = [];
@@ -3868,8 +3863,8 @@
         var did = del.getAttribute("data-del-building");
         var used = data.courses.some(function (c) { return c.buildingId === did; });
         var msg = used
-          ? "还有课程安排在这栋楼，删除后这些课程会失去地点。确定删除吗？"
-          : "确定删除这栋楼吗？";
+          ? t("confirm.deleteBuildingWithCourses")
+          : t("confirm.deleteBuilding");
         askConfirm(msg, function () {
           data.campus.buildings = data.campus.buildings.filter(function (x) { return x.id !== did; });
           saveAndRender();
@@ -4003,7 +3998,7 @@
        Store.exportFile / readFile / applyImport 都还在，想恢复入口把按钮加回来即可。 */
 
     $("#btnResetData").addEventListener("click", function () {
-      askConfirm("课表和楼栋都会变回默认的（楼栋 = 内置校区数据，课表 = 空），确定吗？", function () {
+      askConfirm(t("confirm.resetData"), function () {
         data = Store.reset();
         saveAndRender();
       toast(t("toast.dataReset"), t("toast.dataResetHint"), "ok");
@@ -4051,7 +4046,7 @@
     var sel = $("#vVoiceSelect");
     var list = OP.Speech.voices();
     if (!list.length) {
-      sel.innerHTML = '<option value="">默认音色</option>';
+    sel.innerHTML = '<option value="">' + esc(t("settings.voice.default")) + "</option>";
       return;
     }
     sel.innerHTML = list.map(function (v) {

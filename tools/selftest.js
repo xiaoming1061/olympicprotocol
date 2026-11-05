@@ -1493,7 +1493,9 @@ console.log("\n[16] 清空校区楼栋");
   check("按钮接上了处理函数", handlerStart >= 0);
   check("清空前会弹确认框", handlerBody.indexOf("askConfirm(") > 0);
   check("确认框里会说明有几条课程受影响",
-    handlerBody.indexOf("条课程安排在这些楼里") > 0);
+    handlerBody.indexOf('t("confirm.clearBuildings", { n: list.length, courses: affected })') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf("条课程安排在这些楼里") > 0);
   check("清空时会顺带收起编辑表单",
     handlerBody.indexOf('buildingForm").hidden = true') > 0);
   check("清空后会重新渲染", handlerBody.indexOf("saveAndRender()") > 0);
@@ -4628,7 +4630,7 @@ console.log("\n[46] 路线页三张卡片轮流显示 / 设置卡片默认藏起
   /* 简图没东西可画时，说法由调用方给（不同卡片不一样） */
   check("简图空状态的说法由调用方给",
     fs.readFileSync(path.join(root, "js", "map.js"), "utf8")
-      .indexOf('esc(opts.empty || "今天没有要去的地方")') > 0);
+      .indexOf('esc(opts.empty || (OP.t ? OP.t("map.empty") : "今天没有要去的地方"))') > 0);
 
   /* ---------- 设置里两张卡片默认藏起来，但代码都在 ---------- */
   check("两张卡片默认 hidden，并且有 id 方便重新打开",
@@ -4721,8 +4723,8 @@ console.log("\n[47] Hallmark 第二轮：6 major + 6 minor");
     appCode.indexOf('toast(t("toast.courseDeleted")') > 0 &&
     appCode.indexOf('toast(t("toast.walkReset")') > 0);
   check("确认框只剩真正不可逆的几处（清空 / 恢复 / 覆盖课表）",
-    /askConfirm\("课表和楼栋都会变回默认/.test(appCode) &&
-    /askConfirm\("会用识别结果覆盖现在的全部课程/.test(appCode) &&
+    /askConfirm\(t\("confirm\.resetData"\)/.test(appCode) &&
+    /askConfirm\(t\("confirm\.ocrOverwrite"\)/.test(appCode) &&
     appCode.indexOf("确定删除「") === -1);
   check("确认框能用 Esc 关，且焦点进去又还回来",
     /ev\.key === "Escape"[\s\S]{0,120}closeConfirm\(\)/.test(appCode) &&
@@ -5889,6 +5891,7 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   const geoCode = fs.readFileSync(path.join(root, "js", "geo.js"), "utf8");
   const mapCode = fs.readFileSync(path.join(root, "js", "map.js"), "utf8");
   const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
+  const exportCode = fs.readFileSync(path.join(root, "js", "exportimage.js"), "utf8");
 
   eval(fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8"));
   const T = global.OP.I18N_TABLE;
@@ -5925,9 +5928,9 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   /* 反过来：表里也别留死键。week.* 是 planner.js 里按序号拼出来的，
      静态扫不到，单独放行。 */
   const usedInJs = new Set();
-  [appCode, plannerCode, realMapCode, geoCode, mapCode].forEach((src) => {
-    /* 两种写法都认：t("key") 和 text("key", "兜底") */
-    for (const m of src.matchAll(/\b(?:OP\.)?(?:t|text)\("([a-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
+  [appCode, plannerCode, realMapCode, geoCode, mapCode, exportCode].forEach((src) => {
+    /* 三种写法都认：t("key")、text("key", "兜底")、tr("key", vars, "兜底") */
+    for (const m of src.matchAll(/\b(?:OP\.)?(?:t|text|tr)\("([A-Za-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
   });
   /* 这些键是按序号/种类/错误码拼出来的，静态扫不到，单独放行。
      pull.err.* 与 shot.file* 另各有一条针对性检查（见下），拼错照样会红。 */

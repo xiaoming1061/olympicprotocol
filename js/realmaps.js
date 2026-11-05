@@ -26,14 +26,16 @@ window.OP = window.OP || {};
     osm: {
       label: "OpenStreetMap",
       url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
-      attribution: '数据与地图 &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> 贡献者',
+      attribution: (OP.t ? OP.t("map.attribution.osmPrefix") : "数据与地图") +
+        ' &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> ' +
+        (OP.t ? OP.t("map.attribution.osmSuffix") : "贡献者"),
       maxZoom: 19,
       minZoom: 3
     },
     cuhk: {
-      label: "港中文校园地图",
+      label: OP.t ? OP.t("map.layerCuhk") : "港中文校园地图",
       url: "https://www.cuhk.edu.hk/english/images/campus/tile-map/{z}/{x}/{-y}.png",
-      attribution: "地圖 &copy; 香港中文大學",
+      attribution: OP.t ? OP.t("map.attribution.cuhk") : "地圖 © 香港中文大學",
       maxZoom: 18,
       minZoom: 15
     }
@@ -66,7 +68,8 @@ window.OP = window.OP || {};
 
     function attempt(i) {
       if (i >= sources.length) {
-        return Promise.reject(new Error("加载地图库失败，检查网络后重试"));
+        return Promise.reject(new Error(OP.t
+          ? OP.t("map.libFailed") : "加载地图库失败，检查网络后重试"));
       }
       return new Promise(function (resolve, reject) {
         var link = document.createElement("link");
@@ -78,9 +81,11 @@ window.OP = window.OP || {};
         script.src = sources[i] + "leaflet.js";
         script.onload = function () {
           if (window.L) resolve(window.L);
-          else reject(new Error("地图库加载后仍不可用"));
+        else reject(new Error(OP.t ? OP.t("map.libUnavailable") : "地图库加载后仍不可用"));
         };
-        script.onerror = function () { reject(new Error("这个 CDN 不通")); };
+      script.onerror = function () {
+        reject(new Error(OP.t ? OP.t("map.cdnBlocked") : "这个 CDN 不通"));
+      };
         document.head.appendChild(script);
       }).catch(function () { return attempt(i + 1); });
     }
