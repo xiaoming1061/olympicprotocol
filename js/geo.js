@@ -34,15 +34,25 @@ window.OP = window.OP || {};
 
   function formatDistance(meters) {
     if (meters === null || meters === undefined || isNaN(meters)) return "--";
-    if (meters < 1000) return Math.round(meters / 10) * 10 + " 米";
-    return (meters / 1000).toFixed(meters < 10000 ? 1 : 0) + " 公里";
+    /* 单位跟着界面语言走；自检环境没有 i18n 模块，退回中文 */
+    var text = function (key, n, fallback) { return OP.t ? OP.t(key, { n: n }) : fallback; };
+    if (meters < 1000) {
+      var m = Math.round(meters / 10) * 10;
+      return text("unit.m", m, m + " 米");
+    }
+    var km = (meters / 1000).toFixed(meters < 10000 ? 1 : 0);
+    return text("unit.km", km, km + " 公里");
   }
 
   function formatDuration(minutes) {
     if (minutes === null || minutes === undefined || isNaN(minutes)) return "--";
     var m = Math.max(1, Math.round(minutes));
-    if (m < 60) return m + " 分钟";
-    return Math.floor(m / 60) + " 小时 " + (m % 60) + " 分钟";
+    var text = function (key, n, fallback) { return OP.t ? OP.t(key, { n: n }) : fallback; };
+    if (m < 60) return text("unit.min", m, m + " 分钟");
+    var h = Math.floor(m / 60);
+    return OP.t
+      ? OP.t("unit.hourMin", { h: h, m: m % 60 })
+      : h + " 小时 " + (m % 60) + " 分钟";
   }
 
   /* ---------- 坐标转换 ---------- */

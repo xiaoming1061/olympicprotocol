@@ -3333,7 +3333,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
 
   /* ---------- 「步行」并列 + 校巴分步导航 ---------- */
   check("「步行」标题与「校巴」并列，就在外置导航按钮上方",
-    /class="leg-walk-head">步行<\/div>'\s*\+\s*navActionsHtml\(links\)/.test(appSrc) &&
+    /class="leg-walk-head">' \+ esc\(t\("today\.walk"\)\) \+ "<\/div>"\s*\+\s*navActionsHtml\(links\)/.test(appSrc) &&
     /\.leg-walk-head \{/.test(css));
   check("选中校巴后展开分步导航：去上车站 + 下车站去教室，各配导航按钮",
     /function busWalkSteps\(g, dest, mode, staleH\)/.test(appSrc) &&
@@ -3464,7 +3464,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
 
   /* ---------- 提示的位置与文案 / 高亮留白 / 分界线 ---------- */
   check("已下课不提示余量；正在上课时只说「正在上课」",
-    /if \(leg\.status === "ongoing"\) \{\s*\n\s*warn = '<div class="leg-warn is-now">正在上课<\/div>';/.test(appSrc) &&
+    /if \(leg\.status === "ongoing"\) \{\s*\n\s*warn = '<div class="leg-warn is-now">' \+ esc\(t\("route\.inClass"\)\) \+ "<\/div>";/.test(appSrc) &&
     /else if \(leg\.status !== "past"\)/.test(appSrc) &&
     /\.leg-warn\.is-now \{ color: var\(--accent-ink\)/.test(css));
   check("提示挪到「步行」的外置导航按钮下方",
@@ -4166,7 +4166,9 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
     appCode.indexOf('addEventListener("pointerdown"') > 0 &&
     appCode.indexOf("chooseDorm(") > 0);
   check("一条都没匹配上时给的是提示，不是空白",
-    appCode.indexOf("没有匹配的宿舍") > 0 && css.indexOf(".picker-note") > 0);
+    appCode.indexOf('t("dorm.noMatch")') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8").indexOf("没有匹配的宿舍") > 0 &&
+    css.indexOf(".picker-note") > 0);
   check("候选列表有样式和滚动上限",
     /\.picker\s*\{[\s\S]{0,300}max-height/.test(css) &&
     /\.picker-item\s*\{[\s\S]{0,400}width:\s*100%/.test(css));
@@ -4199,10 +4201,12 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
   /* 起点按用户要求改成"我的位置"：先用定位，取不到才退回今天最后一节课的教室。
      顺序不能反过来——反了就成了"你以为从当前位置算，其实是按教室算的"。 */
   check("起点先是「我的位置」（定位优先）",
-    /var pos = effectivePosition\(\);\s*\n\s*if \(pos\) return \{ point: pos, name: "我的位置"/.test(appCode));
+    /var pos = effectivePosition\(\);\s*\n\s*if \(pos\) return \{ point: pos, name: t\("common\.me"\)/.test(appCode));
   check("取不到定位才退回今天最后一节课的教室，并写明原因",
     /todayCourses\(data, now\)/.test(appCode) && /last\.buildingId/.test(appCode) &&
-    appCode.indexOf("没取到定位，先按今天最后一节课的教室算") > 0);
+    appCode.indexOf('t("dorm.fallbackNote"') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf("没取到定位，先按今天最后一节课的教室算") > 0);
   /* 认"声明"不认"注释里提到的词"——defaults.js 的注释里还写着"没有 dormFromClass
      这个开关了"，按整词匹配会误伤（这坑 README 里记过一次） */
   check("那个开关和它的设置项都删掉了（不该再有 dormFromClass）",
@@ -4217,7 +4221,10 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
     appCode.indexOf("ensureDormElevation") > 0 &&
     appCode.indexOf("OP.Elevation.at(dorm.lat, dorm.lng)") > 0);
   check("回宿舍大多是下坡，所以单独显示下降且注明不折算",
-    appCode.indexOf("下降 <b>") > 0 && css.indexOf(".plan-note") > 0);
+    appCode.indexOf('t("route.stats.drop")') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf('"route.stats.drop": "下降"') > 0 &&
+    css.indexOf(".plan-note") > 0);
   check("输入框里的名字能兜到最像的那条宿舍",
     appCode.indexOf("function resolveDorm") > 0 &&
     appCode.indexOf("bestNameMatch(q, list, 0.45)") > 0);
@@ -4456,9 +4463,12 @@ console.log("\n[44] 自定义路线 / 去掉两个选项");
     /var metrics = P\.walkMetrics\(fromPoint, toPoint, s\)/.test(appCode) &&
     appCode.indexOf('busHtml(busPlan, "custom", "custom"') > 0);
   check("起点终点同一条路会提示，不会算出一段两边一样的路",
-    appCode.indexOf("起点和终点是同一栋楼") > 0);
+    appCode.indexOf('t("custom.same")') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf("起点和终点是同一栋楼") > 0);
   check("起点选了「我的位置」但没定位时有说明",
-    appCode.indexOf("但还没定位") > 0);
+    appCode.indexOf('t("custom.noPosition")') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8").indexOf("但还没定位") > 0);
   check("路线页渲染时会一起算自定义路线",
     /renderRoute\(\); renderDorm\(\); renderCustom\(\);/.test(appCode));
   check("两个选项记在设置里（切走再回来还在）",
@@ -5144,10 +5154,11 @@ console.log("\n[51] 按用户要求删掉的四个入口");
   check("删除宿舍那一行在没得删时整行收起来（不留空行）",
     /\$\("#dormActions"\)\.hidden = !\(dorm && dorm\.custom\)/.test(appCode));
   check("回宿舍的起点改成「我的位置」了（取不到定位才退回教室）",
-    /var pos = effectivePosition\(\);\s*\n\s*if \(pos\) return \{ point: pos, name: "我的位置"/.test(appCode) &&
-    appCode.indexOf("没取到定位，先按今天最后一节课的教室算") > 0);
+    /var pos = effectivePosition\(\);\s*\n\s*if \(pos\) return \{ point: pos, name: t\("common\.me"\)/.test(appCode) &&
+    appCode.indexOf('t("dorm.fallbackNote"') > 0);
   check("空宿舍时的文案不再指向已经删掉的按钮",
-    appCode.indexOf("上面搜一个宿舍") > 0);
+    appCode.indexOf('t("dorm.empty")') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8").indexOf("上面搜一个宿舍") > 0);
 }
 
 console.log("\n[52] 课表代理（Cloudflare Worker）");
@@ -6058,6 +6069,29 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     }) &&
     T["en"]["link.google"] === "Google Maps" &&
     T["zh-Hans"]["link.copy"] === "复制坐标");
+
+  /* ---- 今日页 / 路线页：动态文案也进表了 ---- */
+  check("今日页的状态标签和汇总走三语键",
+    /\$\("#nextTag"\)\.textContent = ongoing \? t\("today\.ongoingTag"\) : t\("today\.next"\);/.test(appCode) &&
+    /t\("today\.summaryCount", \{ n: list\.length \}\)/.test(appCode) &&
+    appCode.indexOf('t("today.badgeNow")') > 0 &&
+    appCode.indexOf('t("today.badgeNext")') > 0);
+  check("路线卡的汇总与空状态走三语键",
+    /t\("route\.summaryCount", \{ n: route\.length \}\)/.test(appCode) &&
+    appCode.indexOf('t("route.empty")') > 0 &&
+    appCode.indexOf('t("route.mapEmpty")') > 0);
+  check("时间在英文界面写 24 小时制，中文仍读作「下午 2 点」",
+    /function timeText\(text\)/.test(plannerCode) &&
+    /if \(lang === "en"\) return String\(text/.test(plannerCode) &&
+    /if \(lang !== "zh-Hant"\) return cnTime\(text\)/.test(plannerCode) &&
+    appCode.indexOf("P.timeText(c.start)") > 0 &&
+    appCode.indexOf("P.cnTime(c.start)") === -1);
+  check("宿舍 / 自定义卡片的状态行也有三语键",
+    ["dorm.stateCount", "dorm.empty", "dorm.fallbackNote", "dorm.noMatch",
+      "custom.stateCount", "custom.empty", "custom.same", "custom.noPosition",
+      "picker.empty"].every(function (k) { return k in T["zh-Hans"]; }) &&
+    appCode.indexOf('t("dorm.stateCount", { n: list.length })') > 0 &&
+    appCode.indexOf('t("custom.stateCount", { n: list.length })') > 0);
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");

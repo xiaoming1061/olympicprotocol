@@ -80,6 +80,21 @@ window.OP = window.OP || {};
     return period + h12 + " 点" + (m === 0 ? "整" : m + " 分");
   }
 
+  /* 界面上显示时间用这个：中文读法（「下午 2 点」）对中文界面自然，
+     英文界面直接写 24 小时制 14:00。语音播报仍然走 cnTime（播报是中文的）。 */
+  function timeText(text) {
+    var lang = (OP.I18N && OP.I18N.lang) ? OP.I18N.lang() : "zh-Hans";
+    if (lang === "en") return String(text === undefined || text === null ? "" : text);
+    if (lang !== "zh-Hant") return cnTime(text);
+    /* 繁體界面的读法：点/分 写成 點/分 */
+    var total = hm(text);
+    var h = Math.floor(total / 60);
+    var m = total % 60;
+    var period = h < 6 ? "凌晨" : h < 12 ? "上午" : h < 13 ? "中午" : h < 18 ? "下午" : "晚上";
+    var h12 = h % 12 === 0 ? 12 : h % 12;
+    return period + h12 + " 點" + (m === 0 ? "整" : m + " 分");
+  }
+
   function minutesBetween(a, b) {
     return (b.getTime() - a.getTime()) / 60000;
   }
@@ -316,7 +331,8 @@ window.OP = window.OP || {};
 
     var legs = [];
     var fromPoint = position || null;
-    var fromName = position ? "我的位置" : null;
+    /* 起点名按界面语言：英文模式 "My location"（自检环境没有 i18n 模块，退回中文） */
+    var fromName = position ? (OP.t ? OP.t("common.me") : "我的位置") : null;
     var prevEnd = date;
     var prevBuilding = null;
 
@@ -586,6 +602,7 @@ window.OP = window.OP || {};
     fmtDate: fmtDate,
     dateRangeText: dateRangeText,
     cnTime: cnTime,
+    timeText: timeText,
     minutesBetween: minutesBetween,
     humanGap: humanGap,
     buildingById: buildingById,

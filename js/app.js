@@ -367,18 +367,20 @@
          放假那天校巴只剩假日线（H），也一并说清楚。 */
       var rest = P.holidayOn(state.now);
       var closed = rest && rest.kind !== "partial" ? rest : null;
-      var restLabel = closed ? (closed.kind === "holiday" ? "今天放假" : "今天停课") : "";
+      var restLabel = closed ? (closed.kind === "holiday" ? t("today.holidayToday") : t("today.closedToday")) : "";
       var lost = rest ? P.cancelledCourses(data, state.now).length : 0;
 
-      $("#nextTag").textContent = closed ? (closed.kind === "holiday" ? "放假" : "停课") : "今日结束";
+      $("#nextTag").textContent = closed
+        ? (closed.kind === "holiday" ? t("today.tagHoliday") : t("today.tagClosed"))
+        : t("today.tagDone");
       $("#nextCountdown").textContent = "--:--";
-      $("#nextName").textContent = restLabel || (list.length ? "今天的课都上完了" : "今天没有课");
+      $("#nextName").textContent = restLabel || (list.length ? t("today.allDone") : t("today.none"));
       $("#nextMeta").textContent = closed
-        ? closed.name + (closed.kind === "holiday" ? " · 校巴只有假日线（H）" : "") +
+        ? closed.name + (closed.kind === "holiday" ? " " + t("today.shuttleHoliday") : "") +
           (closed.note ? " · " + closed.note : "")
         : (list.length
-          ? "共 " + list.length + " 节课，已经全部结束"
-          : (lost ? "今天有 " + lost + " 节课因" + rest.name + "停课" : "好好安排自己的时间"));
+          ? t("today.allEnded", { n: list.length })
+          : (lost ? t("today.cancelled", { n: lost, name: rest.name }) : t("today.freeTime")));
       $("#nextDistance").textContent = "--";
       $("#nextWalk").textContent = "--";
       $("#nextLeave").textContent = "--";
@@ -394,11 +396,11 @@
       var ongoing = info.found.status === "ongoing";
       var target = ongoing ? P.at(state.now, c.end) : P.at(state.now, c.start);
 
-      $("#nextTag").textContent = ongoing ? "正在进行" : "下一节课";
+      $("#nextTag").textContent = ongoing ? t("today.ongoingTag") : t("today.next");
       $("#nextCountdown").textContent = countdownText(target, state.now);
       $("#nextName").textContent = c.name;
       $("#nextMeta").textContent =
-        P.cnTime(c.start) + " – " + P.cnTime(c.end) + " · " +
+        P.timeText(c.start) + " – " + P.timeText(c.end) + " · " +
         P.placeText(c, b) + (c.teacher ? " · " + c.teacher : "");
 
       /* 正在上的课只显示状态，不再算"还要走多远" */
@@ -408,7 +410,7 @@
       if (ongoing) {
         $("#nextDistance").textContent = "--";
         $("#nextWalk").textContent = "--";
-        $("#nextLeave").textContent = "已在上课";
+        $("#nextLeave").textContent = t("today.inClass");
         $("#nextClimbWrap").hidden = true;
       } else if (leg && leg.metrics) {
         var buffer = Number(data.settings.bufferMinutes) || 0;
@@ -420,13 +422,13 @@
         var rise = leg.metrics.hasElevation ? Math.round(leg.metrics.rise) : 0;
         $("#nextClimbWrap").hidden = rise < 3;
         /* 不要加箭头：小字号下 ↑ 会被看成数字 1，118 米变成 1118 米 */
-        if (rise >= 3) $("#nextClimb").textContent = rise + " 米";
+        if (rise >= 3) $("#nextClimb").textContent = t("today.meters", { n: rise });
 
         if (leg.slackMin !== null && leg.slackMin <= 10) hero.classList.add("is-imminent");
       } else {
-        $("#nextDistance").textContent = "打开定位";
+        $("#nextDistance").textContent = t("today.openLocation");
         $("#nextWalk").textContent = "--";
-        $("#nextLeave").textContent = "打开定位";
+        $("#nextLeave").textContent = t("today.openLocation");
         $("#nextClimbWrap").hidden = true;
       }
     }
@@ -443,11 +445,15 @@
     if (!list.length) {
       /* 放假 / 停课的日子说清楚是哪一天，别只留一句"没有课程安排" */
       var off = P.holidayOn(state.now);
-      ol.innerHTML = '<li class="empty">' + (
-        off && off.kind !== "partial"
-          ? (off.kind === "holiday" ? "放假：" : "停课：") + esc(off.name)
-          : "今天没有课程安排"
-      ) + "</li>";
+      var emptyText;
+      if (off && off.kind !== "partial") {
+        emptyText = off.kind === "holiday"
+          ? t("today.emptyHoliday", { name: off.name })
+          : t("today.emptyClosed", { name: off.name });
+      } else {
+        emptyText = t("today.emptyNone");
+      }
+      ol.innerHTML = '<li class="empty">' + esc(emptyText) + "</li>";
     } else {
       var nextId = info.found ? info.found.course.id : null;
       ol.innerHTML = list.map(function (c) {
@@ -455,8 +461,8 @@
         var st = P.statusOf(c, state.now);
         var cls = st === "past" ? " is-past" : (st === "ongoing" ? " is-now" : (c.id === nextId ? " is-next" : ""));
         var badge = st === "ongoing"
-          ? '<span class="tl-badge is-now">进行中</span>'
-          : (st === "past" ? "" : (c.id === nextId ? '<span class="tl-badge">下一节</span>' : ""));
+          ? '<span class="tl-badge is-now">' + esc(t("today.badgeNow")) + "</span>"
+          : (st === "past" ? "" : (c.id === nextId ? '<span class="tl-badge">' + esc(t("today.badgeNext")) + "</span>" : ""));
         return '<li class="tl-item' + cls + '">' +
           '<div class="tl-time">' + esc(c.start) + "<small>" + esc(c.end) + "</small></div>" +
           '<div><div class="tl-name">' + esc(c.name) + "</div>" +
@@ -466,7 +472,8 @@
       }).join("");
     }
 
-    $("#todaySummary").textContent = list.length ? list.length + " 节课" : "无课";
+    $("#todaySummary").textContent = list.length
+      ? t("today.summaryCount", { n: list.length }) : t("today.summaryNone");
   }
 
   /* ================= 渲染：路线 ================= */
@@ -959,19 +966,19 @@
       position: info.position,
       busStops: bus.busStops,
       busLinks: bus.busLinks,
-      empty: "今天没有要去的地方"
+      empty: t("route.mapEmpty")
     };
     renderRouteMap();
 
     var box = $("#routeList");
 
     if (!route.length) {
-      box.innerHTML = '<p class="empty">今天没有需要前往的教室了</p>';
-      $("#routeSummary").textContent = "无待办路线";
+      box.innerHTML = '<p class="empty">' + esc(t("route.empty")) + "</p>";
+      $("#routeSummary").textContent = t("route.summaryNone");
       return;
     }
 
-    $("#routeSummary").textContent = route.length + " 段行程";
+    $("#routeSummary").textContent = t("route.summaryCount", { n: route.length });
 
     var html = route.map(function (leg, i) {
       var c = leg.course;
@@ -981,12 +988,14 @@
 
       var metrics = leg.metrics
         ? '<div class="leg-meta">' +
-            "<span>距离 <b>" + esc(Geo.formatDistance(leg.metrics.distance)) + "</b></span>" +
+            "<span>" + esc(t("today.distance")) + " <b>" + esc(Geo.formatDistance(leg.metrics.distance)) + "</b></span>" +
             (leg.metrics.hasElevation && leg.metrics.rise >= 3
-              ? "<span>爬升 <b>" + Math.round(leg.metrics.rise) + " 米</b></span>"
+              ? "<span>" + esc(t("today.climb")) + " <b>" +
+                esc(t("today.meters", { n: Math.round(leg.metrics.rise) })) + "</b></span>"
               : "") +
-            "<span>步行 <b>" + esc(Geo.formatDuration(leg.metrics.minutes)) + "</b></span>" +
-            "<span>建议出发 <b>" + esc(P.fmtHM(P.hm(c.start) - leg.metrics.minutes - buffer)) + "</b></span>" +
+            "<span>" + esc(t("today.walk")) + " <b>" + esc(Geo.formatDuration(leg.metrics.minutes)) + "</b></span>" +
+            "<span>" + esc(t("today.leave")) + " <b>" +
+              esc(P.fmtHM(P.hm(c.start) - leg.metrics.minutes - buffer)) + "</b></span>" +
           "</div>"
         : "";
 
@@ -996,26 +1005,27 @@
            还没上 → 按余量提醒 */
       var warn = "";
       if (leg.status === "ongoing") {
-        warn = '<div class="leg-warn is-now">正在上课</div>';
+        warn = '<div class="leg-warn is-now">' + esc(t("route.inClass")) + "</div>";
       } else if (leg.status !== "past") {
         if (leg.missed) {
-          warn = '<div class="leg-warn">按现在的余量已经很紧了，直接出发吧</div>';
+          warn = '<div class="leg-warn">' + esc(t("route.veryTight")) + "</div>";
         } else if (leg.slackMin !== null && leg.slackMin <= 10) {
-          warn = '<div class="leg-warn">余量只有 ' + Math.max(0, Math.round(leg.slackMin)) + " 分钟，别拖了</div>";
+          warn = '<div class="leg-warn">' +
+            esc(t("route.tight", { n: Math.max(0, Math.round(leg.slackMin)) })) + "</div>";
         }
       }
 
       /* 已经不该按它出发的那一段（正在上 / 已下课）：靠标题旁边这枚标说明状态。
          之前铺一整块灰底，跟"选中某条校巴方案"的高亮撞在一起，
          而且要在 .leg 上补内边距再用负外边距拉回来，换屏宽容易看出不齐。 */
-      var doneTag = leg.status === "ongoing" ? "上课中"
-        : (leg.status === "past" ? "已下课" : "");
+      var doneTag = leg.status === "ongoing" ? t("route.badgeOngoing")
+        : (leg.status === "past" ? t("route.badgePast") : "");
 
       return '<div class="leg' + (isPast ? " is-past" : "") + '">' +
         '<div class="leg-head">' +
           '<div class="leg-title"><span class="idx">' + (i + 1) + "</span>" +
-            esc((leg.fromName || "起点") + " → " + (b ? b.name : "未知地点")) +
-            (doneTag ? '<span class="tl-badge is-done">' + doneTag + "</span>" : "") + "</div>" +
+            esc((leg.fromName || t("route.start")) + " → " + (b ? b.name : t("route.unknownPlace"))) +
+            (doneTag ? '<span class="tl-badge is-done">' + esc(doneTag) + "</span>" : "") + "</div>" +
           '<div class="leg-time">' + esc(c.start) + " – " + esc(c.end) + "</div>" +
         "</div>" +
         '<div class="leg-meta"><span>' + esc(c.name) +
@@ -1023,7 +1033,7 @@
           (c.teacher ? " · " + esc(c.teacher) : "") + "</span></div>" +
         metrics + busOptions(leg, c) +
         /* 走路这一段也给它一个标题，跟上面的「校巴」并列 */
-        '<div class="leg-walk-head">步行</div>' +
+        '<div class="leg-walk-head">' + esc(t("today.walk")) + "</div>" +
         navActionsHtml(links) +
         /* 提示挪到步行导航按钮下面（用户要求），别再夹在校巴和步行中间 */
         warn +
@@ -1369,7 +1379,7 @@
     var now = state.now;
 
     var pos = effectivePosition();
-    if (pos) return { point: pos, name: "我的位置", note: "", at: now, fromClass: false };
+    if (pos) return { point: pos, name: t("common.me"), note: "", at: now, fromClass: false };
 
     var last = null;
     P.todayCourses(data, now).forEach(function (c) {
@@ -1383,8 +1393,10 @@
         return {
           point: { lat: b.lat, lng: b.lng, elevation: b.elevation },
           name: b.name,
-          note: "没取到定位，先按今天最后一节课的教室算（" +
-            last.start + "–" + last.end + " " + last.name + "）",
+          note: t("dorm.fallbackNote", {
+            time: last.start + "–" + last.end,
+            name: last.name
+          }),
           at: P.at(now, last.end),
           fromClass: true
         };
@@ -1499,7 +1511,9 @@
 
       if (!hits.length) {
         box.hidden = false;
-        box.innerHTML = '<p class="picker-note">' + esc(cfg.empty || "没有匹配的") + "</p>";
+        /* empty 可以给函数：切了语言之后这句要跟着变（字符串在绑定时就定死了） */
+        var emptyText = typeof cfg.empty === "function" ? cfg.empty() : (cfg.empty || t("picker.empty"));
+        box.innerHTML = '<p class="picker-note">' + esc(emptyText) + "</p>";
         return;
       }
 
@@ -1676,12 +1690,12 @@
     var search = $("#dormSearch");
     if (document.activeElement !== search) search.value = dorm ? dorm.label : "";
 
-    $("#dormState").textContent = list.length + " 处可选";
+    $("#dormState").textContent = t("dorm.stateCount", { n: list.length });
     /* 只有自己加的宿舍能删；没有可删的就把整行收起来 */
     $("#dormActions").hidden = !(dorm && dorm.custom);
 
     if (!dorm) {
-      box.innerHTML = '<p class="empty">上面搜一个宿舍（中英文、简体繁体、拼音首字母都认）。</p>';
+      box.innerHTML = '<p class="empty">' + esc(t("dorm.empty")) + "</p>";
       return;
     }
 
@@ -1696,9 +1710,9 @@
       : null;
 
     var head = '<div class="leg-head">' +
-      '<div class="leg-title"><span class="idx">返</span>' +
-        esc((start ? start.name : "起点未知") + " → " + dorm.label) + "</div>" +
-      '<div class="leg-time">' + esc(dorm.custom ? "自建" : "OSM") + "</div>" +
+      '<div class="leg-title"><span class="idx">' + esc(t("dorm.badge")) + "</span>" +
+        esc((start ? start.name : t("dorm.startUnknown")) + " → " + dorm.label) + "</div>" +
+      '<div class="leg-time">' + esc(dorm.custom ? t("dorm.sourceCustom") : "OSM") + "</div>" +
       "</div>";
 
     var note = start && start.note
@@ -1707,7 +1721,7 @@
 
     var stats = "";
     if (!start) {
-      stats = '<p class="plan-note">还没有位置信息：先到「设置 → 定位」开一下实时定位。</p>';
+      stats = '<p class="plan-note">' + esc(t("dorm.noPosition")) + "</p>";
     } else if (metrics) {
       /* 回宿舍大多是下坡。爬升要折算成时间，下降不折算（下坡不省时间，
          这是 Naismith 那套经验规则的口径），所以分开写、并注明。 */
@@ -1717,21 +1731,24 @@
       }
 
       stats = '<div class="leg-meta">' +
-        "<span>距离 <b>" + esc(Geo.formatDistance(metrics.distance)) + "</b></span>" +
+        "<span>" + esc(t("today.distance")) + " <b>" + esc(Geo.formatDistance(metrics.distance)) + "</b></span>" +
         (metrics.hasElevation && metrics.rise >= 3
-          ? "<span>爬升 <b>" + Math.round(metrics.rise) + " 米</b></span>" : "") +
-        (drop >= 3 ? "<span>下降 <b>" + Math.round(drop) + " 米</b></span>" : "") +
-        "<span>步行 <b>" + esc(Geo.formatDuration(metrics.minutes)) + "</b></span>" +
+          ? "<span>" + esc(t("today.climb")) + " <b>" +
+            esc(t("today.meters", { n: Math.round(metrics.rise) })) + "</b></span>" : "") +
+        (drop >= 3 ? "<span>" + esc(t("route.stats.drop")) + " <b>" +
+          esc(t("today.meters", { n: Math.round(drop) })) + "</b></span>" : "") +
+        "<span>" + esc(t("today.walk")) + " <b>" + esc(Geo.formatDuration(metrics.minutes)) + "</b></span>" +
         (start.fromClass
-          ? "<span>下课后 <b>" + pad2(start.at.getHours()) + ":" +
-            pad2(start.at.getMinutes()) + "</b></span>"
+          ? "<span>" + esc(t("dorm.afterClass", {
+            time: pad2(start.at.getHours()) + ":" + pad2(start.at.getMinutes())
+          })) + "</span>"
           : "") +
         "</div>";
     }
 
     /* 名字给「英文 中文」：高德 / 百度会把这个名字显示在目的地上，
        两个写法都带上，用中文地图的人也能一眼确认是不是这栋 */
-    var actions = '<div class="leg-walk-head">步行</div>' +
+    var actions = '<div class="leg-walk-head">' + esc(t("today.walk")) + "</div>" +
       navActionsHtml(Geo.navLinks(dorm.label, dorm.lat, dorm.lng));
 
     box.innerHTML = '<div class="leg dorm-leg">' + head + note + stats +
@@ -1775,14 +1792,13 @@
     var to = toBuilding;
 
     if (!to) {
-      box.innerHTML = '<p class="empty">选一个终点楼栋就会自动规划；' +
-        "起点默认是「我的位置」，也可以从全部楼栋里挑。</p>";
-      stateEl.textContent = list.length + " 栋可选";
+      box.innerHTML = '<p class="empty">' + esc(t("custom.empty")) + "</p>";
+      stateEl.textContent = t("custom.stateCount", { n: list.length });
       return;
     }
 
     var fromPoint = null;
-    var fromName = "我的位置";
+    var fromName = t("common.me");
     if (data.settings.customFrom) {
       var fb = P.buildingById(data, data.settings.customFrom);
       if (fb && typeof fb.lat === "number") {
@@ -1794,15 +1810,14 @@
     }
 
     if (fromPoint && to.id === data.settings.customFrom) {
-      box.innerHTML = '<p class="empty">起点和终点是同一栋楼，换个终点试试。</p>';
-      stateEl.textContent = list.length + " 栋可选";
+      box.innerHTML = '<p class="empty">' + esc(t("custom.same")) + "</p>";
+      stateEl.textContent = t("custom.stateCount", { n: list.length });
       return;
     }
 
     if (!fromPoint) {
-      box.innerHTML = '<p class="empty">起点是「我的位置」，但还没定位。' +
-        "到「设置 → 定位」开一下定位，或者把起点换成一栋楼。</p>";
-      stateEl.textContent = list.length + " 栋可选";
+      box.innerHTML = '<p class="empty">' + esc(t("custom.noPosition")) + "</p>";
+      stateEl.textContent = t("custom.stateCount", { n: list.length });
       return;
     }
 
@@ -1822,11 +1837,13 @@
 
     var stats = metrics
       ? '<div class="leg-meta">' +
-          "<span>距离 <b>" + esc(Geo.formatDistance(metrics.distance)) + "</b></span>" +
+          "<span>" + esc(t("today.distance")) + " <b>" + esc(Geo.formatDistance(metrics.distance)) + "</b></span>" +
           (metrics.hasElevation && metrics.rise >= 3
-            ? "<span>爬升 <b>" + Math.round(metrics.rise) + " 米</b></span>" : "") +
-          (drop >= 3 ? "<span>下降 <b>" + Math.round(drop) + " 米</b></span>" : "") +
-          "<span>步行 <b>" + esc(Geo.formatDuration(metrics.minutes)) + "</b></span>" +
+            ? "<span>" + esc(t("today.climb")) + " <b>" +
+              esc(t("today.meters", { n: Math.round(metrics.rise) })) + "</b></span>" : "") +
+          (drop >= 3 ? "<span>" + esc(t("route.stats.drop")) + " <b>" +
+            esc(t("today.meters", { n: Math.round(drop) })) + "</b></span>" : "") +
+          "<span>" + esc(t("today.walk")) + " <b>" + esc(Geo.formatDuration(metrics.minutes)) + "</b></span>" +
         "</div>"
       : "";
 
@@ -1835,12 +1852,12 @@
     var walkFrom = fromBuilding && typeof fromBuilding.lat === "number"
       ? { lat: fromBuilding.lat, lng: fromBuilding.lng, name: fromBuilding.name }
       : null;
-    var actions = '<div class="leg-walk-head">步行</div>' +
+    var actions = '<div class="leg-walk-head">' + esc(t("today.walk")) + "</div>" +
       navActionsHtml(Geo.navLinks(to.name, to.lat, to.lng, walkFrom));
 
     box.innerHTML = '<div class="leg custom-leg">' +
       '<div class="leg-head">' +
-        '<div class="leg-title"><span class="idx">自</span>' +
+        '<div class="leg-title"><span class="idx">' + esc(t("custom.badge")) + "</span>" +
           esc(fromName + " → " + to.name) + "</div>" +
         '<div class="leg-time">' + esc(metrics ? Geo.formatDuration(metrics.minutes) : "--") + "</div>" +
       "</div>" + stats + busHtml(busPlan, "custom", "custom",
@@ -3436,7 +3453,8 @@
         var d = dormTarget();
         return d ? d.label : "";
       },
-      empty: "没有匹配的宿舍。中英文、简体繁体、拼音首字母都认，试试只打前两个字。",
+      /* 传函数而不是字符串：切语言之后这句才跟着变 */
+      empty: function () { return t("dorm.noMatch"); },
       onPick: function (item) { chooseDorm(item.id); }
     });
 

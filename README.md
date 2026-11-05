@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1217 项检查，不联网
+node tools/selftest.js             # 1221 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1189,7 +1189,16 @@ English。文案表在 `data/i18n.js`，运行时在 `js/i18n.js`。
 |---|---|---|
 | 第一批 | **静态骨架**：卡片标题、字段名、按钮、占位符、图例、无障碍标签 | ✅ 133 条，全挂在 `index.html` 上 |
 | 第二批 | **校巴模块**：线路名、站名、卡片文案、分步导航、停运折叠、地图按钮 | ✅ 已完成 |
-| 第三批 | **其余动态文案**：状态徽章、提示条、播报稿、识别报告、行程卡 | 进行中（约 490 条，逐步换成 `OP.t()`） |
+| 第三批 | **今日页 + 路线页**：状态徽章、行程卡、宿舍、自定义路线、距离/时长单位 | ✅ 已完成 |
+| 第四批 | **其余动态文案**：提示条、播报稿、课表拉取与 OCR 报告 | 进行中（约 430 条） |
+
+第三批里还有两个连带项值得记一笔：
+
+- **时间读法**：中文界面写「下午 2 点 30 分」（繁體写「點」），英文界面直接写
+  `14:30`——`P.timeText()` 一个入口决定，语音播报仍然用中文读法。
+- **宿舍名**：英文模式只留英文名（`Adam Schall Residence`），中文模式是
+  「英文 + 中文」（简中把中文那半转成简体）。`D` / `C` 是返回宿舍 / 自定义路线
+  的小徽章（中文是「返」「自」）。
 
 #### 校巴的英文名以运输处官网为准
 
@@ -1736,7 +1745,7 @@ js/exportimage.js     课表导出成图片（排版是纯计算，画图在 can
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
 tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
-tools/selftest.js     自检脚本，1217 项
+tools/selftest.js     自检脚本，1221 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

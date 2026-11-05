@@ -38,9 +38,16 @@ window.OP = window.OP || {};
   /* 显示用的名字：英文 + 中文并排，两个都看得见才有用
      （只写 "Bethlehem Hall" 或只写 "伯利衡宿舍" 都有人认不出来） */
   function labelOf(d) {
+    /* 名字跟着界面语言：英文模式只留英文名；中文模式「英文 + 中文」并排，
+       简中把中文那半转成简体（跟校巴站名同一套口径）。 */
+    /* 自检环境没加载 i18n 模块：照数据原样（繁体）显示，跟以前一致 */
+    var lang = (OP.I18N && OP.I18N.lang) ? OP.I18N.lang() : "zh-Hant";
+    var en = d.nameEn || d.name || "";
     var zh = d.nameZh || "";
-    if (!zh || zh === d.name) return d.name;
-    return d.name + " " + zh;
+    if (lang === "en") return en || zh;
+    if (lang === "zh-Hans" && zh && OP.Zh && OP.Zh.toSimplified) zh = OP.Zh.toSimplified(zh);
+    if (!zh || zh === en) return en;
+    return en + " " + zh;
   }
 
   /* 补齐字段：搜索和播报都要能拿到 alias 数组，别到处判断 undefined */
