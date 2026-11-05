@@ -2991,9 +2991,11 @@ console.log("\n[32] 课表上的「不需要教室」");
     /if \(c\.needsTime\) notes\.push/.test(appSource));
 
   /* 模糊匹配仍然要报，但要短：只报把握度 */
-  const fuzzyNote = /notes\.push\("自动匹配[^\n]*?\);/.exec(appSource);
+  const fuzzyNote = /notes\.push\(t\("ocr\.autoMatch"[^;]*;/.exec(appSource);
   check("模糊匹配保留一句把握度说明",
-    !!fuzzyNote && fuzzyNote[0].indexOf("%") > 0,
+    !!fuzzyNote &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf('"ocr.autoMatch": "自动匹配 {n}%"') > 0,
     fuzzyNote ? fuzzyNote[0] : "没找到");
   check("这句够短（不超过 70 个字符的源码）",
     !!fuzzyNote && fuzzyNote[0].length <= 70,
@@ -5672,8 +5674,10 @@ console.log("\n[56] 课表导出成图片：页面接线");
      现在失败后会再发一个 no-cors 探针（不受 CORS 约束），把失败分成两类。 */
   check("拉取失败时会自己分辨「网络不通」和「来源不在代理白名单」",
     /mode: "no-cors"/.test(appCode) &&
-    appCode.indexOf("网络能通，但当前页面来源不在代理白名单里") > 0 &&
-    appCode.indexOf("网络层面就到不了那台机器") > 0 &&
+    appCode.indexOf('t("pull.originBlocked", { origin: origin })') > 0 &&
+    appCode.indexOf('t("pull.netDown", { origin: origin })') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf("网络能通，但当前页面来源不在代理白名单里") > 0 &&
     /window\.location && window\.location\.origin/.test(appCode));
   check("绘图模块被加载进来了",
     pageHtml.indexOf('js/exportimage.js') > 0 && appCode.indexOf("OP.ExportImage.render") > 0);
@@ -5690,10 +5694,11 @@ console.log("\n[56] 课表导出成图片：页面接线");
       "esc(c.buildingName"].every(function (s) { return appCode.indexOf(s) > 0; }) &&
     !/\+\s*c\.name\s*\+/.test(appCode) && !/\+\s*item\.name\s*\+/.test(appCode));
   check("没有课程时不画空图，给提示",
-    appCode.indexOf("还没有能画的课") > 0 && /if \(!built\) \{/.test(appCode));
+    appCode.indexOf('t("shot.emptyTitle")') > 0 && /if \(!built\) \{/.test(appCode));
   check("保存走 <a download>，文件名带比例后缀（导两张不会互相覆盖）",
     appCode.indexOf("link.download = name") > 0 &&
-    /phone: "-手机壁纸"/.test(appCode) && /tabletPortrait: "-平板竖屏"/.test(appCode));
+    /phone: "shot\.filePhone"/.test(appCode) &&
+    /tabletPortrait: "shot\.fileTabletPortrait"/.test(appCode));
 
   /* ---------- 这一轮一起提的几件事 ---------- */
   check("「全部课程」卡上只剩新增课程 + 导出课表图片（JSON 导入导出撤掉了）",
@@ -5724,10 +5729,10 @@ console.log("\n[56] 课表导出成图片：页面接线");
     /\$\("#pullStatus"\)\.hidden = true;/.test(appCode));
   check("跳过行数后面不再挂「（缺时间/缺代号）」",
     appCode.indexOf("缺时间/缺代号") === -1 &&
-    /notes\.push\("跳过 " \+ report\.skipped \+ " 行"\)/.test(appCode));
+    /notes\.push\(t\("pull\.skipped", \{ n: report\.skipped \}\)\)/.test(appCode));
   check("导出弹窗不再写「手机上看不清就长按图片保存到相册」",
     appCode.indexOf("长按图片保存到相册") === -1 &&
-    /SHOT_RATIO_LABELS\[ratioKey\]/.test(appCode));
+    /shotRatioLabel\(ratioKey\)/.test(appCode));
 }
 
 console.log("\n[57] 拉取课表卡片：接口出处署名");
@@ -5920,8 +5925,9 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     /* 两种写法都认：t("key") 和 text("key", "兜底") */
     for (const m of src.matchAll(/\b(?:OP\.)?(?:t|text)\("([a-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
   });
-  /* 这些键是按序号/种类拼出来的，静态扫不到，单独放行 */
-  const dynamicPrefixes = ["week.long.", "week.short.", "bus.dest."];
+  /* 这些键是按序号/种类/错误码拼出来的，静态扫不到，单独放行。
+     pull.err.* 与 shot.file* 另各有一条针对性检查（见下），拼错照样会红。 */
+  const dynamicPrefixes = ["week.long.", "week.short.", "bus.dest.", "pull.err.", "shot.file"];
   const dead = baseKeys.filter((k) =>
     !usedInHtml.has(k) && !usedInJs.has(k) &&
     !dynamicPrefixes.some((p) => k.indexOf(p) === 0));
@@ -6092,6 +6098,26 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
       "picker.empty"].every(function (k) { return k in T["zh-Hans"]; }) &&
     appCode.indexOf('t("dorm.stateCount", { n: list.length })') > 0 &&
     appCode.indexOf('t("custom.stateCount", { n: list.length })') > 0);
+
+  /* ---- 课表页：拉取 / 识别 / 导出 ---- */
+  check("课表页的空态、编辑/删除按钮走三语键",
+    appCode.indexOf('t("course.empty")') > 0 &&
+    appCode.indexOf('t("course.edit")') > 0 &&
+    appCode.indexOf('t("course.del")') > 0 &&
+    appCode.indexOf('t("course.notStarted")') > 0);
+
+  /* PULL_ERRORS 是"错误码 → 键"的映射，t() 里不是字面量——这里单独核对 */
+  const errKeys = [...new Set([...appCode.matchAll(/"(pull\.err\.[A-Za-z]+)"/g)].map((m) => m[1]))];
+  check("拉取错误的键全在三张表里（12 个错误码 + generic + status）",
+    errKeys.length >= 14 &&
+    errKeys.every((k) => ["zh-Hans", "zh-Hant", "en"].every((l) => k in T[l])),
+    errKeys.join(" "));
+  check("导出文件名三档后缀的键都在",
+    ["shot.filePhone", "shot.fileTabletPortrait", "shot.fileTabletLandscape"]
+      .every((k) => appCode.indexOf('"' + k + '"') > 0 && k in T["en"]));
+  check("识别结果行的说明走三语键",
+    ["ocr.waitingNote", "ocr.badTime", "ocr.newBuildingNote", "ocr.autoMatch", "ocr.remove"]
+      .every((k) => appCode.indexOf('t("' + k + '"') > 0 || appCode.indexOf('"' + k + '"') > 0));
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");

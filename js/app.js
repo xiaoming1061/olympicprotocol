@@ -1872,18 +1872,18 @@
   var pull = { busy: false, courses: [], report: null, raw: null };
 
   var PULL_ERRORS = {
-    missing_credentials: "学号或密码是空的",
-    bad_json: "代理收到的请求不完整——检查一下代理地址是不是填错了",
-    not_found: "这个地址上没有代理：口令那一段可能写错了",
-    method_not_allowed: "代理只收 POST 请求",
-    body_too_large: "请求体太大（不该发生，报给开发者）",
-    too_many_requests: "调得太频繁了，等一分钟再试",
-    unknown_mode: "接口写法（mode）填错了",
-    upstream_status: "学校那边返回了错误",
-    upstream_unparseable: "学校返回的不是课表——接口可能变了，看下面「原始字段」",
-    upstream_timeout: "学校那边 20 秒没回话",
-    upstream_unreachable: "代理连不上学校（机房 IP 可能被拦了）",
-    bad_response: "代理返回的不是 JSON（地址填对了吗？）"
+    missing_credentials: "pull.err.missingCredentials",
+    bad_json: "pull.err.badJson",
+    not_found: "pull.err.notFound",
+    method_not_allowed: "pull.err.method",
+    body_too_large: "pull.err.tooLarge",
+    too_many_requests: "pull.err.tooMany",
+    unknown_mode: "pull.err.unknownMode",
+    upstream_status: "pull.err.upstreamStatus",
+    upstream_unparseable: "pull.err.upstreamUnparseable",
+    upstream_timeout: "pull.err.upstreamTimeout",
+    upstream_unreachable: "pull.err.upstreamUnreachable",
+    bad_response: "pull.err.badResponse"
   };
 
   /* 代理地址和上游写法都写死在这里（用户要求不要在界面上出现）：
@@ -1907,8 +1907,8 @@
     if (document.activeElement !== sid) sid.value = (data.settings && data.settings.pullSid) || "";
 
     $("#pullState").textContent = pull.busy
-      ? "拉取中…"
-      : "就绪";
+      ? t("pull.busy")
+      : t("pull.ready");
 
     var hasResult = pull.courses.length > 0;
     $("#btnPullImport").hidden = !hasResult;
@@ -1917,8 +1917,8 @@
 
   function pullError(data) {
     var key = (data && data.error) || "bad_response";
-    var text = PULL_ERRORS[key] || ("代理报错：" + key);
-    if (data && data.status) text += "（上游状态 " + data.status + "）";
+    var text = t(PULL_ERRORS[key] || "pull.err.generic", { code: key });
+    if (data && data.status) text += t("pull.err.status", { status: data.status });
     return text;
   }
 
@@ -1931,17 +1931,21 @@
     var fresh = list.filter(function (c) { return !c.buildingId && c.buildingName; }).length;
     var dunno = list.filter(function (c) { return !c.tba && !c.buildingName; }).length;
 
-    var notes = ["上游 " + report.rows + " 行，解析出 " + report.kept + " 条"];
-    if (report.skipped) notes.push("跳过 " + report.skipped + " 行");
-    if (tba) notes.push(tba + " 条地点待定");
-    if (fresh) notes.push(fresh + " 条要新建楼栋");
-    if (dunno) notes.push(dunno + " 条没写地点");
+    var notes = [t("pull.rowsNote", { rows: report.rows, kept: report.kept })];
+    if (report.skipped) notes.push(t("pull.skipped", { n: report.skipped }));
+    if (tba) notes.push(t("pull.tba", { n: tba }));
+    if (fresh) notes.push(t("pull.newBuildings", { n: fresh }));
+    if (dunno) notes.push(t("pull.noPlace", { n: dunno }));
 
     /* 上游给的是一段日期，不是周次——直接照原样显示，不做任何换算 */
     var terms = report.terms || [];
     if (terms.length > 1) {
-      notes.push("跨 " + terms.length + " 个学期（" +
-        terms.map(function (t) { return (t.descr || t.strm) + " " + t.count + " 条"; }).join("、") + "）");
+      notes.push(t("pull.terms", {
+        n: terms.length,
+        list: terms.map(function (term) {
+          return t("pull.termItem", { name: term.descr || term.strm, n: term.count });
+        }).join("、")
+      }));
     }
 
     /* 预览按"周一 → 周五、早 → 晚"排好，跟导入后课表里的顺序一致
@@ -1956,8 +1960,9 @@
     box.innerHTML = '<p class="plan-note">' + esc(notes.join(" · ")) + "</p>" +
       '<div class="pull-list">' + ordered.map(function (c) {
         var place = c.tba
-          ? "地点待定"
-          : (c.buildingId ? "" : "新楼栋：") + (c.buildingName || "（没写地点）") + (c.room ? " · " + c.room : "");
+          ? t("pull.tbaShort")
+          : (c.buildingId ? "" : t("pull.newBuildingPrefix")) +
+            (c.buildingName || t("pull.noPlaceShort")) + (c.room ? " · " + c.room : "");
         var range = P.dateRangeText(c);
         return '<div class="pull-item">' +
           '<div class="pull-head">' +
@@ -1972,7 +1977,7 @@
 
     /* 「原始字段」面板：字段名清单 + 前两行原文。联调时靠它对齐映射。 */
     $("#pullDebugSummary").textContent =
-      "字段名（" + report.keys.length + " 个）：" + report.keys.join("、");
+      t("pull.keys", { n: report.keys.length, list: report.keys.join("、") });
     $("#pullDebugText").textContent = JSON.stringify((pull.raw || []).slice(0, 2), null, 1);
     $("#pullDebug").hidden = false;
   }
@@ -1996,7 +2001,7 @@
     var pwd = $("#pullPwd").value;
 
     if (!sid || !pwd) {
-      toast("SID/密码缺失", "本网站不会储存您的任何个人信息", "warn");
+      toast(t("pull.missing"), t("course.privacy"), "warn");
       return;
     }
 
@@ -2007,7 +2012,7 @@
     pull.busy = true;
     clearPull();
     $("#pullStatus").hidden = false;
-    $("#pullStatus").textContent = "正在向学校要课表…（一般一两秒）";
+    $("#pullStatus").textContent = t("pull.asking");
     renderPull();
 
     /* 每次都明确告诉代理用哪种写法——不依赖代理那台的默认值 */
@@ -2032,8 +2037,8 @@
       });
     }).then(function (json) {
       if (!json || !json.ok) {
-        $("#pullStatus").textContent = "没拉到：" + pullError(json);
-        toast("没拉到课表", pullError(json), "warn");
+        $("#pullStatus").textContent = t("pull.failed", { msg: pullError(json) });
+        toast(t("pull.failedTitle"), pullError(json), "warn");
         return;
       }
 
@@ -2048,10 +2053,10 @@
 
       if (!pull.courses.length) {
         $("#pullStatus").textContent = rows.length
-          ? "读到 " + rows.length + " 行，但一行都没解析出来"
-          : "上游返回 0 条——密码错误或当前学期没有课程安排";
+          ? t("pull.parsedNone", { n: rows.length })
+          : t("pull.upstreamZero");
         $("#pullDebugSummary").textContent =
-          "字段名（" + built.report.keys.length + " 个）：" + built.report.keys.join("、");
+          t("pull.keys", { n: built.report.keys.length, list: built.report.keys.join("、") });
         $("#pullDebugText").textContent = JSON.stringify(rows.slice(0, 2), null, 1);
         $("#pullDebug").hidden = false;
         return;
@@ -2069,20 +2074,16 @@
            碰不到 → 是网络层面到不了（常见：当前网络屏蔽了 workers.dev）。
          no-cors 下响应是 opaque 的，拿不到内容，这里也不需要内容。 */
       var origin = String((window.location && window.location.origin) || "（未知）");
-      $("#pullStatus").textContent = "连不上代理，正在确认是网络问题还是来源问题…";
+      $("#pullStatus").textContent = t("pull.connecting");
 
       return fetch(url, { method: "POST", mode: "no-cors", body: "{}" })
         .then(function () {
-          $("#pullStatus").textContent =
-            "连不上代理：网络能通，但当前页面来源不在代理白名单里。" +
-            "把 " + origin + " 加进 Worker 的 ALLOWED_ORIGINS 就行。";
-          toast("代理拒绝了这次请求", "页面来源：" + origin, "err");
+          $("#pullStatus").textContent = t("pull.originBlocked", { origin: origin });
+          toast(t("pull.originBlockedTitle"), t("pull.originLabel", { origin: origin }), "err");
         })
         .catch(function () {
-          $("#pullStatus").textContent =
-            "连不上代理：网络层面就到不了那台机器（当前网络可能屏蔽了 workers.dev）。" +
-            "换个网络试试。页面来源：" + origin;
-          toast("网络到不了代理", "试试关掉 VPN，或换一个网络", "err");
+          $("#pullStatus").textContent = t("pull.netDown", { origin: origin });
+          toast(t("pull.netDownTitle"), t("pull.netDownDetail"), "err");
         });
     }).then(function () {
       pull.busy = false;
@@ -2150,13 +2151,13 @@
 
     saveAndRender();
     clearPull();
-    $("#pullState").textContent = "已导入 " + added + " 条";
+    $("#pullState").textContent = t("pull.imported", { n: added });
 
     var detail = [];
-    if (dup) detail.push("跳过 " + dup + " 条已经有了的");
-    if (created) detail.push("新建 " + created + " 栋楼（带坐标）");
-    if (filled) detail.push("给 " + filled + " 栋楼补上了坐标");
-    toast("已导入 " + added + " 条课程", detail.join("；"), "ok");
+    if (dup) detail.push(t("pull.dup", { n: dup }));
+    if (created) detail.push(t("pull.created", { n: created }));
+    if (filled) detail.push(t("pull.filled", { n: filled }));
+    toast(t("pull.importedToast", { n: added }), detail.join("；"), "ok");
   }
 
   /* ================= 课表导出成图片 ================= */
@@ -2172,11 +2173,10 @@
     tabletLandscape: 4 / 3
   };
 
-  var SHOT_RATIO_LABELS = {
-    phone: "手机壁纸 9 : 19.5",
-    tabletPortrait: "平板竖屏 3 : 4",
-    tabletLandscape: "平板横屏 4 : 3"
-  };
+  /* 比例的名字跟界面语言走（跟 <option> 用的是同一批键） */
+  function shotRatioLabel(key) {
+    return t("image." + (SHOT_RATIOS[key] ? key : SHOT_RATIO_DEFAULT));
+  }
 
   var SHOT_RATIO_DEFAULT = "phone";
 
@@ -2196,7 +2196,7 @@
   function shotPlace(course) {
     var b = P.buildingById(data, course.buildingId);
     var name = b ? b.name : "";
-    if (!name) return course.room ? "教室 " + course.room : "地点待定";
+    if (!name) return course.room ? t("shot.roomOnly", { room: course.room }) : t("pull.tbaShort");
     return name + (course.room ? " · " + course.room : "");
   }
 
@@ -2217,18 +2217,18 @@
   function shotSubtitle(count) {
     var now = state.now;
     /* 周次写在右上角那个小标签上，这里不重复 */
-    return P.dateLabel(now) + " · 共 " + count + " 门课";
+    return t("shot.subtitle", { date: P.dateLabel(now), n: count });
   }
 
   function openTimetableImage() {
     var courses = data.courses || [];
     var ratioKey = shotRatioKey();
     var built = OP.ExportImage.render(courses, {
-      title: "Olympic Protocol · 课表",
+      title: t("shot.title"),
       subtitle: shotSubtitle(courses.length),
       badge: (function () {
         var wk = P.weekNumber(state.now, data.settings.termStart);
-        return (wk !== null && wk >= 1) ? "第 " + wk + " 周" : "";
+        return (wk !== null && wk >= 1) ? t("week.n", { n: wk }) : "";
       })(),
       placeOf: shotPlace,
       shortPlaceOf: shotShortPlace,
@@ -2237,7 +2237,7 @@
     });
 
     if (!built) {
-      toast("还没有能画的课", "先导入或新增课程，再来导出图片", "warn");
+      toast(t("shot.emptyTitle"), t("shot.emptyDetail"), "warn");
       return;
     }
 
@@ -2248,8 +2248,11 @@
     $("#imagePreview").src = shot.url;
     /* 只说尺寸和比例，不再带"长按保存到相册"那句说明（用户要求去掉） */
     $("#imageHint").textContent =
-      "课表图片 " + built.canvas.width + "×" + built.canvas.height + " 像素 · " +
-      (SHOT_RATIO_LABELS[ratioKey] || "");
+      t("shot.hint", {
+        w: built.canvas.width,
+        h: built.canvas.height,
+        ratio: shotRatioLabel(ratioKey)
+      });
 
     $("#imageBox").hidden = false;
   }
@@ -2294,12 +2297,12 @@
   function shotFileName() {
     var ratioKey = shotRatioKey();
     var names = {
-      phone: "-手机壁纸",
-      tabletPortrait: "-平板竖屏",
-      tabletLandscape: "-平板横屏"
+      phone: "shot.filePhone",
+      tabletPortrait: "shot.fileTabletPortrait",
+      tabletLandscape: "shot.fileTabletLandscape"
     };
-    var suffix = names[ratioKey] || "";
-    return "课表-" + P.dateKey(state.now) + suffix + ".png";
+    var suffix = names[ratioKey] ? t(names[ratioKey]) : "";
+    return t("shot.fileBase") + "-" + P.dateKey(state.now) + suffix + ".png";
   }
 
   function renderCourse() {
@@ -2312,7 +2315,7 @@
     renderPull(courses.length);
 
     if (!courses.length) {
-      box.innerHTML = '<p class="empty">还没有课程，点右上角「新增课程」开始</p>';
+      box.innerHTML = '<p class="empty">' + esc(t("course.empty")) + "</p>";
       return;
     }
 
@@ -2334,8 +2337,10 @@
                 esc(P.weekText(c)) + "</div>" +
             "</div>" +
             '<div class="ci-actions">' +
-              '<button class="btn btn-small" data-edit-course="' + esc(c.id) + '">编辑</button>' +
-              '<button class="btn btn-small btn-danger" data-del-course="' + esc(c.id) + '">删除</button>' +
+              '<button class="btn btn-small" data-edit-course="' + esc(c.id) + '">' +
+                esc(t("course.edit")) + "</button>" +
+              '<button class="btn btn-small btn-danger" data-del-course="' + esc(c.id) + '">' +
+                esc(t("course.del")) + "</button>" +
             "</div>" +
           "</div>";
         }).join("") + "</div>";
@@ -3050,7 +3055,7 @@
     $("#ocrActions").hidden = true;
     $("#ocrDebug").hidden = true;
     ocrProgress(null);
-    if (!keepStatus) $("#ocrStatus").textContent = "未开始";
+    if (!keepStatus) $("#ocrStatus").textContent = t("course.notStarted");
   }
 
   /* 识别明细，用来判断问题出在哪一步（引擎没吐字 / 找不到表头 / 拼不出格子） */
@@ -3095,7 +3100,7 @@
   function handleOcrFile(file) {
     if (state.ocr.busy) return;
     if (!file || !/^image\//.test(file.type || "")) {
-      toast("这不是图片", "截图之后再拖进来，或者直接按 Ctrl+V 粘贴", "warn");
+      toast(t("ocr.notImage"), t("ocr.notImageDetail"), "warn");
       return;
     }
 
@@ -3103,8 +3108,8 @@
     state.ocr.courses = [];
     $("#ocrResult").innerHTML = "";
     $("#ocrActions").hidden = true;
-    $("#ocrStatus").textContent = "识别中…";
-    ocrProgress("正在准备", 0.02);
+    $("#ocrStatus").textContent = t("ocr.recognizing");
+    ocrProgress(t("ocr.preparing"), 0.02);
 
     OP.Ocr.run(file, {
       /* 只认英文。以前这里有个「课表里有中文」的开关，按用户要求去掉了：
@@ -3120,30 +3125,27 @@
       renderOcrDebug(result);
 
       if (!state.ocr.courses.length) {
-        $("#ocrStatus").textContent = "没认出来";
+        $("#ocrStatus").textContent = t("ocr.none");
 
         var words = result.wordCount || 0;
         var reason;
         if (!words) {
-          reason = "识别引擎没有从这张图里读出一个字。多半是图片太小或太糊——" +
-            "试试把课表区域放大后重新截图，别截图整个手机屏幕。";
+          reason = t("ocr.reasonNoText");
         } else if (!result.columns || !result.columns.length) {
-          reason = "读到了 " + words + " 个文字，但没找到星期那一行表头。" +
-            "确认截图里完整包含 Monday…Friday（或周一…周五）这一行。";
+          reason = t("ocr.reasonNoHeader", { n: words });
         } else {
-          reason = "读到了 " + words + " 个文字，也找到了表头，但没能拼出课程。" +
-            "展开下面的识别详情，把里面的内容发给我，我按实际情况调。";
+          reason = t("ocr.reasonNoGrid", { n: words });
         }
         $("#ocrResult").innerHTML = '<p class="empty">' + esc(reason) + "</p>";
         return;
       }
 
-      $("#ocrStatus").textContent = "识别出 " + state.ocr.courses.length + " 条";
+      $("#ocrStatus").textContent = t("ocr.found", { n: state.ocr.courses.length });
       renderOcrResult();
     }).catch(function (err) {
       ocrProgress(null);
-      $("#ocrStatus").textContent = "失败";
-      toast("识别失败", err.message, "err");
+      $("#ocrStatus").textContent = t("ocr.failed");
+      toast(t("ocr.failedTitle"), err.message, "err");
     }).then(function () {
       state.ocr.busy = false;
     });
@@ -3164,17 +3166,18 @@
       var match = picker.ranked.length ? picker.ranked[0] : null;
 
       if (c.buildingName && !match) {
-        options += '<option value="__new__" selected>＋ 新建楼栋：' + esc(c.buildingName) + "</option>";
+        options += '<option value="__new__" selected>' +
+          esc(t("ocr.newBuildingOption", { name: c.buildingName })) + "</option>";
       }
 
       var notes = [];
-      if (c.waiting) notes.push("原课表标记为候补（Waiting）");
-      if (c.needsTime) notes.push("时间没读准，请核对");
+      if (c.waiting) notes.push(t("ocr.waitingNote"));
+      if (c.needsTime) notes.push(t("ocr.badTime"));
       if (c.buildingName && !match) {
-        notes.push("「" + c.buildingName + "」不在楼栋列表里，导入时会新建，之后要补坐标");
+        notes.push(t("ocr.newBuildingNote", { name: c.buildingName }));
       } else if (match && !match.exact) {
         /* 只报把握度：匹配到哪一栋，上面那个下拉框里已经选中了，不用再念一遍 */
-        notes.push("自动匹配 " + Math.round(match.score * 100) + "%");
+        notes.push(t("ocr.autoMatch", { n: Math.round(match.score * 100) }));
       }
 
       /* 黄框只给"页面上确实写了原因"的行留着。
@@ -3192,12 +3195,15 @@
           '<input class="ocr-start" type="time" value="' + esc(c.start || "") + '">' +
           '<span class="ocr-dash">–</span>' +
           '<input class="ocr-end" type="time" value="' + esc(c.end || "") + '">' +
-          '<button type="button" class="btn btn-small btn-danger ocr-remove">移除</button>' +
+          '<button type="button" class="btn btn-small btn-danger ocr-remove">' +
+            esc(t("ocr.remove")) + "</button>" +
         "</div>" +
-        '<input class="ocr-name" type="text" value="' + esc(c.name || "") + '" placeholder="课程名称">' +
+        '<input class="ocr-name" type="text" value="' + esc(c.name || "") +
+          '" placeholder="' + esc(t("course.form.name")) + '">' +
         '<div class="field-row">' +
           '<select class="ocr-building">' + options + "</select>" +
-          '<input class="ocr-room" type="text" value="' + esc(c.room || "") + '" placeholder="房间">' +
+          '<input class="ocr-room" type="text" value="' + esc(c.room || "") +
+            '" placeholder="' + esc(t("ocr.roomPh")) + '">' +
         "</div>" +
         (notes.length ? '<div class="ocr-note">' + esc(notes.join("；")) + "</div>" : "") +
       "</div>";

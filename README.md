@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1221 项检查，不联网
+node tools/selftest.js             # 1225 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1190,7 +1190,12 @@ English。文案表在 `data/i18n.js`，运行时在 `js/i18n.js`。
 | 第一批 | **静态骨架**：卡片标题、字段名、按钮、占位符、图例、无障碍标签 | ✅ 133 条，全挂在 `index.html` 上 |
 | 第二批 | **校巴模块**：线路名、站名、卡片文案、分步导航、停运折叠、地图按钮 | ✅ 已完成 |
 | 第三批 | **今日页 + 路线页**：状态徽章、行程卡、宿舍、自定义路线、距离/时长单位 | ✅ 已完成 |
-| 第四批 | **其余动态文案**：提示条、播报稿、课表拉取与 OCR 报告 | 进行中（约 430 条） |
+| 第四批 | **课表页**：课程列表、拉取状态与错误、识别结果、导出图片 | ✅ 已完成 |
+| 第五批 | **其余**：提示条、语音播报稿、OCR 引擎内部说明、地图标注 | 进行中（约 335 条） |
+
+课表页这批里，**拉取的 12 个错误码**（`pull.err.*`）是"错误码 → 键"的映射，
+`t()` 里看不到字面量，所以自检单独核对这 14 个键是否三语齐全；
+导出文件名的三档后缀（`shot.file*`）也单独盯了一条。
 
 第三批里还有两个连带项值得记一笔：
 
@@ -1745,7 +1750,7 @@ js/exportimage.js     课表导出成图片（排版是纯计算，画图在 can
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
 tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
-tools/selftest.js     自检脚本，1221 项
+tools/selftest.js     自检脚本，1225 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）
