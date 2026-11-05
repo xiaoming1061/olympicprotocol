@@ -8,6 +8,19 @@ window.OP = window.OP || {};
   var WEEKDAYS = ["", "星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
   var WEEKDAYS_SHORT = ["", "周一", "周二", "周三", "周四", "周五", "周六", "周日"];
 
+  /* 这两组名字跟着界面语言走：课表页的「星期一」分组、新增课程里的星期选择、
+     顶部日期都直接读它们。切换语言时原地改写（别换数组）——别处拿的引用才不失效。
+     自检环境里没有加载 js/i18n.js（OP.t 不存在），就保持上面这套中文兜底。 */
+  function refreshWeekdayNames() {
+    if (!OP.t) return;
+    for (var i = 1; i <= 7; i++) {
+      WEEKDAYS[i] = OP.t("week.long." + i);
+      WEEKDAYS_SHORT[i] = OP.t("week.short." + i);
+    }
+  }
+  refreshWeekdayNames();
+  if (OP.I18N && OP.I18N.onChange) OP.I18N.onChange(refreshWeekdayNames);
+
   /* ---------- 时间工具 ---------- */
 
   function hm(text) {
@@ -51,7 +64,10 @@ window.OP = window.OP || {};
   }
 
   function dateLabel(date) {
-    return (date.getMonth() + 1) + " 月 " + date.getDate() + " 日 · " + WEEKDAYS[isoDow(date)];
+    var md = OP.t
+      ? OP.t("date.md", { m: date.getMonth() + 1, d: date.getDate() })
+      : (date.getMonth() + 1) + " 月 " + date.getDate() + " 日";
+    return md + " · " + WEEKDAYS[isoDow(date)];
   }
 
   /* 中文时间读法：14:00 → 下午 2 点整 */

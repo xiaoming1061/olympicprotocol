@@ -59,6 +59,13 @@
 
   function pad2(n) { return (n < 10 ? "0" : "") + n; }
 
+  /* 动态文案取词。静态骨架由 js/i18n.js 按 data-i18n 换掉；
+     这里拼出来的句子（状态、提示、播报稿）走同一张表。
+     OP.t 一定存在（i18n.js 在 app.js 之前加载），兜底只是防手滑。 */
+  function t(key, vars) {
+    return OP.t ? OP.t(key, vars) : key;
+  }
+
   /**
    * 当前跑的是哪一次构建。
    *
@@ -193,10 +200,10 @@
   }
 
   function positionHint() {
-    if (data.settings.simulate) return "模拟位置";
-    if (state.position) return "定位正常";
-    if (state.geoError) return "定位不可用";
-    return "定位未启用";
+    if (data.settings.simulate) return t("geo.simulated");
+    if (state.position) return t("geo.ok");
+    if (state.geoError) return t("geo.error");
+    return t("geo.off");
   }
 
   /* ================= 提示条 ================= */
@@ -333,7 +340,7 @@
 
     var label = P.dateLabel(now);
     var wk = P.weekNumber(now, data.settings.termStart);
-    if (wk !== null && wk >= 1 && wk <= 30) label += " · 第 " + wk + " 周";
+    if (wk !== null && wk >= 1 && wk <= 30) label += " · " + t("week.n", { n: wk });
     $("#todayLabel").textContent = label;
 
     var pill = $("#geoStatus");
@@ -4113,6 +4120,12 @@
         toast("这个浏览器不支持语音播报", "换 Chrome、Edge 或 Safari 试试", "warn");
       }
     }, 1600);
+  }
+
+  /* 切语言：静态文案由 i18n.js 自己换（data-i18n），
+     现拼出来的动态内容（课表分组、路线、状态徽章）得重画一遍才跟上。 */
+  if (OP.I18N && OP.I18N.onChange) {
+    OP.I18N.onChange(function () { render(); });
   }
 
   if (document.readyState === "loading") {

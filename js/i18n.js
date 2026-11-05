@@ -89,6 +89,23 @@ window.OP = window.OP || {};
       if (tv !== tk) titled[i].setAttribute("title", tv);
     }
 
+    /* aria-label 也得能换：地图的 <svg role="img">、数据卡片右下角的仓库图标
+       都是纯图标，读屏只能靠这一句。 */
+    var aria = scope.querySelectorAll("[data-i18n-aria]");
+    for (i = 0; i < aria.length; i++) {
+      var ak = aria[i].getAttribute("data-i18n-aria");
+      var av = t(ak);
+      if (av !== ak) aria[i].setAttribute("aria-label", av);
+    }
+
+    /* 图片的 alt 同理：读屏念的是它，换语言时也得跟着换 */
+    var alts = scope.querySelectorAll("[data-i18n-alt]");
+    for (i = 0; i < alts.length; i++) {
+      var lk = alts[i].getAttribute("data-i18n-alt");
+      var lv = t(lk);
+      if (lv !== lk) alts[i].setAttribute("alt", lv);
+    }
+
     paintPicker();
   }
 

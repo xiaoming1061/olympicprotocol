@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1183 项检查，不联网
+node tools/selftest.js             # 1210 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1181,6 +1181,28 @@ English。文案表在 `data/i18n.js`，运行时在 `js/i18n.js`。
 第一次打开时按浏览器语言猜一次（`zh-tw`/`zh-hk` 认繁体，`zh-cn` 认简体，
 `en` 认英文），认不出来就用简体兜底。
 
+#### 现在翻到哪儿了
+
+分两批做，进度写在下面（自检盯着，不会悄悄退化）：
+
+| 批次 | 内容 | 状态 |
+|---|---|---|
+| 第一批 | **静态骨架**：卡片标题、字段名、按钮、占位符、图例、无障碍标签 | ✅ 133 条，全挂在 `index.html` 上 |
+| 第二批 | **动态文案**：状态徽章、提示条、播报稿、识别报告 | 进行中（约 520 条，逐步换成 `OP.t()`） |
+
+静态的怎么做：元素上挂 `data-i18n="键"`；占位符用 `-ph`、`title` 用 `-title`、
+`aria-label` 用 `-aria`、图片 `alt` 用 `-alt`。切语言时 `js/i18n.js` 只换这些
+属性/文字，**不重画 DOM**，所以不会闪。
+
+动态的怎么做：拼字符串的地方走 `OP.t("键", { 变量 })`，例如
+`t("week.n", { n: wk })`。切语言时 `app.js` 会整体重画一次
+（`OP.I18N.onChange(render)`），星期名由 `planner.js` 原地改写那两个数组。
+
+自检钉了六件事：三张表的键完全一致、没有空译文、页面用到的键都在表里、
+表里没有死键、**静态骨架里不许出现没挂 `data-i18n` 的中文**、语言按钮上的
+endonym（简体中文 / 繁體中文 / English）保持原样。动态元素和 endonym 各有一份
+短白名单，白名单过期也会报错。
+
 ### 数据存在哪
 
 设置页「数据」卡片里能看到三个版本号，出问题时先看这三个：
@@ -1692,7 +1714,7 @@ js/exportimage.js     课表导出成图片（排版是纯计算，画图在 can
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
 tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
-tools/selftest.js     自检脚本，1183 项
+tools/selftest.js     自检脚本，1210 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

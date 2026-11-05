@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>Olympic Protocol · 校园通行指挥台</title>
+  <title data-i18n="app.title">Olympic Protocol · 校园通行指挥台</title>
   <script>
     /* 部署后自动换新版本。
      *
@@ -37,7 +37,7 @@
       }).catch(function () { /* 拿不到就算了，不影响页面 */ });
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20261020-0754" />
+  <link rel="stylesheet" href="styles.css?v=20261105-1749" />
 </head>
 <body>
   <!-- 背景层：一段 16 秒的视频循环（原片是个 4 分钟的长 mv，画面本身就是
@@ -85,31 +85,31 @@
                "每格一条左竖线"的规则会在换行处错位。 -->
           <div class="hero-stats" id="nextStats" data-cells="3">
             <div class="stat">
-              <span class="stat-label">距离</span>
+              <span class="stat-label" data-i18n="today.distance">距离</span>
               <span class="stat-value" id="nextDistance">--</span>
             </div>
             <div class="stat">
-              <span class="stat-label">步行</span>
+              <span class="stat-label" data-i18n="today.walk">步行</span>
               <span class="stat-value" id="nextWalk">--</span>
             </div>
             <div class="stat" id="nextClimbWrap" hidden>
-              <span class="stat-label">爬升</span>
+              <span class="stat-label" data-i18n="today.climb">爬升</span>
               <span class="stat-value" id="nextClimb">--</span>
             </div>
             <div class="stat">
-              <span class="stat-label">建议出发</span>
+              <span class="stat-label" data-i18n="today.leave">建议出发</span>
               <span class="stat-value" id="nextLeave">--</span>
             </div>
           </div>
           <div class="hero-actions">
-            <button class="btn btn-primary" id="btnSpeakNext">播报下一节</button>
-            <button class="btn" id="btnBrief">今日课表播报</button>
+            <button class="btn btn-primary" id="btnSpeakNext" data-i18n="today.speakNext">播报下一节</button>
+            <button class="btn" id="btnBrief" data-i18n="today.brief">今日课表播报</button>
           </div>
         </article>
 
         <article class="card">
           <div class="card-head">
-            <h3>今日课程</h3>
+            <h3 data-i18n="today.courses">今日课程</h3>
             <span class="muted" id="todaySummary">--</span>
           </div>
           <ol class="timeline" id="todayList"></ol>
@@ -118,82 +118,82 @@
 
       <section class="view" data-view="settings">
         <article class="card">
-          <div class="card-head"><h3>定位</h3><span class="muted" id="locState">未开始</span></div>
+          <div class="card-head"><h3 data-i18n="settings.loc.title">定位</h3><span class="muted" id="locState">未开始</span></div>
           <!-- 这三格里「当前坐标」是一串长文本（22.41830, 114.20520），
                手机上一行塞三格会把它硬折成好几行，所以窄屏改成两行：
                坐标独占一行，精度和最近楼栋并排一行。 -->
           <div class="hero-stats hero-stats-tight stats-lead-wide">
-            <div class="stat"><span class="stat-label">当前坐标</span><span class="stat-value" id="locCoords">--</span></div>
-            <div class="stat"><span class="stat-label">精度</span><span class="stat-value" id="locAccuracy">--</span></div>
-            <div class="stat"><span class="stat-label">最近楼栋</span><span class="stat-value" id="locNearest">--</span></div>
+            <div class="stat"><span class="stat-label" data-i18n="settings.loc.coords">当前坐标</span><span class="stat-value" id="locCoords">--</span></div>
+            <div class="stat"><span class="stat-label" data-i18n="settings.loc.accuracy">精度</span><span class="stat-value" id="locAccuracy">--</span></div>
+            <div class="stat"><span class="stat-label" data-i18n="settings.loc.nearest">最近楼栋</span><span class="stat-value" id="locNearest">--</span></div>
           </div>
           <div class="hero-actions">
-            <button class="btn btn-primary" id="btnLocate">开始实时定位</button>
-            <button class="btn" id="btnStopLocate">停止</button>
+            <button class="btn btn-primary" id="btnLocate" data-i18n="settings.loc.start">开始实时定位</button>
+            <button class="btn" id="btnStopLocate" data-i18n="common.stop">停止</button>
           </div>
         </article>
 
         <article class="card">
-          <div class="card-head"><h3>语音播报</h3></div>
+          <div class="card-head"><h3 data-i18n="settings.voice.title">语音播报</h3></div>
           <label class="switch">
             <input type="checkbox" id="vEnabled" checked />
-            <span>启用语音</span>
+            <span data-i18n="settings.voice.enable">启用语音</span>
           </label>
           <label class="field">
-            <span>音色</span>
+            <span data-i18n="settings.voice.voice">音色</span>
             <select id="vVoiceSelect"></select>
           </label>
           <label class="field">
-            <span>语速 <b id="vRateVal">1.0</b></span>
+            <span><span data-i18n="settings.voice.rate">语速</span> <b id="vRateVal">1.0</b></span>
             <input type="range" id="vRate" min="0.5" max="1.8" step="0.05" value="1" />
           </label>
           <label class="field">
-            <span>音量 <b id="vVolumeVal">1.0</b></span>
+            <span><span data-i18n="settings.voice.volume">音量</span> <b id="vVolumeVal">1.0</b></span>
             <input type="range" id="vVolume" min="0" max="1" step="0.05" value="1" />
           </label>
           <div class="hero-actions">
-            <button class="btn" id="btnTestVoice">试听</button>
-            <button class="btn btn-ghost" id="btnStopVoice">停止播报</button>
+            <button class="btn" id="btnTestVoice" data-i18n="settings.voice.test">试听</button>
+            <button class="btn btn-ghost" id="btnStopVoice" data-i18n="settings.voice.stop">停止播报</button>
           </div>
         </article>
 
         <article class="card">
-          <div class="card-head"><h3>提醒与步行参数</h3></div>
+          <div class="card-head"><h3 data-i18n="settings.param.title">提醒与步行参数</h3></div>
           <div class="field-row">
             <label class="field">
-              <span>课前提醒（分钟）</span>
+              <span data-i18n="settings.param.lead">课前提醒（分钟）</span>
               <input type="number" id="sLead" min="0" max="60" step="1" />
             </label>
             <label class="field">
-              <span>到楼缓冲（分钟）</span>
+              <span data-i18n="settings.param.buffer">到楼缓冲（分钟）</span>
               <input type="number" id="sBuffer" min="0" max="30" step="1" />
             </label>
           </div>
           <div class="field-row">
             <label class="field">
-              <span>步行速度（米/分钟）</span>
+              <span data-i18n="settings.param.speed">步行速度（米/分钟）</span>
               <input type="number" id="sSpeed" min="30" max="140" step="1" />
             </label>
             <label class="field">
-              <span>校巴速度（米/分钟）</span>
+              <span data-i18n="settings.param.busSpeed">校巴速度（米/分钟）</span>
               <input type="number" id="sBusSpeed" min="120" max="800" step="10" />
             </label>
           </div>
           <label class="field">
-            <span>路程系数</span>
+            <span data-i18n="settings.param.detour">路程系数</span>
             <input type="number" id="sDetour" min="1" max="2" step="0.05" />
           </label>
           <label class="field">
-            <span>学期开始日期（用于计算教学周）</span>
+            <span data-i18n="settings.param.termStart">学期开始日期（用于计算教学周）</span>
             <input type="date" id="sTermStart" />
           </label>
           <label class="field">
-            <span>爬升折算：1 米爬升 ≈ 几米平路</span>
+            <span data-i18n="settings.param.climb">爬升折算：1 米爬升 ≈ 几米平路</span>
             <input type="number" id="sClimb" min="0" max="20" step="0.5" />
           </label>
           <div class="hero-actions">
-            <button class="btn" id="btnTestAlert">测试出发提醒</button>
-            <button class="btn btn-ghost" id="btnResetWalk">恢复默认配置</button>
+            <button class="btn" id="btnTestAlert" data-i18n="settings.param.testAlert">测试出发提醒</button>
+            <button class="btn btn-ghost" id="btnResetWalk" data-i18n="settings.param.reset">恢复默认配置</button>
           </div>
         </article>
 
@@ -202,62 +202,62 @@
              也可以把代码里那个 SHOW_BUILDING_TOOLS 开关改成 true。 -->
         <article class="card" id="placesCard" hidden>
           <div class="card-head">
-            <h3>从地图读取附近楼栋</h3>
+            <h3 data-i18n="settings.places.title">从地图读取附近楼栋</h3>
             <span class="muted" id="plStatus">未搜索</span>
           </div>
           <label class="field">
-            <span>按名字搜（找指定的楼）</span>
-            <input type="text" id="plNameQuery" placeholder="例如：Lady Shaw / 邵逸夫" />
+            <span data-i18n="settings.places.searchName">按名字搜（找指定的楼）</span>
+            <input type="text" id="plNameQuery" data-i18n-ph="settings.places.namePh" placeholder="例如：Lady Shaw / 邵逸夫" />
           </label>
           <div class="hero-actions">
-            <button class="btn btn-primary" id="btnSearchByName">按名字搜</button>
+            <button class="btn btn-primary" id="btnSearchByName" data-i18n="settings.places.byName">按名字搜</button>
           </div>
           <hr class="sep" />
           <label class="field">
-            <span>搜索半径（米）</span>
+            <span data-i18n="settings.places.radius">搜索半径（米）</span>
             <input type="number" id="plRadius" min="100" max="5000" step="50" value="800" />
           </label>
           <label class="field">
-            <span>名称过滤（可留空）</span>
-            <input type="text" id="plKeyword" placeholder="例如：教学楼" />
+            <span data-i18n="settings.places.filter">名称过滤（可留空）</span>
+            <input type="text" id="plKeyword" data-i18n-ph="settings.places.filterPh" placeholder="例如：教学楼" />
           </label>
           <label class="switch">
             <input type="checkbox" id="plMerge" checked />
-            <span>合并同一栋楼内的地点</span>
+            <span data-i18n="settings.places.merge">合并同一栋楼内的地点</span>
           </label>
           <label class="switch">
             <input type="checkbox" id="plEnglish" checked />
-            <span>优先用英文名（中文名会存成别名）</span>
+            <span data-i18n="settings.places.english">优先用英文名（中文名会存成别名）</span>
           </label>
           <div class="hero-actions">
-            <button class="btn btn-primary" id="btnSearchPlaces">搜索附近建筑</button>
-            <button class="btn" id="btnAddSelectedPlaces">把勾选的加入楼栋</button>
-            <button class="btn btn-ghost" id="btnClearPlaces">清空结果</button>
+            <button class="btn btn-primary" id="btnSearchPlaces" data-i18n="settings.places.searchNearby">搜索附近建筑</button>
+            <button class="btn" id="btnAddSelectedPlaces" data-i18n="settings.places.addSelected">把勾选的加入楼栋</button>
+            <button class="btn btn-ghost" id="btnClearPlaces" data-i18n="settings.places.clear">清空结果</button>
           </div>
           <div class="places-list" id="placesList"></div>
         </article>
 
         <article class="card" id="buildingsCard" hidden>
           <div class="card-head">
-            <h3>校区楼栋</h3>
+            <h3 data-i18n="settings.build.title">校区楼栋</h3>
             <div class="card-head-actions">
-              <button class="btn btn-small" id="btnAddBuilding">新增楼栋</button>
-              <button class="btn btn-small" id="btnAutoFillBuildings">自动补齐</button>
-              <button class="btn btn-small" id="btnFetchElevation">获取海拔</button>
-              <button class="btn btn-small btn-danger" id="btnClearBuildings">清空全部</button>
+              <button class="btn btn-small" id="btnAddBuilding" data-i18n="settings.build.add">新增楼栋</button>
+              <button class="btn btn-small" id="btnAutoFillBuildings" data-i18n="settings.build.autofill">自动补齐</button>
+              <button class="btn btn-small" id="btnFetchElevation" data-i18n="settings.build.elevation">获取海拔</button>
+              <button class="btn btn-small btn-danger" id="btnClearBuildings" data-i18n="settings.build.clear">清空全部</button>
             </div>
           </div>
           <label class="field">
-            <span>校区名称</span>
+            <span data-i18n="settings.build.campusName">校区名称</span>
             <input type="text" id="campusName" />
           </label>
           <label class="field">
-            <span>搜索楼栋</span>
-            <input type="search" id="buildingSearch" placeholder="名字或别名，中英文都行" />
+            <span data-i18n="settings.build.search">搜索楼栋</span>
+            <input type="search" id="buildingSearch" data-i18n-ph="settings.build.searchPh" placeholder="名字或别名，中英文都行" />
           </label>
           <label class="switch">
             <input type="checkbox" id="buildingMissingOnly" />
-            <span>只看还没坐标的</span>
+            <span data-i18n="settings.build.missingOnly">只看还没坐标的</span>
           </label>
           <p class="count-line" id="buildingCount"></p>
           <div class="building-list" id="buildingList"></div>
@@ -265,27 +265,27 @@
           <form id="buildingForm" class="form" hidden>
             <input type="hidden" id="bfId" />
             <label class="field">
-              <span>楼栋名称</span>
-              <input type="text" id="bfName" placeholder="例如：第三教学楼" required />
+              <span data-i18n="settings.build.name">楼栋名称</span>
+              <input type="text" id="bfName" data-i18n-ph="settings.build.namePh" placeholder="例如：第三教学楼" required />
             </label>
             <label class="field">
-              <span>别名（逗号分隔）</span>
-              <input type="text" id="bfAlias" placeholder="三教, C楼" />
+              <span data-i18n="settings.build.alias">别名（逗号分隔）</span>
+              <input type="text" id="bfAlias" data-i18n-ph="settings.build.aliasPh" placeholder="三教, C楼" />
             </label>
             <div class="field-row">
               <label class="field">
-                <span>纬度</span>
+                <span data-i18n="settings.build.lat">纬度</span>
                 <input type="number" id="bfLat" step="0.000001" required />
               </label>
               <label class="field">
-                <span>经度</span>
+                <span data-i18n="settings.build.lng">经度</span>
                 <input type="number" id="bfLng" step="0.000001" required />
               </label>
             </div>
             <div class="form-actions">
-              <button type="button" class="btn" id="bfUseHere">用我的当前位置填入</button>
-              <button type="submit" class="btn btn-primary">保存</button>
-              <button type="button" class="btn btn-ghost" id="bfCancel">取消</button>
+              <button type="button" class="btn" id="bfUseHere" data-i18n="settings.build.useHere">用我的当前位置填入</button>
+              <button type="submit" class="btn btn-primary" data-i18n="common.save">保存</button>
+              <button type="button" class="btn btn-ghost" id="bfCancel" data-i18n="common.cancel">取消</button>
             </div>
           </form>
         </article>
@@ -305,27 +305,27 @@
         </article>
 
         <article class="card">
-          <div class="card-head"><h3>数据</h3></div>
+          <div class="card-head"><h3 data-i18n="settings.data.title">数据</h3></div>
           <!-- data-cells 是必须的：手机端那套「两列 + 第二行整行」的排布
                只对 [data-cells="3"] 生效，缺了它 430px 下还硬撑三列，
                字会挤到贴着发丝线。 -->
           <div class="hero-stats hero-stats-tight" data-cells="3">
             <div class="stat">
-              <span class="stat-label">应用版本</span>
+              <span class="stat-label" data-i18n="settings.data.appVersion">应用版本</span>
               <span class="stat-value" id="verApp">--</span>
             </div>
             <div class="stat">
-              <span class="stat-label">楼栋数据</span>
+              <span class="stat-label" data-i18n="settings.data.buildingsVersion">楼栋数据</span>
               <span class="stat-value" id="verData">--</span>
             </div>
             <!-- 发布时间放最后：它在手机端独占整行，时间字符串需要更宽的地方 -->
             <div class="stat">
-              <span class="stat-label">发布时间</span>
+              <span class="stat-label" data-i18n="settings.data.buildTime">发布时间</span>
               <span class="stat-value" id="verBuild">--</span>
             </div>
           </div>
           <div class="hero-actions">
-            <button class="btn btn-ghost" id="btnResetData">恢复默认数据</button>
+            <button class="btn btn-ghost" id="btnResetData" data-i18n="settings.data.reset">恢复默认数据</button>
           </div>
           <!-- 页面仓库的入口（放右下角）。图标是内联 SVG，不引外部图片——
                静态托管断网也不会裂；颜色跟课表代理卡片上的署名同一档
@@ -333,6 +333,7 @@
           <div class="card-foot">
             <a class="repo-link" href="https://github.com/xiaoming1061/olympicprotocol"
               target="_blank" rel="noopener noreferrer"
+              data-i18n-title="settings.data.repoTitle" data-i18n-aria="settings.data.repoTitle"
               title="页面仓库（GitHub）" aria-label="页面仓库（GitHub）">
               <svg class="repo-ico" viewBox="0 0 16 16" width="20" height="20" aria-hidden="true" focusable="false">
                 <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
@@ -344,31 +345,31 @@
       <section class="view" data-view="route">
         <article class="card">
           <div class="card-head">
-            <h3>校园地图</h3>
+            <h3 data-i18n="route.map.title">校园地图</h3>
             <div class="map-modes" id="mapModes">
-              <button type="button" class="map-mode" data-mapmode="osm">街道图</button>
-              <button type="button" class="map-mode" data-mapmode="cuhk">港中文</button>
-              <button type="button" class="map-mode" data-mapmode="schematic">简图</button>
+              <button type="button" class="map-mode" data-mapmode="osm" data-i18n="route.map.osm">街道图</button>
+              <button type="button" class="map-mode" data-mapmode="cuhk" data-i18n="route.map.cuhk">港中文</button>
+              <button type="button" class="map-mode" data-mapmode="schematic" data-i18n="route.map.schematic">简图</button>
             </div>
           </div>
           <div class="map-wrap">
-            <svg id="mapSvg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" role="img" aria-label="校园简图"></svg>
+            <svg id="mapSvg" viewBox="0 0 1000 700" preserveAspectRatio="xMidYMid meet" role="img" data-i18n-aria="route.map.aria" aria-label="校园简图"></svg>
             <div id="mapReal" style="display: none"></div>
           </div>
           <div class="legend" id="mapLegend">
-            <span class="legend-item"><i class="dot dot-me"></i>我的位置</span>
-            <span class="legend-item"><i class="dot dot-next"></i>下一节课</span>
-            <span class="legend-item"><i class="dot dot-today"></i>今天还要去</span>
-            <span class="legend-item"><i class="line line-walk"></i>走这一段</span>
-            <span class="legend-item"><i class="line line-ride"></i>坐车这一段</span>
+            <span class="legend-item"><i class="dot dot-me"></i><span data-i18n="common.me">我的位置</span></span>
+            <span class="legend-item"><i class="dot dot-next"></i><span data-i18n="today.next">下一节课</span></span>
+            <span class="legend-item"><i class="dot dot-today"></i><span data-i18n="route.legend.today">今天还要去</span></span>
+            <span class="legend-item"><i class="line line-walk"></i><span data-i18n="route.legend.walk">走这一段</span></span>
+            <span class="legend-item"><i class="line line-ride"></i><span data-i18n="route.legend.ride">坐车这一段</span></span>
           </div>
         </article>
 
         <!-- 三张卡片做成左右滑动、一次只显示一张：显示哪张，上面的地图就画哪张的起终点 -->
         <div class="route-nav" id="routeNav">
-          <button type="button" class="route-tab is-active" data-slide="plan">路线规划</button>
-          <button type="button" class="route-tab" data-slide="dorm">返回宿舍</button>
-          <button type="button" class="route-tab" data-slide="custom">自定义路线</button>
+          <button type="button" class="route-tab is-active" data-slide="plan" data-i18n="route.tab.plan">路线规划</button>
+          <button type="button" class="route-tab" data-slide="dorm" data-i18n="route.tab.dorm">返回宿舍</button>
+          <button type="button" class="route-tab" data-slide="custom" data-i18n="route.tab.custom">自定义路线</button>
         </div>
 
         <div class="route-slides" id="routeSlides">
@@ -377,7 +378,7 @@
         <section class="route-slide" data-slide="plan">
         <article class="card">
           <div class="card-head">
-            <h3>路线规划</h3>
+            <h3 data-i18n="route.tab.plan">路线规划</h3>
             <span class="muted" id="routeSummary">--</span>
           </div>
           <div class="route-list" id="routeList"></div>
@@ -387,19 +388,19 @@
         <section class="route-slide" data-slide="dorm">
         <article class="card">
           <div class="card-head">
-            <h3>返回宿舍</h3>
+            <h3 data-i18n="route.tab.dorm">返回宿舍</h3>
             <span class="muted" id="dormState">未设置</span>
           </div>
           <label class="field">
-            <span>宿舍（中英文、简体繁体、拼音首字母都能搜）</span>
+            <span data-i18n="route.dorm.search">宿舍（中英文、简体繁体、拼音首字母都能搜）</span>
             <input type="search" id="dormSearch" autocomplete="off"
-              placeholder="例如：汤 / 知行楼 / zxl / Chih Hsing" />
+              data-i18n-ph="route.dorm.searchPh" placeholder="例如：汤 / 知行楼 / zxl / Chih Hsing" />
           </label>
           <div class="picker" id="dormSuggest" hidden></div>
           <!-- 只剩「删除这个宿舍」这一颗（只有自己加的宿舍才显示），
                整行在没得删时一起收起来，免得留一段空行 -->
           <div class="hero-actions" id="dormActions" hidden>
-            <button class="btn btn-ghost" id="btnDormRemove" hidden>删除这个宿舍</button>
+            <button class="btn btn-ghost" id="btnDormRemove" hidden data-i18n="route.dorm.remove">删除这个宿舍</button>
           </div>
           <div class="dorm-plan" id="dormPlan"></div>
         </article>
@@ -408,25 +409,25 @@
         <section class="route-slide" data-slide="custom">
         <article class="card">
           <div class="card-head">
-            <h3>自定义路线</h3>
+            <h3 data-i18n="route.tab.custom">自定义路线</h3>
             <span class="muted" id="customState">选好起点终点自动规划</span>
           </div>
           <div class="field-row">
             <label class="field">
-              <span>起点（中英文、简繁体、拼音首字母都能搜）</span>
+              <span data-i18n="route.custom.from">起点（中英文、简繁体、拼音首字母都能搜）</span>
               <input type="search" id="customFromSearch" autocomplete="off"
-                placeholder="我的位置 / 教研楼 / jylyz" />
+                data-i18n-ph="route.custom.fromPh" placeholder="我的位置 / 教研楼 / jylyz" />
             </label>
             <label class="field">
-              <span>终点</span>
+              <span data-i18n="route.custom.to">终点</span>
               <input type="search" id="customToSearch" autocomplete="off"
-                placeholder="蒙民偉樓 / 蒙民伟楼 / mmwl" />
+                data-i18n-ph="route.custom.toPh" placeholder="蒙民偉樓 / 蒙民伟楼 / mmwl" />
             </label>
           </div>
           <div class="picker" id="customFromList" hidden></div>
           <div class="picker" id="customToList" hidden></div>
           <div class="hero-actions">
-            <button class="btn" id="btnCustomSwap">起点终点对调</button>
+            <button class="btn" id="btnCustomSwap" data-i18n="route.custom.swap">起点终点对调</button>
           </div>
           <div class="custom-plan" id="customPlan"></div>
         </article>
@@ -439,10 +440,10 @@
       <section class="view" data-view="course">
         <article class="card">
           <div class="card-head">
-            <h3>全部课程</h3>
+            <h3 data-i18n="course.list.title">全部课程</h3>
             <div class="card-head-actions">
-              <button class="btn btn-small" id="btnAddCourse">新增课程</button>
-              <button class="btn btn-small btn-primary" id="btnExportImage">导出课表图片</button>
+              <button class="btn btn-small" id="btnAddCourse" data-i18n="course.add">新增课程</button>
+              <button class="btn btn-small btn-primary" id="btnExportImage" data-i18n="course.export">导出课表图片</button>
             </div>
           </div>
           <div class="course-list" id="courseList"></div>
@@ -450,8 +451,8 @@
 
         <!-- 两种导入方式做成左右滑动的两张卡（跟路线页同一套交互），默认停在「拉取课表」 -->
         <div class="route-nav" id="importNav">
-          <button type="button" class="route-tab is-active" data-slide="pull">从学校接口拉取</button>
-          <button type="button" class="route-tab" data-slide="ocr">从截图导入</button>
+          <button type="button" class="route-tab is-active" data-slide="pull" data-i18n="course.tab.pull">从学校接口拉取</button>
+          <button type="button" class="route-tab" data-slide="ocr" data-i18n="course.tab.ocr">从截图导入</button>
         </div>
 
         <div class="route-slides" id="importSlides">
@@ -460,32 +461,32 @@
         <section class="route-slide" data-slide="pull">
         <article class="card" id="pullCard">
           <div class="card-head">
-            <h3>从学校接口拉取课表</h3>
+            <h3 data-i18n="course.pull.title">从学校接口拉取课表</h3>
             <span class="muted" id="pullState">就绪</span>
           </div>
           <!-- 密码只在这一次请求里用：不存本地、不进日志，代理和学校那边也都是用完就丢 -->
           <div class="field-row">
             <label class="field">
-              <span>学号 SID</span>
+              <span data-i18n="course.pull.sid">学号 SID</span>
               <!-- 允许浏览器记住这组账号密码（用户要求）：username + current-password
                    是标准搭配，密码管理器会认出来并问要不要保存 -->
               <input type="text" id="pullSid" inputmode="numeric" autocomplete="username" placeholder="1155xxxxxx" />
             </label>
             <label class="field">
-              <span>密码</span>
+              <span data-i18n="course.pull.pwd">密码</span>
               <input type="password" id="pullPwd" autocomplete="current-password" />
             </label>
           </div>
-          <p class="field-note">本网站不会储存您的任何个人信息</p>
+          <p class="field-note" data-i18n="course.privacy">本网站不会储存您的任何个人信息</p>
           <div class="hero-actions">
-            <button class="btn btn-primary" id="btnPull">拉取课表</button>
-            <button class="btn" id="btnPullImport" hidden>导入这些课</button>
-            <button class="btn btn-ghost" id="btnPullClear" hidden>放弃这次结果</button>
+            <button class="btn btn-primary" id="btnPull" data-i18n="course.pull.run">拉取课表</button>
+            <button class="btn" id="btnPullImport" hidden data-i18n="course.pull.import">导入这些课</button>
+            <button class="btn btn-ghost" id="btnPullClear" hidden data-i18n="course.pull.discard">放弃这次结果</button>
           </div>
           <p class="progress-text" id="pullStatus" hidden></p>
           <div id="pullResult"></div>
           <details class="ocr-debug" id="pullDebug" hidden>
-            <summary>原始字段</summary>
+            <summary data-i18n="course.pull.raw">原始字段</summary>
             <p class="debug-summary" id="pullDebugSummary"></p>
             <pre id="pullDebugText"></pre>
           </details>
@@ -497,7 +498,7 @@
               <svg class="credit-ico" viewBox="0 0 16 16" width="16" height="16" aria-hidden="true" focusable="false">
                 <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
               </svg>
-              <span>接口调用方式参考自 CUHK_Timetable_fetch，感谢原作者</span>
+              <span data-i18n="course.credit">接口调用方式参考自 CUHK_Timetable_fetch，感谢原作者</span>
             </a>
           </p>
         </article>
@@ -506,22 +507,22 @@
         <section class="route-slide" data-slide="ocr">
         <article class="card" id="ocrCard">
           <div class="card-head">
-            <h3>从课表截图导入</h3>
+            <h3 data-i18n="course.ocr.title">从课表截图导入</h3>
             <span class="muted" id="ocrStatus">未开始</span>
           </div>
           <!-- 这两个按钮放在卡片顶部：以前在底部，结果一多就被底部导航栏挡住 -->
           <div class="hero-actions ocr-actions-top" id="ocrActions" hidden>
-            <button class="btn btn-primary" id="btnOcrImport">确认导入</button>
-            <button class="btn btn-ghost" id="btnOcrCancel">放弃这次识别</button>
+            <button class="btn btn-primary" id="btnOcrImport" data-i18n="course.ocr.confirm">确认导入</button>
+            <button class="btn btn-ghost" id="btnOcrCancel" data-i18n="course.ocr.discard">放弃这次识别</button>
           </div>
           <div class="drop-zone" id="ocrDrop">
-            <strong>粘贴 / 拖入 / 点击选择图片</strong>
+            <strong data-i18n="course.ocr.drop">粘贴 / 拖入 / 点击选择图片</strong>
             <input type="file" id="ocrFile" accept="image/*" hidden />
           </div>
-          <p class="field-note">本网站不会储存您的任何个人信息</p>
+          <p class="field-note" data-i18n="course.privacy">本网站不会储存您的任何个人信息</p>
           <label class="switch" id="ocrReplaceWrap" hidden>
             <input type="checkbox" id="ocrReplace" />
-            <span>导入前清空现有课表</span>
+            <span data-i18n="course.ocr.clearExisting">导入前清空现有课表</span>
           </label>
           <div class="progress" id="ocrProgress" hidden>
             <div class="progress-bar" id="ocrProgressBar"></div>
@@ -529,7 +530,7 @@
           <p class="progress-text" id="ocrProgressText" hidden></p>
           <div id="ocrResult"></div>
           <details class="ocr-debug" id="ocrDebug" hidden>
-            <summary>识别详情</summary>
+            <summary data-i18n="course.ocr.detail">识别详情</summary>
             <p class="debug-summary" id="ocrDebugSummary"></p>
             <pre id="ocrDebugText"></pre>
           </details>
@@ -545,51 +546,51 @@
           <form id="courseForm" class="form">
             <input type="hidden" id="cfId" />
             <label class="field">
-              <span>课程名称</span>
-              <input type="text" id="cfName" placeholder="例如：高等数学" required />
+              <span data-i18n="course.form.name">课程名称</span>
+              <input type="text" id="cfName" data-i18n-ph="course.form.namePh" placeholder="例如：高等数学" required />
             </label>
             <label class="field">
-              <span>上课楼栋</span>
+              <span data-i18n="course.form.building">上课楼栋</span>
               <select id="cfBuilding"></select>
             </label>
             <div class="field-row">
               <label class="field">
-                <span>教室</span>
+                <span data-i18n="course.form.room">教室</span>
                 <input type="text" id="cfRoom" placeholder="A301" />
               </label>
               <label class="field">
-                <span>教师</span>
-                <input type="text" id="cfTeacher" placeholder="张老师" />
+                <span data-i18n="course.form.teacher">教师</span>
+                <input type="text" id="cfTeacher" data-i18n-ph="course.form.teacherPh" placeholder="张老师" />
               </label>
             </div>
             <div class="field-row">
               <label class="field">
-                <span>开始时间</span>
+                <span data-i18n="course.form.start">开始时间</span>
                 <input type="time" id="cfStart" value="08:00" required />
               </label>
               <label class="field">
-                <span>结束时间</span>
+                <span data-i18n="course.form.end">结束时间</span>
                 <input type="time" id="cfEnd" value="09:40" required />
               </label>
             </div>
             <fieldset class="field">
-              <legend>上课星期</legend>
+              <legend data-i18n="course.form.weekday">上课星期</legend>
               <div class="weekday-picker" id="cfWeekdays"></div>
             </fieldset>
             <!-- 起止日期只有从学校接口拉回来的课才有；手输/截图导入的可以留空 -->
             <div class="field-row">
               <label class="field">
-                <span>开始日期（可留空）</span>
+                <span data-i18n="course.form.startDate">开始日期（可留空）</span>
                 <input type="date" id="cfStartDate" />
               </label>
               <label class="field">
-                <span>结束日期（可留空）</span>
+                <span data-i18n="course.form.endDate">结束日期（可留空）</span>
                 <input type="date" id="cfEndDate" />
               </label>
             </div>
             <div class="form-actions">
-              <button type="submit" class="btn btn-primary">保存</button>
-              <button type="button" class="btn btn-ghost" id="cfCancel">取消</button>
+              <button type="submit" class="btn btn-primary" data-i18n="common.save">保存</button>
+              <button type="button" class="btn btn-ghost" id="cfCancel" data-i18n="common.cancel">取消</button>
             </div>
           </form>
         </article>
@@ -610,8 +611,8 @@
     <div class="modal-card" role="dialog" aria-modal="true">
       <p class="modal-text" id="confirmText"></p>
       <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="confirmCancel">取消</button>
-        <button type="button" class="btn btn-primary" id="confirmOk">确定</button>
+        <button type="button" class="btn btn-ghost" id="confirmCancel" data-i18n="common.cancel">取消</button>
+        <button type="button" class="btn btn-primary" id="confirmOk" data-i18n="common.ok">确定</button>
       </div>
     </div>
   </div>
@@ -619,45 +620,45 @@
   <!-- 课表图片：先给你看生成好的图，再决定存下来还是分享出去。
        比例按用途选：自适应（就按内容）/ 手机壁纸 / 平板壁纸。 -->
   <div class="modal" id="imageBox" hidden>
-    <div class="modal-card" role="dialog" aria-modal="true" aria-label="课表图片">
+    <div class="modal-card" role="dialog" aria-modal="true" data-i18n-aria="image.alt" aria-label="课表图片">
       <p class="modal-text" id="imageHint">课表图片已经生成。</p>
       <label class="field">
-        <span>图片比例</span>
+        <span data-i18n="image.ratio">图片比例</span>
         <select id="imageRatio">
-          <option value="phone" selected>手机壁纸 9 : 19.5</option>
-          <option value="tabletPortrait">平板竖屏 3 : 4</option>
-          <option value="tabletLandscape">平板横屏 4 : 3</option>
+          <option value="phone" selected data-i18n="image.phone">手机壁纸 9 : 19.5</option>
+          <option value="tabletPortrait" data-i18n="image.tabletPortrait">平板竖屏 3 : 4</option>
+          <option value="tabletLandscape" data-i18n="image.tabletLandscape">平板横屏 4 : 3</option>
         </select>
       </label>
-      <img class="image-shot" id="imagePreview" alt="课表图片" />
+      <img class="image-shot" id="imagePreview" data-i18n-alt="image.alt" alt="课表图片" />
       <div class="modal-actions">
-        <button type="button" class="btn btn-ghost" id="imageClose">关闭</button>
-        <button type="button" class="btn" id="imageSave">保存图片</button>
+        <button type="button" class="btn btn-ghost" id="imageClose" data-i18n="common.close">关闭</button>
+        <button type="button" class="btn" id="imageSave" data-i18n="image.save">保存图片</button>
       </div>
     </div>
   </div>
 
-  <script src="data/buildings.js?v=20261020-0754"></script>
-  <script src="data/dorms.js?v=20261020-0754"></script>
-  <script src="data/shuttle.js?v=20261020-0754"></script>
-  <script src="data/holidays.js?v=20261020-0754"></script>
-  <script src="data/defaults.js?v=20261020-0754"></script>
-  <script src="data/i18n.js?v=20261020-0754"></script>
-  <script src="js/i18n.js?v=20261020-0754"></script>
-  <script src="js/store.js?v=20261020-0754"></script>
-  <script src="js/zh.js?v=20261020-0754"></script>
-  <script src="js/dorm.js?v=20261020-0754"></script>
-  <script src="js/geo.js?v=20261020-0754"></script>
-  <script src="js/shuttle.js?v=20261020-0754"></script>
-  <script src="js/elevation.js?v=20261020-0754"></script>
-  <script src="js/speech.js?v=20261020-0754"></script>
-  <script src="js/planner.js?v=20261020-0754"></script>
-  <script src="js/map.js?v=20261020-0754"></script>
-  <script src="js/realmaps.js?v=20261020-0754"></script>
-  <script src="js/places.js?v=20261020-0754"></script>
-  <script src="js/ocr.js?v=20261020-0754"></script>
-  <script src="js/timetable.js?v=20261020-0754"></script>
-  <script src="js/exportimage.js?v=20261020-0754"></script>
-  <script src="js/app.js?v=20261020-0754"></script>
+  <script src="data/buildings.js?v=20261105-1749"></script>
+  <script src="data/dorms.js?v=20261105-1749"></script>
+  <script src="data/shuttle.js?v=20261105-1749"></script>
+  <script src="data/holidays.js?v=20261105-1749"></script>
+  <script src="data/defaults.js?v=20261105-1749"></script>
+  <script src="data/i18n.js?v=20261105-1749"></script>
+  <script src="js/i18n.js?v=20261105-1749"></script>
+  <script src="js/store.js?v=20261105-1749"></script>
+  <script src="js/zh.js?v=20261105-1749"></script>
+  <script src="js/dorm.js?v=20261105-1749"></script>
+  <script src="js/geo.js?v=20261105-1749"></script>
+  <script src="js/shuttle.js?v=20261105-1749"></script>
+  <script src="js/elevation.js?v=20261105-1749"></script>
+  <script src="js/speech.js?v=20261105-1749"></script>
+  <script src="js/planner.js?v=20261105-1749"></script>
+  <script src="js/map.js?v=20261105-1749"></script>
+  <script src="js/realmaps.js?v=20261105-1749"></script>
+  <script src="js/places.js?v=20261105-1749"></script>
+  <script src="js/ocr.js?v=20261105-1749"></script>
+  <script src="js/timetable.js?v=20261105-1749"></script>
+  <script src="js/exportimage.js?v=20261105-1749"></script>
+  <script src="js/app.js?v=20261105-1749"></script>
 </body>
 </html>

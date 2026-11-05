@@ -1484,7 +1484,7 @@ console.log("\n[16] 清空校区楼栋");
 
   check("设置里有清空按钮", html.indexOf('id="btnClearBuildings"') > 0);
   check("按钮和「新增楼栋」放在一起",
-    /card-head-actions[\s\S]{0,300}btnAddBuilding[\s\S]{0,300}btnClearBuildings/.test(html));
+    /card-head-actions[\s\S]{0,300}btnAddBuilding[\s\S]{0,600}btnClearBuildings/.test(html));
 
   /* 处理函数里还有嵌套的 }); ，正则截不准，按位置切一段出来看 */
   const handlerStart = appSource.indexOf('btnClearBuildings").addEventListener("click"');
@@ -3064,7 +3064,7 @@ console.log("\n[34] 设置页里的版本号");
   check("数据卡片的读数行带了 data-cells（否则手机端不换两列）",
     /class="hero-stats hero-stats-tight" data-cells="3"/.test(pageHtml));
   check("这三个格子挂在「数据」卡片里",
-    /<article class="card">\s*<div class="card-head"><h3>数据<\/h3><\/div>[\s\S]*?id="verData"[\s\S]*?id="btnResetData"/.test(pageHtml));
+    /<article class="card">\s*<div class="card-head"><h3[^>]*>数据<\/h3><\/div>[\s\S]*?id="verData"[\s\S]*?id="btnResetData"/.test(pageHtml));
   check("渲染设置页时会把三个版本号填上",
     /function renderSettings\(\)[\s\S]{0,400}\$\("#verApp"\)\.textContent/.test(appCode) &&
     /\$\("#verBuild"\)\.textContent = buildStamp\(\)/.test(appCode) &&
@@ -4579,7 +4579,7 @@ console.log("\n[46] 路线页三张卡片轮流显示 / 设置卡片默认藏起
   /* 课表页那两张卡：拉取课表 / 截图导入，默认停在拉取 */
   check("课表页两张卡也是滑动组，默认显示「拉取课表」",
     /<div class="route-nav" id="importNav">/.test(pageHtml) &&
-    /<button type="button" class="route-tab is-active" data-slide="pull">/.test(pageHtml) &&
+    /<button type="button" class="route-tab is-active" data-slide="pull"[^>]*>/.test(pageHtml) &&
     /<section class="route-slide" data-slide="pull">/.test(pageHtml) &&
     /<section class="route-slide" data-slide="ocr">/.test(pageHtml) &&
     /slides: \["pull", "ocr"\][\s\S]{0,80}initial: "pull"/.test(appCode));
@@ -5043,7 +5043,7 @@ console.log("\n[50] 校历：假期不上课、校巴只剩假日线 H");
     !/weeks:/.test(appCode) && !/\.weeks\b/.test(appCode));
   check("顶上那个「第 N 周」和学期开始日设置都还在",
     /\$\("#todayLabel"\)\.textContent = label/.test(appCode) &&
-    /label \+= " · 第 " \+ wk \+ " 周"/.test(appCode) &&
+    /label \+= " · " \+ t\("week\.n", \{ n: wk \}\)/.test(appCode) &&
     pageHtml.indexOf('id="todayLabel"') > 0 &&
     pageHtml.indexOf('id="sTermStart"') > 0 &&
     OP.Store.defaults().settings.termStart === "2026-09-07");
@@ -5097,7 +5097,7 @@ console.log("\n[50] 校历：假期不上课、校巴只剩假日线 H");
   /* 用户要求去掉的那句说明 */
   check("识别详情不再写「出问题时用来排查」",
     pageHtml.indexOf("出问题时用来排查") === -1 &&
-    pageHtml.indexOf("<summary>识别详情</summary>") > 0);
+    /<summary[^>]*>识别详情<\/summary>/.test(pageHtml));
 
   /* 放假那天"距离 / 步行 / 建议出发"和倒计时都是空话，收起来 */
   check("放假那天收起倒计时和读数行（不留一排假的破折号）",
@@ -5425,9 +5425,9 @@ console.log("\n[54] 从学校接口拉课表：页面接线");
   /* 隐私说明从"输入框里的灰字"改成输入框下方的一行说明（用户要求：
      框内提示太丑，挪到下面；截图导入那个虚线框下面也要有一份） */
   check("SID/密码框下面有一行「本网站不会储存您的任何个人信息」",
-    /<div class="field-row">[\s\S]{0,600}?<\/div>\s*<p class="field-note">本网站不会储存您的任何个人信息<\/p>/.test(pageHtml));
+    /<div class="field-row">[\s\S]{0,600}?<\/div>\s*<p class="field-note"[^>]*>本网站不会储存您的任何个人信息<\/p>/.test(pageHtml));
   check("截图导入的虚线框下面也有同一句",
-    /id="ocrDrop"[\s\S]{0,300}?<\/div>\s*<p class="field-note">本网站不会储存您的任何个人信息<\/p>/.test(pageHtml));
+    /id="ocrDrop"[\s\S]{0,300}?<\/div>\s*<p class="field-note"[^>]*>本网站不会储存您的任何个人信息<\/p>/.test(pageHtml));
   check("密码框里不再塞那句提示（框内留白）",
     /id="pullPwd"[^>]*>/.test(pageHtml) &&
     !/id="pullPwd"[^>]*placeholder=/.test(pageHtml));
@@ -5630,7 +5630,7 @@ console.log("\n[56] 课表导出成图片：页面接线");
     /id="btnExportImage"/.test(pageHtml) &&
     pageHtml.indexOf('id="btnExportImage"') < pageHtml.indexOf('id="courseList"'));
   check("按钮文案是「导出课表图片」，而且用了主色（不再是一颗淡灰按钮）",
-    /<button class="btn btn-small btn-primary" id="btnExportImage">导出课表图片<\/button>/.test(pageHtml));
+    /<button class="btn btn-small btn-primary" id="btnExportImage"[^>]*>导出课表图片<\/button>/.test(pageHtml));
   check("弹窗里有预览图 + 比例选择 + 保存 + 关闭",
     pageHtml.indexOf('id="imageBox"') > 0 && pageHtml.indexOf('id="imagePreview"') > 0 &&
     pageHtml.indexOf('id="imageRatio"') > 0 && pageHtml.indexOf('id="imageSave"') > 0 &&
@@ -5643,9 +5643,9 @@ console.log("\n[56] 课表导出成图片：页面接线");
     appCode.indexOf("imageShare") === -1 && appCode.indexOf("navigator.share") === -1);
   check("比例只剩三档壁纸（「自适应」按用户要求撤掉了），默认手机壁纸",
     !/<option value="fit"/.test(pageHtml) &&
-    /<option value="phone" selected>手机壁纸 9 : 19\.5<\/option>/.test(pageHtml) &&
-    /<option value="tabletPortrait">平板竖屏 3 : 4<\/option>/.test(pageHtml) &&
-    /<option value="tabletLandscape">平板横屏 4 : 3<\/option>/.test(pageHtml) &&
+    /<option value="phone" selected[^>]*>手机壁纸 9 : 19\.5<\/option>/.test(pageHtml) &&
+    /<option value="tabletPortrait"[^>]*>平板竖屏 3 : 4<\/option>/.test(pageHtml) &&
+    /<option value="tabletLandscape"[^>]*>平板横屏 4 : 3<\/option>/.test(pageHtml) &&
     /var SHOT_RATIOS = \{[\s\S]{0,120}phone: 9 \/ 19\.5[\s\S]{0,120}tabletPortrait: 3 \/ 4[\s\S]{0,80}tabletLandscape: 4 \/ 3/.test(appCode) &&
     /var SHOT_RATIO_DEFAULT = "phone";/.test(appCode));
   check("脚本里每一样都绑上了（少一个就是开页面就报错）",
@@ -5853,6 +5853,157 @@ console.log("\n[58] 墨水屏课表牌：固件约定与屏幕排版");
   check("控制台粘贴用的单文件版没有过期（改完 worker 记得重新生成）",
     bundleCheck.status === 0,
     String(bundleCheck.stderr || "").trim());
+}
+
+console.log("\n[59] 多语言：三张表 + 静态骨架");
+{
+  const pageHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
+  const i18nRun = fs.readFileSync(path.join(root, "js", "i18n.js"), "utf8");
+  const appCode = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+  const plannerCode = fs.readFileSync(path.join(root, "js", "planner.js"), "utf8");
+
+  eval(fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8"));
+  const T = global.OP.I18N_TABLE;
+  const langs = Object.keys(T);
+  const baseKeys = Object.keys(T["zh-Hans"]).sort();
+
+  check("三种语言的表都在（简中 / 繁中 / 英文）",
+    langs.length === 3 && langs.indexOf("zh-Hans") >= 0 &&
+    langs.indexOf("zh-Hant") >= 0 && langs.indexOf("en") >= 0, langs.join(" "));
+
+  /* 键必须一一对齐：少一条就会静默退回简体，用户看到的是半句中文 */
+  const mismatched = langs.filter((l) => {
+    const ks = Object.keys(T[l]).sort();
+    return ks.length !== baseKeys.length || ks.some((k, i) => k !== baseKeys[i]);
+  });
+  check("三张表的键完全一致（少一条就会退回简体）",
+    mismatched.length === 0, mismatched.join(" "));
+
+  const empty = [];
+  langs.forEach((l) => Object.keys(T[l]).forEach((k) => {
+    if (!String(T[l][k] || "").trim()) empty.push(l + ":" + k);
+  }));
+  check("没有空译文", empty.length === 0, empty.join(" "));
+
+  /* 页面里用到的键必须都存在——拼错一个键，页面上就直接露出 "settings.xxx" */
+  const usedInHtml = new Set();
+  for (const m of pageHtml.matchAll(/data-i18n(?:-ph|-title|-aria|-alt)?="([^"]+)"/g)) {
+    usedInHtml.add(m[1]);
+  }
+  const missingInTable = [...usedInHtml].filter((k) => !(k in T["zh-Hans"]));
+  check("index.html 里用到的键都在表里（拼错就会把键名显示出来）",
+    missingInTable.length === 0, missingInTable.join(" "));
+
+  /* 反过来：表里也别留死键。week.* 是 planner.js 里按序号拼出来的，
+     静态扫不到，单独放行。 */
+  const usedInJs = new Set();
+  [appCode, plannerCode].forEach((src) => {
+    for (const m of src.matchAll(/\b(?:OP\.)?t\("([a-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
+  });
+  const dynamicPrefixes = ["week.long.", "week.short."];
+  const dead = baseKeys.filter((k) =>
+    !usedInHtml.has(k) && !usedInJs.has(k) &&
+    !dynamicPrefixes.some((p) => k.indexOf(p) === 0));
+  check("表里没有谁都不用的死键", dead.length === 0, dead.join(" "));
+
+  /* ---- 静态骨架里不许再出现没挂 data-i18n 的中文 ----
+     动态元素（JS 现写文字）与语言按钮上的 endonym 例外，两份名单都要短、可审计。 */
+  const DYNAMIC_IDS = ["geoStatus", "nextTag", "nextName", "locState", "plStatus",
+    "dormState", "customState", "pullState", "ocrStatus", "courseFormTitle", "imageHint",
+    "todayLabel", "clock", "todaySummary", "nextMeta", "nextCountdown", "nextDistance",
+    "nextWalk", "nextClimb", "nextLeave", "routeSummary", "buildingCount", "confirmText"];
+  const ENDONYMS = ["简体中文", "繁體中文", "English"];
+
+  const staleIds = DYNAMIC_IDS.filter((id) => pageHtml.indexOf('id="' + id + '"') === -1);
+  check("动态文案的白名单没有过期条目", staleIds.length === 0, staleIds.join(" "));
+
+  const cn = /[\u4e00-\u9fff]/;
+  const html = pageHtml;
+  const stack = [];
+  let translatedDepth = 0;
+  let idx = 0;
+  const unmarked = [];
+  while (idx < html.length) {
+    const lt = html.indexOf("<", idx);
+    const text = lt === -1 ? html.slice(idx) : html.slice(idx, lt);
+    if (text.trim() && cn.test(text)) {
+      const clean = text.replace(/<!--[\s\S]*?-->/g, "").replace(/\s+/g, " ").trim();
+      const parentId = stack.length ? stack[stack.length - 1].id : null;
+      const isDynamic = parentId && DYNAMIC_IDS.indexOf(parentId) >= 0;
+      if (clean && !translatedDepth && !isDynamic && ENDONYMS.indexOf(clean) === -1) {
+        unmarked.push(clean.slice(0, 40));
+      }
+    }
+    if (lt === -1) break;
+    const gt = html.indexOf(">", lt);
+    if (gt === -1) break;
+    const tag = html.slice(lt, gt + 1);
+    idx = gt + 1;
+
+    if (tag.startsWith("<!--")) {
+      const end = html.indexOf("-->", lt);
+      idx = end === -1 ? html.length : end + 3;
+      continue;
+    }
+
+    const name = (/^<\/?\s*([a-zA-Z0-9-]+)/.exec(tag) || [])[1];
+    const closing = /^<\s*\//.test(tag);
+    const selfClose = /\/>$/.test(tag) ||
+      ["input", "img", "br", "hr", "meta", "link", "source"].indexOf(name) >= 0;
+    const idMatch = /\bid="([^"]+)"/.exec(tag);
+    const id = idMatch ? idMatch[1] : null;
+
+    if (!closing) {
+      [["placeholder", "data-i18n-ph"], ["title", "data-i18n-title"],
+        ["aria-label", "data-i18n-aria"], ["alt", "data-i18n-alt"]].forEach((pair) => {
+        const m = new RegExp("\\b" + pair[0] + '="([^"]*)"').exec(tag);
+        if (m && cn.test(m[1]) && tag.indexOf(pair[1]) === -1) {
+          if (!id || DYNAMIC_IDS.indexOf(id) === -1) unmarked.push(pair[0] + "=" + m[1].slice(0, 30));
+        }
+      });
+    }
+
+    if (closing) {
+      if (stack.length && stack.pop().translated) translatedDepth--;
+      continue;
+    }
+    if (selfClose) continue;
+    if (name === "script" || name === "style") {
+      const close = html.indexOf("</" + name, idx);
+      idx = close === -1 ? html.length : close;
+      continue;
+    }
+    const isTranslated = /\bdata-i18n(=|"|\s)/.test(tag.replace(/data-i18n-[a-z]+/g, ""));
+    stack.push({ translated: isTranslated, id: id });
+    if (isTranslated) translatedDepth++;
+  }
+  check("静态骨架里没有漏挂 data-i18n 的中文（动态文案除外）",
+    unmarked.length === 0, unmarked.slice(0, 6).join(" | "));
+
+  /* 运行时得认得这四种属性，不然 title / aria / alt / placeholder 换不了 */
+  check("运行时支持 data-i18n / -ph / -title / -aria / -alt 五种",
+    /querySelectorAll\("\[data-i18n\]"\)/.test(i18nRun) &&
+    /querySelectorAll\("\[data-i18n-ph\]"\)/.test(i18nRun) &&
+    /querySelectorAll\("\[data-i18n-title\]"\)/.test(i18nRun) &&
+    /querySelectorAll\("\[data-i18n-aria\]"\)/.test(i18nRun) &&
+    /querySelectorAll\("\[data-i18n-alt\]"\)/.test(i18nRun));
+
+  /* 切了语言，动态内容要重画一遍；星期名也要跟着换 */
+  check("切语言后会重画动态内容（不然课表分组还是旧语言）",
+    /OP\.I18N\.onChange\(function \(\) \{ render\(\); \}\)/.test(appCode));
+  check("星期名跟着语言走（原地改写数组，别处拿的引用不失效）",
+    /function refreshWeekdayNames\(\)/.test(plannerCode) &&
+    /WEEKDAYS\[i\] = OP\.t\("week\.long\." \+ i\)/.test(plannerCode) &&
+    /OP\.I18N\.onChange\(refreshWeekdayNames\)/.test(plannerCode) &&
+    /OP\.t\("date\.md", \{ m: date\.getMonth\(\) \+ 1, d: date\.getDate\(\) \}\)/.test(plannerCode));
+
+  /* 语言按钮写自己那门语言的名字，翻了反而找不到 */
+  const langButtons = [...pageHtml.matchAll(/<button type="button" class="lang-btn" data-lang="([^"]+)"[^>]*>([^<]+)</g)];
+  check("语言按钮上是 endonym，而且三颗都在",
+    langButtons.length === 3 &&
+    langButtons.every((b) => b[0].indexOf("data-i18n") === -1) &&
+    langButtons.map((b) => b[2].trim()).join("|") === "简体中文|繁體中文|English",
+    langButtons.map((b) => b[2]).join("|"));
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");
