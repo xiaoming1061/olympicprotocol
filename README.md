@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1225 项检查，不联网
+node tools/selftest.js             # 1228 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1191,7 +1191,24 @@ English。文案表在 `data/i18n.js`，运行时在 `js/i18n.js`。
 | 第二批 | **校巴模块**：线路名、站名、卡片文案、分步导航、停运折叠、地图按钮 | ✅ 已完成 |
 | 第三批 | **今日页 + 路线页**：状态徽章、行程卡、宿舍、自定义路线、距离/时长单位 | ✅ 已完成 |
 | 第四批 | **课表页**：课程列表、拉取状态与错误、识别结果、导出图片 | ✅ 已完成 |
-| 第五批 | **其余**：提示条、语音播报稿、OCR 引擎内部说明、地图标注 | 进行中（约 335 条） |
+| 第五批 | **提示条 + 设置页状态**：全部 toast、定位/搜索状态、撤销按钮 | ✅ 已完成 |
+| 第六批 | **其余**：语音播报稿、OCR 引擎内部说明、楼栋列表细节 | 进行中（约 250 条） |
+
+### 终点标记是一枚图钉
+
+终点（今天课室、宿舍、自定义路线终点）不再画「圆圈 + 终」字，改成**图钉**：
+尖端扎在坐标上、身子往上长。理由很实际——圆圈里塞一个汉字，小尺寸下挤，
+而且每换一种语言就得换一个字。图钉没有这个问题。
+
+两套地图同一造型、同一配色（主题粉）：
+
+| 地图 | 实现 |
+|---|---|
+| 简图（SVG） | `map.js` 的 `destPin()`：一条 `M0 0C…Z` 的泪滴路径 + 圆点 |
+| 街道图 / 港中文图（Leaflet） | `realmaps.js` 的 `divIcon`：30×40 的内联 SVG，`iconAnchor: [15, 38]` 让尖端正好落在坐标上 |
+
+颜色走 `--accent` / `--accent-ink`（不是图片里的正红），跟全站粉色主题一致；
+要换成图片那种红，只改 `.bld-pin-body` / `.rm-dest-body` 这两个变量引用即可。
 
 课表页这批里，**拉取的 12 个错误码**（`pull.err.*`）是"错误码 → 键"的映射，
 `t()` 里看不到字面量，所以自检单独核对这 14 个键是否三语齐全；
@@ -1750,7 +1767,7 @@ js/exportimage.js     课表导出成图片（排版是纯计算，画图在 can
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
 tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
-tools/selftest.js     自检脚本，1225 项
+tools/selftest.js     自检脚本，1228 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

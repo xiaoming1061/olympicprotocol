@@ -91,6 +91,34 @@ window.OP = window.OP || {};
 
   function markerFor(L, stop) {
     var cls = "rm-pin" + (stop.isNext ? " is-next" : "");
+    var isDest = String(stop.order || "") === "终";
+
+    /* 终点画成一枚图钉（尖端落在坐标上），跟简图那一枚同一套造型；
+       其余点还是小圆点——底图信息密，圆点不挡路。 */
+    if (isDest) {
+      var pin = L.marker([stop.building.lat, stop.building.lng], {
+        icon: L.divIcon({
+          className: "rm-icon is-dest",
+          html: '<svg class="rm-dest-pin" width="30" height="40" viewBox="0 0 30 40" aria-hidden="true">' +
+            '<path class="rm-dest-body" d="M15 38C10.5 30 2 24.5 2 16C2 7.5 8 1 15 1' +
+            'C22 1 28 7.5 28 16C28 24.5 19.5 30 15 38Z"/>' +
+            '<circle class="rm-dest-dot" cx="15" cy="15" r="5.6"/>' +
+            "</svg>",
+          iconSize: [30, 40],
+          iconAnchor: [15, 38]
+        }),
+        zIndexOffset: 1000
+      });
+
+      pin.bindTooltip("<b>" + esc(stop.building.name) + "</b>" +
+        (stop.time ? "<br>" + esc(stop.time) : ""), {
+        permanent: true,
+        direction: "top",
+        offset: [0, -34],
+        className: "rm-tip is-next"
+      });
+      return pin;
+    }
 
     /* 街道图/港中文地图上的点要小：底图本身信息密，点大了就盖住路和楼 */
     var marker = L.marker([stop.building.lat, stop.building.lng], {

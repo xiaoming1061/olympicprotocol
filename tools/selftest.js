@@ -1474,7 +1474,7 @@ console.log("\n[15] 搜索附近的性能");
     appSource.indexOf('$("#plKeyword").addEventListener("input"') > 0);
   check("搜索时显示已用秒数，避免看起来像卡死",
     appSource.indexOf("startPlacesTicker") > 0 &&
-    appSource.indexOf("搜索中… ") > 0);
+    appSource.indexOf('t("settings.places.searching", { n: sec, max: limit })') > 0);
 }
 
 console.log("\n[16] 清空校区楼栋");
@@ -2098,7 +2098,7 @@ console.log("\n[25] 按名字搜楼栋（解决半径搜索被截断）");
   check("名字框里回车也能搜",
     appSource.indexOf('$("#plNameQuery").addEventListener("keydown"') > 0);
   check("半径结果顶到上限时会提醒改用名字搜",
-    appSource.indexOf("结果已达上限，可能有楼栋没列出来") > 0 &&
+    appSource.indexOf('t("toast.limitHit")') > 0 &&
     appSource.indexOf("OP.Places.resultLimitFor(radius)") > 0);
 }
 
@@ -2167,7 +2167,7 @@ console.log("\n[26] 自动补齐楼栋");
   check("补齐后会把 OSM 的中英文名补进别名",
     appSource.indexOf("OP.Places.mergeAliases(match, building)") > 0);
   check("补不上的会列出来而不是悄悄跳过",
-    appSource.indexOf("没找到：") > 0);
+    appSource.indexOf('t("toast.autofillMissing", { list: result.skipped.join("、") })') > 0);
   check("模糊打分复用 ocr 的 nameScore",
     placesSource.indexOf("OP.Ocr.nameScore") > 0);
 }
@@ -2767,7 +2767,7 @@ console.log("\n[31] 默认楼栋换新版本时强制采用（整份替换）");
       (b.alias || []).indexOf("Science Centre") >= 0));
   check("应用会把「换成新版」这件事告诉用户",
     fs.readFileSync(path.join(root, "js", "app.js"), "utf8")
-      .indexOf("楼栋数据已换成新版") > 0);
+      .indexOf('t("toast.buildingsUpgraded")') > 0);
   /* 旧的"只补不改"那套要清干净，留着会让人以为还有第二条同步规则 */
   const storeSource = fs.readFileSync(path.join(root, "js", "store.js"), "utf8");
   check("只补不改的合并函数已经删掉",
@@ -4234,7 +4234,9 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
     /var low = OP\.Dorm\.normalize\(q\)/.test(appCode) &&
     /OP\.Dorm\.names\(d\)\.map\(function \(n\) \{ return OP\.Dorm\.normalize\(n\); \}\)/.test(appCode));
   check("找不到时提示里写明了支持简体/首字母",
-    appCode.indexOf("简体繁体、中文首字母") > 0);
+    appCode.indexOf('t("toast.dormNotFoundHint")') > 0 &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf("简体繁体、中文首字母") > 0);
   check("输入框的提示给了简体和首字母的例子",
     pageHtml.indexOf("汤 / 知行楼 / zxl") > 0);
   /* 双名要真的显示出来，不能只存数据 */
@@ -4714,10 +4716,10 @@ console.log("\n[47] Hallmark 第二轮：6 major + 6 minor");
     css.indexOf(".toast-action") > 0 &&
     /pointer-events:\s*auto/.test(css));
   check("可撤销的三处改成「直接做 + 撤销提示条」",
-    (appCode.match(/label:\s*"撤销"/g) || []).length >= 3 &&
-    appCode.indexOf('toast("已删除宿舍"') > 0 &&
-    appCode.indexOf('toast("已删除课程"') > 0 &&
-    appCode.indexOf('toast("已恢复默认配置"') > 0);
+    (appCode.match(/label:\s*t\("common\.undo"\)/g) || []).length >= 3 &&
+    appCode.indexOf('toast(t("toast.dormDeleted")') > 0 &&
+    appCode.indexOf('toast(t("toast.courseDeleted")') > 0 &&
+    appCode.indexOf('toast(t("toast.walkReset")') > 0);
   check("确认框只剩真正不可逆的几处（清空 / 恢复 / 覆盖课表）",
     /askConfirm\("课表和楼栋都会变回默认/.test(appCode) &&
     /askConfirm\("会用识别结果覆盖现在的全部课程/.test(appCode) &&
@@ -5885,6 +5887,8 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   const plannerCode = fs.readFileSync(path.join(root, "js", "planner.js"), "utf8");
   const realMapCode = fs.readFileSync(path.join(root, "js", "realmaps.js"), "utf8");
   const geoCode = fs.readFileSync(path.join(root, "js", "geo.js"), "utf8");
+  const mapCode = fs.readFileSync(path.join(root, "js", "map.js"), "utf8");
+  const css = fs.readFileSync(path.join(root, "styles.css"), "utf8");
 
   eval(fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8"));
   const T = global.OP.I18N_TABLE;
@@ -5921,7 +5925,7 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   /* 反过来：表里也别留死键。week.* 是 planner.js 里按序号拼出来的，
      静态扫不到，单独放行。 */
   const usedInJs = new Set();
-  [appCode, plannerCode, realMapCode, geoCode].forEach((src) => {
+  [appCode, plannerCode, realMapCode, geoCode, mapCode].forEach((src) => {
     /* 两种写法都认：t("key") 和 text("key", "兜底") */
     for (const m of src.matchAll(/\b(?:OP\.)?(?:t|text)\("([a-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
   });
@@ -6118,6 +6122,30 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   check("识别结果行的说明走三语键",
     ["ocr.waitingNote", "ocr.badTime", "ocr.newBuildingNote", "ocr.autoMatch", "ocr.remove"]
       .every((k) => appCode.indexOf('t("' + k + '"') > 0 || appCode.indexOf('"' + k + '"') > 0));
+
+  /* ---- 提示条 / 设置页状态 / 终点图钉 ---- */
+  const badToast = appCode.split("\n").filter(function (line) {
+    return /toast\(/.test(line) && /[\u4e00-\u9fff]/.test(line);
+  });
+  check("所有提示条都走三语键（app.js 里不再有中文 toast）",
+    badToast.length === 0, badToast.slice(0, 3).join(" | "));
+  check("设置页的定位状态与精度也走三语键",
+    appCode.indexOf('t("settings.loc.locating")') > 0 &&
+    appCode.indexOf('t("settings.loc.located")') > 0 &&
+    appCode.indexOf('t("settings.loc.accuracyVal", { n: Math.round(state.position.accuracy) })') > 0 &&
+    appCode.indexOf('t("settings.places.searching", { n: sec, max: limit })') > 0);
+
+  /* 终点标记：一枚图钉，尖端落在坐标上；简图与街道图同一造型 */
+  check("终点标记画成图钉（简图 + 街道图），不再是圆圈加「终」字",
+    /function destPin\(x, y\)/.test(mapCode) &&
+    mapCode.indexOf("bld-pin-body") > 0 &&
+    /String\(s\.order \|\| ""\) === "终"/.test(mapCode) &&
+    realMapCode.indexOf("is-dest") > 0 &&
+    realMapCode.indexOf("rm-dest-body") > 0 &&
+    /String\(stop\.order \|\| ""\) === "终"/.test(realMapCode) &&
+    /\.bld-pin-body \{/.test(css) && /\.rm-dest-body \{/.test(css) &&
+    /* 图钉的尖端要贴在坐标上：街道图那枚 anchor 落在图形底部 */
+    /iconAnchor: \[15, 38\]/.test(realMapCode));
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");

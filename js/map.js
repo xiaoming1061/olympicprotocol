@@ -312,6 +312,18 @@ window.OP = window.OP || {};
     });
 
     /* ---- 今天要去的楼栋 ---- */
+    /* 终点用"图钉"：尖端扎在坐标上、身子往上长。圆圈 + 「终」字在
+       小尺寸下既挤又得为每种语言换字，图钉没有这个问题。 */
+    var PIN_H = 37;
+    var PIN_W = 26;
+    function destPin(x, y) {
+      return '<g class="bld-pin" transform="translate(' + x.toFixed(1) + " " + y.toFixed(1) + ')">' +
+        '<path class="bld-pin-body" d="M0 0C-4.5-8-13-13.5-13-22C-13-30.5-7-37 0-37' +
+        'C7-37 13-30.5 13-22C13-13.5 4.5-8 0 0Z"/>' +
+        '<circle class="bld-pin-dot" cx="0" cy="-23" r="5.6"/>' +
+        "</g>";
+    }
+
     stops.forEach(function (s) {
       var b = s.building;
       var p = project(b);
@@ -322,18 +334,24 @@ window.OP = window.OP || {};
          而且好几栋楼时"1 2 3"还得分神去对行程列表。
          缩小成一个"这里有一栋"的记号，靠颜色区分下一节和今天其余。 */
       var r = s.isNext ? 11 : 9;
+      var isDest = String(s.order || "") === "终";
 
-      parts.push('<circle class="bld' + (s.isNext ? " is-next" : " is-today") +
-        '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>' +
-        /* 圈里只写「终」「起」这类标记——跟「返回宿舍」那张图的终点是同一套。
-           纯数字（今天第几节）不写：用户要求圈里别堆序号。 */
-        (/^[0-9]+$/.test(String(s.order || "")) || !s.order
-          ? ""
-          : '<text class="bld-tag' + (s.isNext ? " is-next" : "") +
-            '" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '">' +
-            esc(s.order) + "</text>"));
-
-      marks.push({ x: p.x, y: p.y, r: r });
+      if (isDest) {
+        parts.push(destPin(p.x, p.y));
+        /* 障碍框按图钉的身子算（不是以尖端为圆心的圆），标签才不会被压住 */
+        marks.push({ x: p.x, y: p.y - PIN_H / 2, r: PIN_W / 2 + 3 });
+      } else {
+        parts.push('<circle class="bld' + (s.isNext ? " is-next" : " is-today") +
+          '" cx="' + p.x.toFixed(1) + '" cy="' + p.y.toFixed(1) + '" r="' + r + '"/>' +
+          /* 圈里只写「起」这类标记——终点已经换成图钉了。
+             纯数字（今天第几节）不写：用户要求圈里别堆序号。 */
+          (/^[0-9]+$/.test(String(s.order || "")) || !s.order
+            ? ""
+            : '<text class="bld-tag' + (s.isNext ? " is-next" : "") +
+              '" x="' + p.x.toFixed(1) + '" y="' + (p.y + 4).toFixed(1) + '">' +
+              esc(s.order) + "</text>"));
+        marks.push({ x: p.x, y: p.y, r: r });
+      }
 
       /* 全称留在 <title> 里，简写只放在图上 */
       var lines = [{
@@ -343,13 +361,15 @@ window.OP = window.OP || {};
       }];
       if (s.time) lines.push({ text: esc(s.time), fs: TIME_FS, cls: "bld-time" });
 
-      labels.push({ x: p.x, y: p.y, r: r, rank: 1, title: b.name, lines: lines });
+      labels.push(isDest
+        ? { x: p.x, y: p.y - PIN_H, r: 4, rank: 1, prefer: "above", title: b.name, lines: lines }
+        : { x: p.x, y: p.y, r: r, rank: 1, title: b.name, lines: lines });
 
       /* 「下一节」旗标先摆（rank 0），习惯放上面 */
       if (s.isNext) {
         labels.push({
-          x: p.x, y: p.y, r: r, rank: 0, prefer: "above", title: b.name,
-          lines: [{ text: "下一节", fs: FLAG_FS, cls: "bld-flag" }]
+          x: p.x, y: isDest ? p.y - PIN_H : p.y, r: r, rank: 0, prefer: "above", title: b.name,
+          lines: [{ text: esc(OP.t ? OP.t("map.nextFlag") : "下一节"), fs: FLAG_FS, cls: "bld-flag" }]
         });
       }
     });
@@ -357,18 +377,20 @@ window.OP = window.OP || {};
     /* ---- 我的位置 ---- */
     if (opts.position) {
       var me = project(opts.position);
+      var meLabel = OP.t ? OP.t("common.me") : "我的位置";
       parts.push("<g>" +
         '<circle class="me-ring" cx="' + me.x.toFixed(1) + '" cy="' + me.y.toFixed(1) + '" r="13"/>' +
         '<circle class="me-dot" cx="' + me.x.toFixed(1) + '" cy="' + me.y.toFixed(1) + '" r="10"/>' +
         "</g>");
       marks.push({ x: me.x, y: me.y, r: 16 });
       labels.push({
-        x: me.x, y: me.y, r: 16, rank: 2, prefer: "above", title: "我的位置",
-        lines: [{ text: "我的位置", fs: ME_FS, cls: "me-label" }]
+        x: me.x, y: me.y, r: 16, rank: 2, prefer: "above", title: meLabel,
+        lines: [{ text: esc(meLabel), fs: ME_FS, cls: "me-label" }]
       });
     } else if (stops.length) {
       /* 没定位时在图上说一句，免得以为坏了 */
-      parts.push('<text class="map-note" x="500" y="666">打开定位后会显示你的位置</text>');
+      parts.push('<text class="map-note" x="500" y="666">' +
+        esc(OP.t ? OP.t("map.noPosition") : "打开定位后会显示你的位置") + "</text>");
     }
 
     placeLabels(labels, marks);

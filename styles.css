@@ -686,6 +686,18 @@ body {
 
 .rm-pin.is-next { background: var(--accent); color: var(--on-accent); border-color: var(--accent-disabled); }
 
+/* 终点图钉：尖端扎在坐标上、身子往上长。
+   跟简图的 .bld-pin 同一套配色（粉身 + 深粉圆点），不用再往圈里塞字。 */
+.rm-icon.is-dest { background: none; border: 0; }
+.rm-dest-pin { display: block; overflow: visible; }
+.rm-dest-body {
+  fill: var(--accent);
+  stroke: var(--accent-ink);
+  stroke-width: 1.6;
+  filter: drop-shadow(0 2px 3px rgba(74, 43, 58, 0.28));
+}
+.rm-dest-dot { fill: var(--accent-ink); }
+
 /* 常驻标签（楼名 + 时间） */
 .leaflet-tooltip.rm-tip {
   background: var(--panel);
@@ -727,6 +739,15 @@ body {
 .bld.is-today { fill: var(--accent-disabled); stroke: var(--accent); stroke-width: 3; }
 /* 下一节课所在的那栋 */
 .bld.is-next { fill: var(--accent); stroke: var(--accent-disabled); stroke-width: 3; }
+
+/* 简图上的终点图钉（街道图那边是 .rm-dest-*，配色一致） */
+.bld-pin-body {
+  fill: var(--accent);
+  stroke: var(--accent-ink);
+  stroke-width: 1.6;
+  filter: drop-shadow(0 2px 3px rgba(74, 43, 58, 0.28));
+}
+.bld-pin-dot { fill: var(--accent-ink); }
 
 /* 圈里的标记（「终」「起」）。字号压到 11px 才装得进 r=9 的圈，
    跟圆点一起缩放，所以不跟 .bld-label 那套大字号走。 */

@@ -21,7 +21,8 @@
     lastCheck: 0,
     hintShown: false,
     places: [],
-    placesStatus: "未搜索",
+    /* 空串 = 还没搜过；显示时按语言补上「未搜索」（见 renderPlaces） */
+    placesStatus: "",
     placesRaw: null,
     /* 校区楼栋列表默认收起，只看前几栋 */
     buildingListExpanded: false,
@@ -290,7 +291,7 @@
 
   function say(text, label) {
     if (!OP.Speech.supported()) {
-      toast("这个浏览器不支持语音合成", "换 Chrome、Edge 或 Safari 试试", "warn");
+        toast(t("toast.voiceUnsupported"), t("toast.tryBrowser"), "warn");
       return false;
     }
     var ok = OP.Speech.speak(text, data.settings);
@@ -1257,7 +1258,7 @@
         busStops: d.busStops,
         busLinks: d.busLinks
       }).catch(function (err) {
-        toast("地图加载失败", err.message + "。可以先切回「简图」。", "err");
+          toast(t("toast.mapFailed"), err.message + " " + t("toast.mapFailedHint"), "err");
       });
     }
 
@@ -1450,8 +1451,7 @@
     var dorm = resolveDorm(text);
     data.settings.dormId = dorm ? dorm.id : "";
     if (!dorm && String(text || "").trim()) {
-      toast("没找到这个宿舍",
-        "中英文、简体繁体、中文首字母（zxl → 知行樓）都认，试试只打前两个字", "warn");
+      toast(t("toast.dormNotFound"), t("toast.dormNotFoundHint"), "warn");
     }
     saveAndRender();
   }
@@ -1674,8 +1674,7 @@
 
     data.settings[settingKey] = hit ? hit.id : "";
     if (!hit) {
-      toast("没找到这栋楼",
-        "中英文、简繁体、拼音首字母都认（蒙民伟楼 / 蒙民偉樓 / mmwl）", "warn");
+      toast(t("toast.buildingNotFound"), t("toast.buildingNotFoundHint"), "warn");
     }
     saveAndRender();
   }
@@ -2395,13 +2394,14 @@
     var nearest = P.nearestBuilding(pos, (data.campus && data.campus.buildings) || []);
 
     $("#locState").textContent = data.settings.simulate
-      ? "模拟位置"
+      ? t("geo.simulated")
       : (state.locating
-        ? "定位中"
-        : (state.position ? "已定位" : (state.geoError ? "定位不可用" : "未开始")));
+        ? t("settings.loc.locating")
+        : (state.position ? t("settings.loc.located")
+          : (state.geoError ? t("geo.error") : t("common.notStarted"))));
     $("#locCoords").textContent = pos ? pos.lat.toFixed(5) + ", " + pos.lng.toFixed(5) : "--";
     $("#locAccuracy").textContent = (state.position && !data.settings.simulate)
-      ? "±" + Math.round(state.position.accuracy) + " 米" : "--";
+      ? t("settings.loc.accuracyVal", { n: Math.round(state.position.accuracy) }) : "--";
     $("#locNearest").textContent = nearest ? nearest.building.name : "--";
 
     var list = (data.campus && data.campus.buildings) || [];
@@ -2505,8 +2505,8 @@
   /* 复制文本：优先用剪贴板 API，老浏览器退回临时输入框 */
   function copyText(text, label) {
     function finish(ok) {
-      toast(ok ? "坐标已复制" : "复制失败",
-        ok ? text + "（粘到任何地图 App 的搜索框都行）" : "手动选中这串数字吧：" + text,
+      toast(ok ? t("toast.copied") : t("toast.copyFailed"),
+        ok ? t("toast.copiedHint", { text: text }) : t("toast.copyFailedHint", { text: text }),
         ok ? "ok" : "err");
     }
 
@@ -2567,7 +2567,7 @@
 
   function startLocate() {
     if (!Geo.supported()) {
-      toast("这个浏览器不支持定位", "换 Chrome、Edge 或 Safari 试试", "err");
+      toast(t("toast.geoUnsupported"), t("toast.tryBrowser"), "err");
       return;
     }
     state.locating = true;
@@ -2590,14 +2590,14 @@
       render();
     });
 
-    toast("开始定位", "首次使用请在弹窗里允许位置权限", "ok");
+    toast(t("toast.geoStart"), t("toast.geoStartHint"), "ok");
   }
 
   function stopLocate() {
     Geo.stop();
     state.locating = false;
     render();
-    toast("已停止定位", "");
+    toast(t("toast.geoStopped"), "");
   }
 
   /* ================= 提醒 ================= */
@@ -2674,11 +2674,11 @@
       .map(function (i) { return Number(i.value); });
 
     if (!days.length) {
-      toast("还没有选上课星期", "至少勾选一天", "warn");
+    toast(t("toast.noWeekday"), t("toast.noWeekdayHint"), "warn");
       return;
     }
     if (P.hm($("#cfEnd").value) <= P.hm($("#cfStart").value)) {
-      toast("时间不对", "下课时间要晚于上课时间", "warn");
+    toast(t("toast.badTime"), t("toast.badTimeHint"), "warn");
       return;
     }
 
@@ -2715,7 +2715,7 @@
   function renderPlaces() {
     var box = $("#placesList");
     var list = state.places || [];
-    $("#plStatus").textContent = state.placesStatus;
+    $("#plStatus").textContent = state.placesStatus || t("settings.places.idle");
 
     if (!list.length) {
       box.innerHTML = "";
@@ -2766,13 +2766,13 @@
     var buildings = (data.campus && data.campus.buildings) || [];
     var target = OP.Places.findExisting(item, buildings, 25);
     if (!target) {
-      toast("没找到对应的楼栋", "列表可能已经变了，重新搜一次", "warn");
+    toast(t("toast.buildingGone"), t("toast.buildingGoneHint"), "warn");
       return;
     }
 
     var added = OP.Places.mergeAliases(item, target);
     if (!added) {
-      toast("没有需要补的名字", "「" + target.name + "」已经有这些名字了");
+    toast(t("toast.aliasesExist"), t("toast.aliasesExistHint", { name: target.name }));
       return;
     }
 
@@ -2784,7 +2784,7 @@
     var pos = effectivePosition();
 
     if (!pos) {
-      toast("还没有位置", "先在「定位」里开启定位，或用模拟位置", "warn");
+    toast(t("toast.noPosition"), t("toast.noPositionHint"), "warn");
       return;
     }
 
@@ -2804,23 +2804,24 @@
     OP.Places.search(options).then(function (list) {
       stopPlacesTicker();
       state.places = list;
-      state.placesStatus = list.length ? "找到 " + list.length + " 个" : "没找到";
+      state.placesStatus = list.length
+        ? t("settings.places.found", { n: list.length })
+        : t("settings.places.notFound");
       renderPlaces();
       if (!list.length) {
-        toast("没有找到建筑", "换个来源、把半径调大，或清空名称过滤再试", "warn");
+        toast(t("toast.noBuildings"), t("toast.noBuildingsHint"), "warn");
       } else if (state.placesRaw && state.placesRaw.length >= OP.Places.resultLimitFor(radius)) {
         /* 结果顶到上限，说明很可能被截断了 */
-        toast("结果已达上限，可能有楼栋没列出来",
-          "这个半径下带名字的建筑超过 " + OP.Places.resultLimitFor(radius) +
-          " 栋。找指定的楼用上面的「按名字搜」。", "warn");
+        toast(t("toast.limitHit"),
+          t("toast.limitHitHint", { n: OP.Places.resultLimitFor(radius) }), "warn");
       }
     }).catch(function (err) {
       stopPlacesTicker();
       state.placesRaw = null;
       state.places = [];
-      state.placesStatus = "搜索失败";
+      state.placesStatus = t("settings.places.failed");
       renderPlaces();
-      toast("搜索失败", err.message, "err");
+    toast(t("toast.searchFailed"), err.message, "err");
     }).then(function () {
       $("#btnSearchPlaces").disabled = false;
     });
@@ -2848,7 +2849,9 @@
 
     var radius = Number($("#plRadius").value) || 800;
     state.places = OP.Places.shape(state.placesRaw, placeOptions(pos, radius));
-    state.placesStatus = state.places.length ? "找到 " + state.places.length + " 个" : "没找到";
+    state.placesStatus = state.places.length
+      ? t("settings.places.found", { n: state.places.length })
+      : t("settings.places.notFound");
     renderPlaces();
   }
 
@@ -2862,7 +2865,7 @@
   function searchPlacesByName() {
     var query = $("#plNameQuery").value.trim();
     if (!query) {
-      toast("请输入楼栋名字", "中文英文都行，例如 Lady Shaw 或 邵逸夫", "warn");
+      toast(t("toast.needBuildingName"), t("toast.needBuildingNameHint"), "warn");
       return;
     }
 
@@ -2871,21 +2874,23 @@
     state.places = [];
     renderPlaces();
     $("#btnSearchByName").disabled = true;
-    $("#plStatus").textContent = "搜索中…";
+    $("#plStatus").textContent = t("settings.places.searching", { n: 0, max: 40 });
 
     OP.Places.searchByName(query, pos ? { lat: pos.lat, lng: pos.lng } : {}).then(function (list) {
       state.places = OP.Places.shape(list, placeOptions(pos || { lat: 0, lng: 0 },
         Number($("#plRadius").value) || 800));
-      state.placesStatus = list.length ? "按名字找到 " + state.places.length + " 个" : "没找到";
+      state.placesStatus = list.length
+        ? t("settings.places.foundByName", { n: state.places.length })
+        : t("settings.places.notFound");
       renderPlaces();
       if (!list.length) {
-        toast("没找到这个楼栋", "换个写法试试，比如只输一部分名字", "warn");
+        toast(t("toast.noSuchBuilding"), t("toast.noSuchBuildingHint"), "warn");
       }
     }).catch(function (err) {
       state.places = [];
-      state.placesStatus = "搜索失败";
+      state.placesStatus = t("settings.places.failed");
       renderPlaces();
-      toast("按名字搜索失败", err.message, "err");
+      toast(t("toast.nameSearchFailed"), err.message, "err");
     }).then(function () {
       $("#btnSearchByName").disabled = false;
     });
@@ -2897,12 +2902,12 @@
     stopPlacesTicker();
     var started = Date.now();
     var limit = Math.round(OP.Places.timeoutFor(radius) / 1000);
-    $("#plStatus").textContent = "搜索中… 0 秒";
+    $("#plStatus").textContent = t("settings.places.searching", { n: 0, max: limit });
     placesTicker = window.setInterval(function () {
       var sec = Math.floor((Date.now() - started) / 1000);
-      var text = "搜索中… " + sec + " 秒（最多等 " + limit + " 秒）";
+      var text = t("settings.places.searching", { n: sec, max: limit });
       /* 等久了给句话，免得看起来像卡死 */
-      if (sec >= 30) text += " · 地图服务繁忙，请再等等";
+      if (sec >= 30) text += " " + t("settings.places.busy");
       $("#plStatus").textContent = text;
     }, 1000);
   }
@@ -2920,7 +2925,7 @@
       .map(function (input) { return Number(input.getAttribute("data-place-idx")); });
 
     if (!picked.length) {
-      toast("没有勾选任何建筑", "先勾上要去的那几栋", "warn");
+      toast(t("toast.noSelection"), t("toast.noSelectionHint"), "warn");
       return;
     }
 
@@ -3017,15 +3022,15 @@
       }
 
       if (!result.total) {
-        if (!silentWhenEmpty) toast("没有需要补的楼栋", "所有楼栋都有坐标了", "ok");
+        if (!silentWhenEmpty) toast(t("toast.nothingToFill"), t("toast.allHaveCoords"), "ok");
         return result;
       }
 
-      var detail = result.filled + " / " + result.total + " 栋已补上坐标";
+      var detail = t("toast.autofillDetail", { filled: result.filled, total: result.total });
       if (result.skipped.length) {
-        detail += "；没找到：" + result.skipped.join("、");
+        detail += t("toast.autofillMissing", { list: result.skipped.join("、") });
       }
-      toast("自动补齐完成", detail, result.filled ? "ok" : "warn");
+      toast(t("toast.autofillDone"), detail, result.filled ? "ok" : "warn");
       return result;
     });
   }
@@ -3273,11 +3278,11 @@
     var detail = [];
     if (skipped) detail.push("跳过 " + skipped + " 条（信息不全）");
     if (createdBuildings.length) detail.push("新建了 " + createdBuildings.length + " 栋楼");
-    toast("已导入 " + added + " 条课程", detail.join("；"), "ok");
+    toast(t("toast.importedCourses", { n: added }), detail.join("；"), "ok");
 
     if (createdBuildings.length) {
-      toast("这些楼栋还没有坐标",
-        createdBuildings.join("、") + "。去「设置 → 校区楼栋」补一下，路线才能算。", "warn");
+      toast(t("toast.noCoords"),
+        t("toast.noCoordsHint", { list: createdBuildings.join("、") }), "warn");
     }
 
     /* 导入完直接去 OSM 找这些楼，省得手工一栋栋补 */
@@ -3312,7 +3317,7 @@
     };
 
     if (!payload.name || isNaN(payload.lat) || isNaN(payload.lng)) {
-      toast("信息不完整", "楼栋名称和经纬度都要填", "warn");
+      toast(t("toast.incomplete"), t("toast.incompleteHint"), "warn");
       return;
     }
 
@@ -3430,7 +3435,7 @@
     $("#btnCustomSwap").addEventListener("click", function () {
       /* 起点是「我的位置」时没有"对调"可言：位置不在下拉里 */
       if (!data.settings.customFrom) {
-        toast("起点是「我的位置」", "先把起点选成一栋楼，才能跟终点对调", "warn");
+      toast(t("toast.startIsMe"), t("toast.startIsMeHint"), "warn");
         return;
       }
       var tmp = data.settings.customFrom;
@@ -3556,8 +3561,8 @@
       OP.Dorm.remove(data.settings, dorm.id);
       data.settings.dormId = "";
       saveAndRender();
-      toast("已删除宿舍", dorm.label, "", {
-        label: "撤销",
+      toast(t("toast.dormDeleted"), dorm.label, "", {
+        label: t("common.undo"),
         onAction: function () {
           if (!entry) return;
           data.settings.addedDorms = data.settings.addedDorms || [];
@@ -3662,8 +3667,8 @@
       keys.forEach(function (key) { data.settings[key] = base[key]; });
       saveAndRender();
 
-      toast("已恢复默认配置", "提醒、缓冲、速度这些回到默认值", "", {
-        label: "撤销",
+      toast(t("toast.walkReset"), t("toast.walkResetHint"), "", {
+        label: t("common.undo"),
         onAction: function () {
           Object.keys(before).forEach(function (key) { data.settings[key] = before[key]; });
           saveAndRender();
@@ -3700,16 +3705,16 @@
       });
 
       if (!todo.length) {
-        toast("海拔都齐了", list.length + " 栋楼都已有海拔", "ok");
+        toast(t("toast.elevationAll"), t("toast.elevationAllHint", { n: list.length }), "ok");
         return;
       }
 
       button.disabled = true;
-      button.textContent = "查询中…";
+      button.textContent = t("settings.build.querying");
 
       OP.Elevation.lookup(todo.map(function (b) { return { lat: b.lat, lng: b.lng }; }),
         function (done, total) {
-          button.textContent = "查询中 " + done + "/" + total;
+          button.textContent = t("settings.build.queryingN", { done: done, total: total });
         }
       ).then(function (values) {
         var filled = 0;
@@ -3720,12 +3725,13 @@
           }
         });
         saveAndRender();
-        toast("海拔已更新", filled + " 栋（待查 " + todo.length + " 栋）", "ok");
+      toast(t("toast.elevationUpdated"),
+        t("toast.elevationUpdatedHint", { filled: filled, todo: todo.length }), "ok");
       }).catch(function (err) {
-        toast("查询海拔失败", err.message, "err");
+        toast(t("toast.elevationFailed"), err.message, "err");
       }).then(function () {
         button.disabled = false;
-        button.textContent = "获取海拔";
+        button.textContent = t("settings.build.elevation");
       });
     });
 
@@ -3754,7 +3760,7 @@
     $("#btnClearBuildings").addEventListener("click", function () {
       var list = (data.campus && data.campus.buildings) || [];
       if (!list.length) {
-        toast("楼栋列表本来就是空的", "");
+        toast(t("toast.buildingsEmpty"), "");
         return;
       }
 
@@ -3825,7 +3831,7 @@
     $("#btnAddSelectedPlaces").addEventListener("click", addSelectedPlaces);
     $("#btnClearPlaces").addEventListener("click", function () {
       state.places = [];
-      state.placesStatus = "未搜索";
+      state.placesStatus = t("settings.places.idle");
       renderPlaces();
     });
 
@@ -3835,7 +3841,7 @@
     $("#bfUseHere").addEventListener("click", function () {
       var pos = effectivePosition();
       if (!pos) {
-        toast("现在还没有位置", "先点「开始实时定位」", "warn");
+      toast(t("toast.noPositionNow"), t("toast.noPositionNowHint"), "warn");
         return;
       }
       $("#bfLat").value = pos.lat.toFixed(6);
@@ -3982,8 +3988,8 @@
         var removed = data.courses[at];
         data.courses = data.courses.filter(function (x) { return x.id !== id; });
         saveAndRender();
-        toast("已删除课程", course.name, "", {
-          label: "撤销",
+        toast(t("toast.courseDeleted"), course.name, "", {
+          label: t("common.undo"),
           onAction: function () {
             if (!removed) return;
             data.courses.splice(at < 0 ? 0 : at, 0, removed);
@@ -4000,7 +4006,7 @@
       askConfirm("课表和楼栋都会变回默认的（楼栋 = 内置校区数据，课表 = 空），确定吗？", function () {
         data = Store.reset();
         saveAndRender();
-        toast("已恢复默认数据", "楼栋回到内置校区数据，课表清空", "ok");
+      toast(t("toast.dataReset"), t("toast.dataResetHint"), "ok");
       });
     });
 
@@ -4144,9 +4150,11 @@
       if (pendingBuildingSync.removed.length) {
         bits.push("移除 " + pendingBuildingSync.removed.length + " 栋");
       }
-      toast("楼栋数据已换成新版",
-        "共 " + ((data.campus && data.campus.buildings) || []).length + " 栋" +
-        (bits.length ? "（" + bits.join("、") + "）" : "") + "；以默认数据为准", "ok");
+    toast(t("toast.buildingsUpgraded"),
+      t("toast.buildingsUpgradedHint", {
+        n: ((data.campus && data.campus.buildings) || []).length,
+        extra: bits.length ? "（" + bits.join("、") + "）" : ""
+      }), "ok");
     }
 
     window.addEventListener("resize", function () {
@@ -4187,7 +4195,7 @@
       if (state.hintShown) return;
       state.hintShown = true;
       if (!OP.Speech.supported()) {
-        toast("这个浏览器不支持语音播报", "换 Chrome、Edge 或 Safari 试试", "warn");
+        toast(t("toast.voicePlay"), t("toast.tryBrowser"), "warn");
       }
     }, 1600);
   }
