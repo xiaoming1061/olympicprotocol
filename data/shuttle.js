@@ -76,7 +76,8 @@ window.OP.SHUTTLE_ROUTES = [
       id: "2",
       no: "2",
       nameZh: "新聯線",
-      nameEn: "NA/UC",
+      /* Official spelling keeps spaces: route/2 is titled "2 NA / UC". */
+      nameEn: "NA / UC",
       group: "shuttle",
       days: "星期一至六（公眾假期停開）",
       sessions: [
@@ -351,7 +352,8 @@ window.OP.SHUTTLE_ROUTES = [
       id: "6b",
       no: "6B",
       nameZh: "下行線（新聯）",
-      nameEn: "Downward (NA/UC)",
+      /* Official: route/6b is titled "6B Downward (NA / UC)". */
+      nameEn: "Downward (NA / UC)",
       group: "meetclass",
       days: "只限教學日（非教學日、閱讀週及大學假期停開）",
       sessions: [

@@ -290,18 +290,21 @@ window.OP = window.OP || {};
    * @param when     哪一天（只用来看星期几，决定哪些线开）
    * @param walkMin  走路要多少分钟（用来比较坐车划不划算）
    * @param settings 设置
-   * @returns { board, alight, groups, reason }
+   * @returns { board, alight, groups, reason, reasonKey }
+   *          reason 是中文兜底，reasonKey 给界面按语言翻：
+   *          noStops 附近没站 / oneWay 线路方向不对 / noService 这段没班次
    *          groups 里每条线一个：{ route, board, alight, walkBeforeMin, rideMin,
    *          walkAfterMin, totalMin, saves, headwayMin, caveat, boardNote, alightNote }
    */
   function plan(from, to, when, walkMin, settings) {
-    var empty = { board: null, alight: null, groups: [], reason: "" };
+    var empty = { board: null, alight: null, groups: [], reason: "", reasonKey: "" };
     if (!from || !to || !when) return empty;
 
     var boards = nearbyStops(from, settings, MAX_ACCESS_BOARD, MAX_BOARD_CANDIDATES);
     var alights = nearbyStops(to, settings, MAX_ACCESS_ALIGHT, MAX_ALIGHT_CANDIDATES);
     if (!boards.length || !alights.length) {
       empty.reason = "附近没有校巴站";
+      empty.reasonKey = "noStops";
       return empty;
     }
 
@@ -365,17 +368,23 @@ window.OP = window.OP || {};
     });
 
     var reason = "";
+    var reasonKey = "";
     if (!groups.length) {
-      reason = connected
-        ? "这段没有班次"
-        : "没有线路从上车站坐到下车站（校巴单向）";
+      if (connected) {
+        reason = "这段没有班次";
+        reasonKey = "noService";
+      } else {
+        reason = "没有线路从上车站坐到下车站（校巴单向）";
+        reasonKey = "oneWay";
+      }
     }
 
     return {
       board: boards[0],
       alight: alights[0],
       groups: groups,
-      reason: reason
+      reason: reason,
+      reasonKey: reasonKey
     };
   }
 
@@ -419,6 +428,33 @@ window.OP = window.OP || {};
     return (0.299 * r + 0.587 * g + 0.114 * b) > 150 ? "#241016" : "#ffffff";
   }
 
+  /* ---------- 当前语言下的名字 ----------
+   * 数据里线路名是繁体（官方写法）+ 官方英文名，站名是繁体 + 英文。
+   * 三种界面语言各取所需：英文用官方英文名，繁中用原样，简中用繁转简。
+   * 卡片、地图、播报都走这一处，省得三边各写一套。
+   */
+  function uiLang() {
+    return (OP.I18N && OP.I18N.lang) ? OP.I18N.lang() : "zh-Hans";
+  }
+
+  function zhText(text) {
+    var s = String(text === undefined || text === null ? "" : text);
+    if (uiLang() === "zh-Hans" && OP.Zh && OP.Zh.toSimplified) return OP.Zh.toSimplified(s);
+    return s;
+  }
+
+  function stopName(stop) {
+    if (!stop) return "";
+    if (uiLang() === "en" && stop.en) return stop.en;
+    return zhText(stop.zh || stop.en || stop.id || "");
+  }
+
+  function routeName(route) {
+    if (!route) return "";
+    if (uiLang() === "en" && route.nameEn) return route.nameEn;
+    return zhText(route.nameZh);
+  }
+
   OP.Shuttle = {
     plan: plan,
     routesOn: routesOn,
@@ -436,6 +472,8 @@ window.OP = window.OP || {};
     noteRules: noteRules,
     colorOf: colorOf,
     inkOn: inkOn,
+    stopName: stopName,
+    routeName: routeName,
     ROUTE_COLORS: ROUTE_COLORS,
     runStops: runStops,
     headwayOf: headwayOf,

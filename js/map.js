@@ -300,10 +300,11 @@ window.OP = window.OP || {};
         p.x.toFixed(1) + " " + p.y.toFixed(1) + ')"/>');
       marks.push({ x: p.x, y: p.y, r: r });
       /* 只写站名：它在哪条线是上车、哪条线是下车，路线列表里已经写了 */
+      var label = OP.Shuttle && OP.Shuttle.stopName ? OP.Shuttle.stopName(st) : st.zh;
       labels.push({
-        x: p.x, y: p.y, r: r, rank: big ? 1 : 3, title: st.zh,
+        x: p.x, y: p.y, r: r, rank: big ? 1 : 3, title: label,
         lines: [{
-          text: esc(st.zh),
+          text: esc(label),
           fs: big ? STOP_FS + 2 : STOP_FS,
           cls: "bus-stop-label" + (big ? " is-picked" : "")
         }]

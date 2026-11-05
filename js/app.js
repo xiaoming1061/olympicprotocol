@@ -632,13 +632,13 @@
                 钉高度是因为它当时可能正展开到一半，按全开画反而会往上蹦。 */
   function busWalkSteps(g, dest, mode, staleH) {
     var rows = [
-      { title: "从当前位置到起始校巴站", target: g.board && g.board.stop, min: g.walkBeforeMin }
+      { title: t("bus.steps.toBoard"), target: g.board && g.board.stop, min: g.walkBeforeMin }
     ];
     if (dest && typeof dest.lat === "number") {
       /* 这一段的起点是**下车的那个校巴站**，不是当前位置——
          外置地图要按这个起点算路线（用户报过：点进去默认从我这儿出发）。 */
       rows.push({
-        title: "从终点校巴站到" + (dest.label || "终点"),
+        title: t("bus.steps.toDest", { dest: dest.label || t("bus.dest.custom") }),
         target: dest,
         from: g.alight && g.alight.stop,
         min: g.walkAfterMin
@@ -657,64 +657,104 @@
          手动折叠时留着（那是重新展开的入口）。 */
       '<div class="bus-steps-top"><div class="bus-steps-topin">' +
         '<button type="button" class="bus-steps-head" aria-expanded="' +
-          (opened ? "true" : "false") + '">分步导航</button>' +
+          (opened ? "true" : "false") + '">' + esc(t("bus.steps.title")) + "</button>" +
       "</div></div>" +
       '<div class="bus-steps-body"><div class="bus-steps-inner">' +
         rows.map(function (row) {
-          var t = row.target;
-          if (!t || typeof t.lat !== "number") return "";
-          var name = t.zh || t.name || t.label || "目的地";
+          var target = row.target;
+          if (!target || typeof target.lat !== "number") return "";
+          var name = (target.zh || target.en)
+            ? OP.Shuttle.stopName(target)
+            : (target.name || target.label || t("bus.dest.custom"));
           /* 起点给了站/楼就按它走；没给就是"我这儿出发"，交给地图 App */
           var from = row.from && typeof row.from.lat === "number"
-            ? { lat: row.from.lat, lng: row.from.lng, name: row.from.zh || row.from.en || "" }
+            ? { lat: row.from.lat, lng: row.from.lng, name: OP.Shuttle.stopName(row.from) }
             : null;
           return '<div class="bus-step">' +
             '<div class="bus-step-title">' + esc(row.title) +
               (typeof row.min === "number" && isFinite(row.min)
-                ? " · 步行 " + Math.round(row.min) + " 分钟" : "") +
+                ? " " + t("bus.steps.walk", { n: Math.round(row.min) }) : "") +
             "</div>" +
-            navActionsHtml(Geo.navLinks(name, t.lat, t.lng, from)) +
+            navActionsHtml(Geo.navLinks(name, target.lat, target.lng, from)) +
           "</div>";
         }).join("") +
       "</div></div></div>";
   }
 
-  function busHtml(plan, destLabel, kind, destPoint) {
+  /* 「没有方案」的原因：shuttle.js 给的是 reasonKey，界面这边翻；
+     拿不到 key（老的缓存版本）就退回它给的中文。 */
+  function planReasonText(plan) {
+    var key = plan && plan.reasonKey;
+    if (key === "noStops") return t("bus.reason.noStops");
+    if (key === "oneWay") return t("bus.reason.oneWay");
+    if (key === "noService") return t("bus.reason.noService");
+    return (plan && plan.reason) || t("bus.none.default");
+  }
+
+  /* 站点附注（"逢 31 至 00 分開出的班次才停"这种）住在数据里，是繁体中文。
+     非英文模式下按简繁转一下；英文模式按规则翻——四种写法都认，
+     认不出来的原样端出去，总比丢掉信息好。 */
+  function busNoteText(note) {
+    var raw = String(note || "");
+    if (!raw) return "";
+    var lang = (OP.I18N && OP.I18N.lang) ? OP.I18N.lang() : "zh-Hans";
+    if (lang !== "en") {
+      return (lang === "zh-Hans" && OP.Zh && OP.Zh.toSimplified)
+        ? OP.Zh.toSimplified(raw) : raw;
+    }
+
+    var range = /逢\s*(\d{1,2})\s*至\s*(\d{1,2})\s*分開出的班次才停/.exec(raw);
+    /* 注意别用 pad2：它接的是数字，"00" 会被当成 0 再补一个 0 变成 "000" */
+    var two = function (s) { return ("0" + String(s)).slice(-2); };
+    if (range) return t("bus.note.minutes", { from: two(range[1]), to: two(range[2]) });
+    var one = /逢\s*(\d{1,2})\s*分開出的班次才停/.exec(raw);
+    if (one) return t("bus.note.minute", { at: two(one[1]) });
+    if (raw.indexOf("只在教學日") >= 0) return t("bus.flag.teaching");
+    if (raw.indexOf("只在非教學日") >= 0) return t("bus.flag.nonTeaching");
+    return raw;
+  }
+
+  /* destKind 是 "room" / "dorm" / "custom"——"走到哪里"这个说法按语言翻，
+     所以传的是种类而不是已经写死的词。 */
+  function busHtml(plan, destKind, kind, destPoint) {
     /* 模块没加载上说明页面是旧缓存（HTML 里没有 js/shuttle.js 那一行），
        这种情况要明说，不能跟"这段没车"长得一样 */
     if (!OP.Shuttle || !(OP.SHUTTLE_ROUTES || []).length) {
-      return '<div class="leg-bus is-missing"><div class="leg-bus-head">校巴</div>' +
-        '<div class="bus-none">校巴模块没加载——页面是旧缓存。强制刷新一次就会好' +
-        '（iOS 加到桌面的话：删掉图标重新添加）。</div></div>';
+      return '<div class="leg-bus is-missing"><div class="leg-bus-head">' +
+        esc(t("bus.title")) + "</div>" +
+        '<div class="bus-none">' + esc(t("bus.none.missing")) + "</div></div>";
     }
 
     if (!plan) return "";
 
     /* 教室和宿舍共用这块 HTML，只有"走到哪里"这个说法不一样 */
-    var dest = destLabel || "教室";
+    var dest = t("bus.dest." + (destKind || "room"));
 
     /* 全部列出来：比走路慢也好、赶不上这一节也好，都摆出来让人自己挑。
        排在前面的仍然是"上车站离你最近"的那些。 */
     var groups = plan.groups || [];
     if (!groups.length) {
-      return '<div class="leg-bus is-none"><div class="leg-bus-head">校巴</div>' +
-        '<div class="bus-none">' + esc(plan.reason || "这段没有合适的班次") + "</div></div>";
+      return '<div class="leg-bus is-none"><div class="leg-bus-head">' + esc(t("bus.title")) + "</div>" +
+        '<div class="bus-none">' + esc(planReasonText(plan)) + "</div></div>";
     }
 
     function renderGroup(g) {
       var flags = [];
-      if (g.caveat === "teaching" || g.route.group === "meetclass") flags.push("只在教学日");
-      if (g.caveat === "nonTeaching") flags.push("只在非教学日");
-      if (g.route.group === "night") flags.push("晚间/假日线");
-      if (g.boardNote) flags.push("上车：" + g.boardNote);
-      if (g.alightNote) flags.push("下车：" + g.alightNote);
+      if (g.caveat === "teaching" || g.route.group === "meetclass") flags.push(t("bus.flag.teaching"));
+      if (g.caveat === "nonTeaching") flags.push(t("bus.flag.nonTeaching"));
+      if (g.route.group === "night") flags.push(t("bus.flag.night"));
+      if (g.boardNote) flags.push(t("bus.note.board", { note: busNoteText(g.boardNote) }));
+      if (g.alightNote) flags.push(t("bus.note.alight", { note: busNoteText(g.alightNote) }));
 
       /* 只写预估时长，不写"几点到"——校巴到站时间不稳，报了反而误导 */
       var verdict = "";
       var tone = "";
-      if (g.saves !== null && g.saves >= 1) { verdict = "比走路快 " + Math.round(g.saves) + " 分"; tone = " is-faster"; }
-      else if (g.saves !== null && g.saves <= -1) verdict = "比走路慢 " + Math.round(-g.saves) + " 分";
-      else if (g.saves !== null) verdict = "和走路差不多";
+      if (g.saves !== null && g.saves >= 1) {
+        verdict = t("bus.verdict.faster", { n: Math.round(g.saves) });
+        tone = " is-faster";
+      } else if (g.saves !== null && g.saves <= -1) {
+        verdict = t("bus.verdict.slower", { n: Math.round(-g.saves) });
+      } else if (g.saves !== null) verdict = t("bus.verdict.same");
 
       /* 每小时开出时间。直接照交通处页面的写法（那边是
          「每小時開出時間 (分) 10, 25, 40, 55分」），给的是**时刻表本身**，
@@ -724,7 +764,7 @@
          **仍然不写"到你这站几点"**：校巴到站时间不稳，报了反而误导。 */
       var everyMin = (g.route.everyHour || []).slice().sort(function (a, b) { return a - b; });
       var depsLine = everyMin.length
-        ? '<div class="bus-deps">每小时开出 ' + everyMin.map(pad2).join(" · ") + " 分</div>"
+        ? '<div class="bus-deps">' + esc(t("bus.deps", { list: everyMin.map(pad2).join(" · ") })) + "</div>"
         : "";
 
       var pickId = busPickId(g, kind);
@@ -778,16 +818,21 @@
             var bg = OP.Shuttle.colorOf(g.route);
             return '<span class="bus-tag" style="background:' + bg +
               ";color:" + OP.Shuttle.inkOn(bg) + '">' + esc(g.route.no) + "</span>";
-          })() + esc(g.route.nameZh) +
+          })() + esc(OP.Shuttle.routeName(g.route)) +
         "</div>" +
-        '<div class="bus-stops">' + esc(g.board.stop.zh) + " 上车 → " +
-          esc(g.alight.stop.zh) + " 下车" +
-        "</div>" +
+        '<div class="bus-stops">' + t("bus.stops", {
+          board: esc(OP.Shuttle.stopName(g.board.stop)),
+          alight: esc(OP.Shuttle.stopName(g.alight.stop))
+        }) + "</div>" +
         '<div class="bus-ride' + tone + '">' +
-          "走到车站 <b>" + Math.round(g.walkBeforeMin) + "</b> 分 + 车程 <b>" +
-            Math.round(g.rideMin) + "</b> 分 + 走到" + esc(dest) + " <b>" + Math.round(g.walkAfterMin) +
-            "</b> 分 = 合计 <b>" + Math.round(g.totalMin) + "</b> 分" +
-          (g.headwayMin ? ' · 约每 <b>' + g.headwayMin + "</b> 分钟一班" : "") +
+          t("bus.ride", {
+            a: Math.round(g.walkBeforeMin),
+            b: Math.round(g.rideMin),
+            c: Math.round(g.walkAfterMin),
+            total: Math.round(g.totalMin),
+            dest: esc(dest)
+          }) +
+          (g.headwayMin ? " " + t("bus.headway", { n: g.headwayMin }) : "") +
           (verdict ? ' <span class="bus-verdict">' + verdict + "</span>" : "") +
         "</div>" +
         depsLine +
@@ -811,7 +856,7 @@
       html += '<div class="bus-off' + (state.busOffOpen ? " is-open" : "") + '">' +
         '<button type="button" class="bus-off-head" aria-expanded="' +
           (state.busOffOpen ? "true" : "false") + '">' +
-          "现在停运的线路（" + stopped.length + " 条）</button>" +
+          esc(t("bus.off.title", { n: stopped.length })) + "</button>" +
         '<div class="bus-off-body"><div class="bus-off-inner">' +
           stopped.map(renderGroup).join("") + "</div></div></div>";
     }
@@ -824,7 +869,8 @@
     var busOpen = !data.settings.busCollapsed;
     return '<div class="leg-bus' + (busOpen ? " is-open" : "") + '">' +
       '<button type="button" class="leg-bus-head" aria-expanded="' + (busOpen ? "true" : "false") + '">' +
-        '校巴<span class="bus-count">' + groups.length + " 条可乘</span></button>" +
+        esc(t("bus.title")) + '<span class="bus-count">' +
+          esc(t("bus.count", { n: groups.length })) + "</span></button>" +
       '<div class="leg-bus-body"><div class="leg-bus-inner">' + html + "</div></div>" +
     "</div>";
   }
@@ -833,7 +879,7 @@
   function busOptions(leg, course) {
     void course;
     if (!leg.fromPoint || !leg.toPoint) return "";
-    return busHtml(leg.busPlan, "教室", "plan",
+    return busHtml(leg.busPlan, "room", "plan",
       leg.building ? { label: leg.building.name, lat: leg.building.lat, lng: leg.building.lng } : null);
   }
 
@@ -1689,7 +1735,7 @@
       navActionsHtml(Geo.navLinks(dorm.label, dorm.lat, dorm.lng));
 
     box.innerHTML = '<div class="leg dorm-leg">' + head + note + stats +
-      (start ? busHtml(busPlan, "宿舍", "dorm",
+      (start ? busHtml(busPlan, "dorm", "dorm",
         { label: dorm.label, lat: dorm.lat, lng: dorm.lng }) : "") + actions + "</div>";
   }
 
@@ -1797,7 +1843,7 @@
         '<div class="leg-title"><span class="idx">自</span>' +
           esc(fromName + " → " + to.name) + "</div>" +
         '<div class="leg-time">' + esc(metrics ? Geo.formatDuration(metrics.minutes) : "--") + "</div>" +
-      "</div>" + stats + busHtml(busPlan, "终点", "custom",
+      "</div>" + stats + busHtml(busPlan, "custom", "custom",
         { label: to.name, lat: to.lat, lng: to.lng }) + actions + "</div>";
   }
 

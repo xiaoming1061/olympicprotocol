@@ -116,6 +116,8 @@ window.OP = window.OP || {};
     var gcj = wgs84ToGcj02(lat, lng);
     var bd = gcj02ToBd09(gcj.lat, gcj.lng);
     var label = encodeURIComponent(name);
+    /* 按钮文案跟着界面语言走；自检环境没有 js/i18n.js，就退回中文 */
+    var text = function (key, fallback) { return OP.t ? OP.t(key) : fallback; };
 
     /* 起点是车站/楼栋，一样要转成各家坐标系 */
     var fGcj = from ? wgs84ToGcj02(from.lat, from.lng) : null;
@@ -124,7 +126,7 @@ window.OP = window.OP || {};
 
     return [
       {
-        label: "高德地图",
+        label: text("link.amap", "高德地图"),
         /* uri.amap.com 不写 from 就是"从当前位置出发" */
         url: "https://uri.amap.com/navigation?" +
           (fGcj
@@ -135,7 +137,7 @@ window.OP = window.OP || {};
           "&mode=walk&coordinate=gaode&callnative=1"
       },
       {
-        label: "百度地图",
+        label: text("link.baidu", "百度地图"),
         url: "https://api.map.baidu.com/direction?" +
           (fBd
             ? "origin=latlng:" + fBd.lat.toFixed(6) + "," + fBd.lng.toFixed(6) +
@@ -146,7 +148,7 @@ window.OP = window.OP || {};
           "&mode=walking&region=%E5%85%A8%E5%9B%BD&output=html&src=webapp.olympic-protocol"
       },
       {
-        label: "Google 地图",
+        label: text("link.google", "Google 地图"),
         /* 这是 Google 的通用链接（universal link）：
            装了 App 就直接打开 App，没装才退回网页。
            香港用标准 WGS-84 坐标，不需要转换。 */
@@ -158,14 +160,14 @@ window.OP = window.OP || {};
           lat.toFixed(6) + "," + lng.toFixed(6) + "&travelmode=walking"
       },
       {
-        label: "苹果地图",
+        label: text("link.apple", "苹果地图"),
         /* maps.apple.com 也是通用链接，会直接唤起「地图」App */
         url: "https://maps.apple.com/?" +
           (from ? "saddr=" + from.lat.toFixed(6) + "," + from.lng.toFixed(6) + "&" : "") +
           "daddr=" + lat.toFixed(6) + "," + lng.toFixed(6) + "&dirflg=w"
       },
       {
-        label: "复制坐标",
+        label: text("link.copy", "复制坐标"),
         /* 原来这里是 geo: 协议（想"让系统自己挑地图 App"），
            但那是安卓的标准，iOS 根本不认，iPhone 上点了没反应。
            改成复制坐标：任何地图 App 的搜索框都能粘，两端都能用。 */

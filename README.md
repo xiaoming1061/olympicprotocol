@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1210 项检查，不联网
+node tools/selftest.js             # 1217 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1188,7 +1188,29 @@ English。文案表在 `data/i18n.js`，运行时在 `js/i18n.js`。
 | 批次 | 内容 | 状态 |
 |---|---|---|
 | 第一批 | **静态骨架**：卡片标题、字段名、按钮、占位符、图例、无障碍标签 | ✅ 133 条，全挂在 `index.html` 上 |
-| 第二批 | **动态文案**：状态徽章、提示条、播报稿、识别报告 | 进行中（约 520 条，逐步换成 `OP.t()`） |
+| 第二批 | **校巴模块**：线路名、站名、卡片文案、分步导航、停运折叠、地图按钮 | ✅ 已完成 |
+| 第三批 | **其余动态文案**：状态徽章、提示条、播报稿、识别报告、行程卡 | 进行中（约 490 条，逐步换成 `OP.t()`） |
+
+#### 校巴的英文名以运输处官网为准
+
+线路名不是自己翻的，照 `transport.cuhk.edu.hk/route/<编号>/` 的页面标题抄
+（2026-11 逐条核过）。**空格也算官方写法的一部分**——2 号线是 `NA / UC`，
+6B 是 `Downward (NA / UC)`，不是 `NA/UC`。
+
+| 编号 | 官方英文名 | 编号 | 官方英文名 |
+|---|---|---|---|
+| 1 | Main Campus | 5 | Upward |
+| 2 | NA / UC | 6A | Downward (CWC) |
+| 2S | NA/UC (S) | 6B | Downward (NA / UC) |
+| 3 | Shaw | 7 | Downward (Shaw) |
+| 4 | Campus Circuit | 8 | Western Campus |
+| N | Night Service | H | Holidays Service |
+
+取名字统一走 `OP.Shuttle.routeName()` / `OP.Shuttle.stopName()`（在
+`js/shuttle.js`）：英文模式用官方英文名，繁中用数据里的繁体，简中把繁体
+转成简体。卡片、简图、街道图的站名都调这一处，不会三边各写一套。
+站点附注（`逢 31 至 00 分開出的班次才停` 那几种）在英文模式下按规则翻成
+`Stops only on departures at :31–:00`；认不出来的原样保留，不丢信息。
 
 静态的怎么做：元素上挂 `data-i18n="键"`；占位符用 `-ph`、`title` 用 `-title`、
 `aria-label` 用 `-aria`、图片 `alt` 用 `-alt`。切语言时 `js/i18n.js` 只换这些
@@ -1714,7 +1736,7 @@ js/exportimage.js     课表导出成图片（排版是纯计算，画图在 can
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
 tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
-tools/selftest.js     自检脚本，1210 项
+tools/selftest.js     自检脚本，1217 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

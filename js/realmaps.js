@@ -138,7 +138,13 @@ window.OP = window.OP || {};
     (list || []).forEach(function (s) {
       var stop = s && s.stop;
       if (!stop || !hasCoords(stop)) return;
-      var role = s.roles && s.roles.board ? "上车" : (s.roles && s.roles.alight ? "下车" : "");
+      /* 站名与「上车/下车」都跟着界面语言走 */
+      var stopText = OP.Shuttle && OP.Shuttle.stopName ? OP.Shuttle.stopName(stop) : stop.zh;
+      var lang = (OP.I18N && OP.I18N.lang) ? OP.I18N.lang() : "zh-Hans";
+      var role = s.roles && s.roles.board
+        ? (OP.t ? OP.t("bus.board") : "上车")
+        : (s.roles && s.roles.alight ? (OP.t ? OP.t("bus.alight") : "下车") : "");
+      var suffix = role ? (lang === "en" ? " (" + role + ")" : "（" + role + "）") : "";
       /* 选中那条线的站：圈更大、描边更粗，而且**常驻**站名浮标
          （没选中的只做悬停提示，免得一堆站名糊在一起） */
       var big = !!s.picked;
@@ -148,7 +154,7 @@ window.OP = window.OP || {};
         weight: big ? 3 : 2,
         fillColor: "#ffc55a",
         fillOpacity: 1
-      }).addTo(overlay).bindTooltip(stop.zh + (role ? "（" + role + "）" : ""), {
+      }).addTo(overlay).bindTooltip(stopText + suffix, {
         direction: "top",
         offset: [0, big ? -10 : -6],
         permanent: big,

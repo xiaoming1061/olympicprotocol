@@ -3264,7 +3264,9 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
   /* ---------- 每小时开出时间 ---------- */
   check("卡片上列「每小时开出时间」（照交通处页面的写法）",
     /class="bus-deps"/.test(appSrc) &&
-    /每小时开出 /.test(appSrc) &&
+    /t\("bus\.deps"/.test(appSrc) &&
+    fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8")
+      .indexOf("每小时开出 {list} 分") > 0 &&
     /\.bus-deps \{/.test(css));
   check("不看运营状态：用 everyHour 直接给时刻表，不再换算成今天哪几班",
     /\(g\.route\.everyHour \|\| \[\]\)/.test(appSrc) &&
@@ -3407,7 +3409,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /\.bus-steps\.is-entering \.bus-steps-head \{/.test(css));
   check("旧那条收起时 aria-expanded 也变回 false（屏幕阅读器不会以为它还开着）",
     /el\.style\.height = "0px";[\s\S]{0,240}?head\.setAttribute\("aria-expanded", "false"\);/.test(appSrc) &&
-    /\(opened \? "true" : "false"\) \+ '">分步导航<\/button>'/.test(appSrc));
+    /\(opened \? "true" : "false"\) \+ '">' \+ esc\(t\("bus\.steps\.title"\)\) \+ "<\/button>"/.test(appSrc));
 
   /* 整页每 30 秒重渲染一次（tick → checkAlerts）。不记住分步导航的开合状态，
      那一次重渲染会把它按"刚选中"重画：先塌下去、再滑出来（实测：
@@ -3435,7 +3437,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
      外置地图要是按当前位置算，这一段就白规划了（用户报过）。 */
   check("「从终点校巴站到教室」的外置导航从车站出发，不是从当前位置",
     /from: g\.alight && g\.alight\.stop,/.test(appSrc) &&
-    /navActionsHtml\(Geo\.navLinks\(name, t\.lat, t\.lng, from\)\)/.test(appSrc) &&
+    /navActionsHtml\(Geo\.navLinks\(name, target\.lat, target\.lng, from\)\)/.test(appSrc) &&
     /row\.from && typeof row\.from\.lat === "number"/.test(appSrc) &&
     /* 第一段（走到上车站）本来就是从我这儿走，不给起点 */
     /target: g\.board && g\.board\.stop, min: g\.walkBeforeMin \}/.test(appSrc));
@@ -3652,8 +3654,12 @@ console.log("\n[36] 校巴乘坐规划");
     appCode.indexOf("WORTH_MIN") === -1 &&
     appCode.indexOf("var groups = plan.groups || [];") > 0);
   check("界面只写三段时长 + 合计 + 班次间隔",
-    appCode.indexOf("走到车站 <b>") > 0 && appCode.indexOf("车程 <b>") > 0 &&
-    appCode.indexOf("分 + 走到") > 0 && appCode.indexOf("分钟一班") > 0);
+    appCode.indexOf('t("bus.ride"') > 0 && appCode.indexOf('t("bus.headway"') > 0 &&
+    (function () {
+      const table = fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8");
+      return table.indexOf("走到车站 <b>{a}</b>") > 0 && table.indexOf("车程 <b>{b}</b>") > 0 &&
+        table.indexOf("合计 <b>{total}</b>") > 0 && table.indexOf("分钟一班") > 0;
+    })());
   check("界面上没有任何「几点到」的时刻",
     appCode.indexOf("车到站") === -1 && appCode.indexOf("到目标站") === -1 &&
     appCode.indexOf("clockText(") === -1);
@@ -3775,7 +3781,7 @@ console.log("\n[38] 主题、连堂课、停运折叠、地图连线");
      地图跳转只剩行程卡片里那排链接（每段行程一组）。primary 标记留着，
      是为了"默认用哪家地图"这件事在 geo.js 里仍然只有一个出处。 */
   check("Google 地图那条链接标了 primary（默认用它）",
-    /label:\s*"Google 地图"[\s\S]{0,220}primary:\s*true/.test(geoCode));
+    /label:\s*text\("link\.google", "Google 地图"\)[\s\S]{0,220}primary:\s*true/.test(geoCode));
   check("行程卡片里仍然有地图跳转入口（删按钮没把这条路一起删掉）",
     appCode.indexOf("Geo.navLinks(b.name, b.lat, b.lng)") > 0 &&
     appCode.indexOf('class="nav-link"') > 0);
@@ -4203,10 +4209,10 @@ console.log("\n[41] 宿舍数据与「返回宿舍」");
     appCode.indexOf("dormFromClass") === -1 && !/dormFromClass\s*:/.test(defaults));
   check("回宿舍也走同一个校巴规划",
     /OP\.Shuttle\.plan\(start\.point/.test(appCode) &&
-    appCode.indexOf('busHtml(busPlan, "宿舍", "dorm"') > 0);
+    appCode.indexOf('busHtml(busPlan, "dorm", "dorm"') > 0);
   check("校巴那块 HTML 教室和宿舍共用一份",
-    appCode.indexOf("function busHtml(plan, destLabel, kind") > 0 &&
-    appCode.indexOf('busHtml(leg.busPlan, "教室", "plan"') > 0);
+    appCode.indexOf("function busHtml(plan, destKind, kind") > 0 &&
+    appCode.indexOf('busHtml(leg.busPlan, "room", "plan"') > 0);
   check("宿舍的高差也算（缺海拔会自动补查一次）",
     appCode.indexOf("ensureDormElevation") > 0 &&
     appCode.indexOf("OP.Elevation.at(dorm.lat, dorm.lng)") > 0);
@@ -4448,7 +4454,7 @@ console.log("\n[44] 自定义路线 / 去掉两个选项");
   check("用的是同一套规划：走多久 + 校巴方案",
     /OP\.Shuttle\.plan\(fromPoint, toPoint, state\.now/.test(appCode) &&
     /var metrics = P\.walkMetrics\(fromPoint, toPoint, s\)/.test(appCode) &&
-    appCode.indexOf('busHtml(busPlan, "终点", "custom"') > 0);
+    appCode.indexOf('busHtml(busPlan, "custom", "custom"') > 0);
   check("起点终点同一条路会提示，不会算出一段两边一样的路",
     appCode.indexOf("起点和终点是同一栋楼") > 0);
   check("起点选了「我的位置」但没定位时有说明",
@@ -5861,6 +5867,8 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   const i18nRun = fs.readFileSync(path.join(root, "js", "i18n.js"), "utf8");
   const appCode = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
   const plannerCode = fs.readFileSync(path.join(root, "js", "planner.js"), "utf8");
+  const realMapCode = fs.readFileSync(path.join(root, "js", "realmaps.js"), "utf8");
+  const geoCode = fs.readFileSync(path.join(root, "js", "geo.js"), "utf8");
 
   eval(fs.readFileSync(path.join(root, "data", "i18n.js"), "utf8"));
   const T = global.OP.I18N_TABLE;
@@ -5897,10 +5905,12 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   /* 反过来：表里也别留死键。week.* 是 planner.js 里按序号拼出来的，
      静态扫不到，单独放行。 */
   const usedInJs = new Set();
-  [appCode, plannerCode].forEach((src) => {
-    for (const m of src.matchAll(/\b(?:OP\.)?t\("([a-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
+  [appCode, plannerCode, realMapCode, geoCode].forEach((src) => {
+    /* 两种写法都认：t("key") 和 text("key", "兜底") */
+    for (const m of src.matchAll(/\b(?:OP\.)?(?:t|text)\("([a-z]+\.[^"]+)"/g)) usedInJs.add(m[1]);
   });
-  const dynamicPrefixes = ["week.long.", "week.short."];
+  /* 这些键是按序号/种类拼出来的，静态扫不到，单独放行 */
+  const dynamicPrefixes = ["week.long.", "week.short.", "bus.dest."];
   const dead = baseKeys.filter((k) =>
     !usedInHtml.has(k) && !usedInJs.has(k) &&
     !dynamicPrefixes.some((p) => k.indexOf(p) === 0));
@@ -6004,6 +6014,50 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     langButtons.every((b) => b[0].indexOf("data-i18n") === -1) &&
     langButtons.map((b) => b[2].trim()).join("|") === "简体中文|繁體中文|English",
     langButtons.map((b) => b[2]).join("|"));
+
+  /* ---- 校巴线路名：以运输处官网为准 ----
+     名字照 transport.cuhk.edu.hk/route/<no>/ 的 <title> 抄（2026-11 核对）。 */
+  const OFFICIAL_ROUTE_EN = {
+    "1": "Main Campus", "2": "NA / UC", "2S": "NA/UC (S)", "3": "Shaw",
+    "4": "Campus Circuit", "5": "Upward", "6A": "Downward (CWC)",
+    "6B": "Downward (NA / UC)", "7": "Downward (Shaw)", "8": "Western Campus",
+    "N": "Night Service", "H": "Holidays Service"
+  };
+  const routes = OP.SHUTTLE_ROUTES || [];
+  const badEn = routes.filter((r) => r.nameEn !== OFFICIAL_ROUTE_EN[r.no]);
+  check("12 条线路的英文名与运输处官网一致",
+    routes.length === 12 && badEn.length === 0,
+    badEn.map((r) => r.no + ":" + r.nameEn).join(" "));
+  check("英文名带官方空格（NA / UC 不是 NA/UC）",
+    (routes.filter((r) => r.no === "2")[0] || {}).nameEn === "NA / UC" &&
+    (routes.filter((r) => r.no === "6B")[0] || {}).nameEn === "Downward (NA / UC)");
+
+  const shuttleCode = fs.readFileSync(path.join(root, "js", "shuttle.js"), "utf8");
+  check("线路名/站名按界面语言取：英文用官方英文名，简中繁转简",
+    /function stopName\(stop\)/.test(shuttleCode) &&
+    /function routeName\(route\)/.test(shuttleCode) &&
+    /uiLang\(\) === "en" && stop\.en/.test(shuttleCode) &&
+    /uiLang\(\) === "en" && route\.nameEn/.test(shuttleCode) &&
+    /OP\.Zh\.toSimplified\(s\)/.test(shuttleCode));
+  check("校巴卡片用的是 routeName（不再直接写死 nameZh）",
+    appCode.indexOf("esc(OP.Shuttle.routeName(g.route))") > 0 &&
+    appCode.indexOf("esc(g.route.nameZh)") === -1);
+  check("地图上的校巴站名也跟着语言走",
+    fs.readFileSync(path.join(root, "js", "map.js"), "utf8").indexOf("OP.Shuttle.stopName(st)") > 0 &&
+    realMapCode.indexOf("OP.Shuttle.stopName(stop)") > 0);
+  check("站点附注（逢 31 至 00 分…）英文模式下翻成规则句",
+    /function busNoteText\(note\)/.test(appCode) &&
+    /逢\\s\*\(\\d\{1,2\}\)\\s\*至/.test(appCode));
+
+  /* 地图按钮（高德 / 百度 / Google / 苹果 / 复制坐标）也在校巴卡片里出现，
+     英文模式下不能只有它们还是中文。 */
+  check("地图按钮文案跟着语言走，自检环境退回中文",
+    /var text = function \(key, fallback\) \{ return OP\.t \? OP\.t\(key\) : fallback; \};/.test(geoCode) &&
+    ['amap', 'baidu', 'google', 'apple', 'copy'].every(function (k) {
+      return geoCode.indexOf('text("link.' + k + '"') > 0;
+    }) &&
+    T["en"]["link.google"] === "Google Maps" &&
+    T["zh-Hans"]["link.copy"] === "复制坐标");
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");
