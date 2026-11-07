@@ -2113,69 +2113,145 @@ html[lang="en"] .lang-btn[data-lang="en"] {
 .onboard.is-done .onboard-list { margin-top: 8px; }
 .onboard.is-done .onboard-step { grid-template-columns: 26px minmax(0, 1fr); }
 
-/* 三屏开场：横向 scroll-snap，一次一屏 */
-.intro-card { width: min(92vw, 420px); overflow: hidden; position: relative; padding: 22px 20px 16px; }
-
-.intro-skip {
-  position: absolute;
-  top: 10px;
-  right: 10px;
+/* 上手卡的右上角 X（跳过 / 关闭都收成这一颗） */
+.card-x {
   appearance: none;
   border: 0;
-  background: none;
+  background: transparent;
   color: var(--text-dim);
   font-family: inherit;
-  font-size: var(--text-sm);
-  padding: 6px 8px;
+  font-size: 22px;
+  line-height: 1;
+  width: 32px;
+  height: 32px;
+  margin: -4px -6px -4px 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
   cursor: pointer;
 }
-
-.intro-track {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  -webkit-overflow-scrolling: touch;
-  scrollbar-width: none;
+/* 悬停只在真有指针的设备上生效 */
+@media (hover: hover) {
+  .card-x:hover { color: var(--text); }
+  .intro-close:hover { border-color: var(--accent-line-strong); }
 }
-.intro-track::-webkit-scrollbar { display: none; }
 
-.intro-screen {
-  flex: 0 0 100%;
-  scroll-snap-align: start;
-  min-height: 168px;
+/* ---------- 首次打开的全屏开场 ----------
+   一屏放下全部要点：文字靠左、字号放大，像一张海报。
+   文字与按钮从左侧渐入、由快至慢；X 从右侧淡入。 */
+.intro {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: clamp(26px, 6vh, 64px) clamp(22px, 7vw, 80px);
+  /* 背景视频还在下面透出来一点，但左侧要够亮，字才站得住 */
+  background: linear-gradient(112deg,
+    rgba(255, 253, 254, 0.97) 0%,
+    rgba(255, 241, 247, 0.94) 56%,
+    rgba(255, 236, 244, 0.72) 100%);
+  /* 不再加一层毛玻璃：左侧本来就接近不透明，糊上去只是多一层开销 */
+  overflow: auto;
+}
+.intro[hidden] { display: none; }
+/* 开场是全屏的：把下面的应用界面藏起来，只留背景视频透出来 */
+body.is-intro .app { visibility: hidden; }
+
+.intro-sheet {
+  position: relative;
+  width: min(560px, 100%);
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  padding: 34px 4px 6px;
+  padding-right: clamp(8px, 4vw, 48px);
 }
 
-.intro-screen h2 {
-  margin: 0;
-  font-size: 26px;
-  line-height: 1.25;
-  letter-spacing: -0.01em;
+.intro-close {
+  position: fixed;
+  top: max(16px, env(safe-area-inset-top));
+  right: max(16px, env(safe-area-inset-right));
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--card-2);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 22px;
+  line-height: 1;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  animation: intro-in-right 420ms var(--ease-out) both;
+}
+
+.intro-title {
+  margin: 0 0 clamp(20px, 4.5vh, 36px);
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  animation: intro-in 560ms var(--ease-out) both;
+}
+.intro-title-en {
+  display: block;
+  font-size: clamp(32px, 8.5vw, 46px);
+  font-weight: 800;
   color: var(--text);
 }
-
-.intro-screen p {
-  margin: 10px 0 0;
-  font-size: var(--text-md);
-  color: var(--text-dim);
-  line-height: 1.6;
+.intro-title-cn {
+  display: block;
+  margin-top: 8px;
+  font-size: clamp(20px, 5vw, 28px);
+  font-weight: 700;
+  color: var(--accent-ink);
+  letter-spacing: 0;
 }
 
-.intro-actions { display: flex; gap: 8px; margin-top: 22px; }
+.intro-points {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 4.5vh, 32px);
+}
+
+.intro-point { animation: intro-in 560ms var(--ease-out) both; }
+.intro-point:nth-child(1) { animation-delay: 90ms; }
+.intro-point:nth-child(2) { animation-delay: 170ms; }
+.intro-point:nth-child(3) { animation-delay: 250ms; }
+
+.intro-point h2 {
+  margin: 0;
+  font-size: clamp(22px, 6vw, 32px);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--text);
+}
+.intro-point p {
+  margin: 6px 0 0;
+  font-size: clamp(14px, 3.8vw, 17px);
+  line-height: 1.55;
+  color: var(--text-dim);
+}
+
+.intro-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: clamp(26px, 6vh, 46px);
+  animation: intro-in 560ms var(--ease-out) 330ms both;
+}
 .intro-actions .btn { flex: 1; }
 
-.intro-dots { display: flex; justify-content: center; gap: 6px; padding-top: 10px; }
-.intro-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--accent-line-strong);
-  transition: background var(--dur-hover) var(--ease-out), width var(--dur-hover) var(--ease-out);
+@keyframes intro-in {
+  from { opacity: 0; transform: translateX(-24px); }
+  to { opacity: 1; transform: none; }
 }
-.intro-dot.is-active { width: 16px; border-radius: var(--radius-pill); background: var(--accent); }
+@keyframes intro-in-right {
+  from { opacity: 0; transform: translateX(14px); }
+  to { opacity: 1; transform: none; }
+}
 
 .modal-card {
   width: min(92vw, 420px);

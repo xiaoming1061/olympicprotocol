@@ -420,9 +420,6 @@
     var head = card.querySelector("h3");
     if (head) head.textContent = allDone ? t("onboard.finished") + " ✓" : t("onboard.title");
 
-    var skip = $("#onboardSkip");
-    if (skip) skip.textContent = allDone ? t("onboard.review") : t("onboard.skip");
-
     list.innerHTML = steps.map(function (key, i) {
       var isDone = done[i];
       return '<li class="onboard-step' + (isDone ? " is-done" : "") + '">' +
@@ -445,40 +442,19 @@
     list.hidden = allDone && !onboardOpen;
   }
 
-  /* 开场三屏的圆点：滚动时跟着走 */
-  var introRaf = 0;
-  function paintIntroDots() {
-    var track = $("#introTrack");
-    var dots = $("#introDots");
-    if (!track || !dots) return;
-    if (!dots.children.length) {
-      for (var i = 0; i < track.children.length; i++) {
-        var dot = document.createElement("span");
-        dot.className = "intro-dot";
-        dots.appendChild(dot);
-      }
-    }
-    var w = track.clientWidth || 1;
-    var idx = Math.round(track.scrollLeft / w);
-    Array.prototype.forEach.call(dots.children, function (dot, i) {
-      dot.classList.toggle("is-active", i === idx);
-    });
-  }
-
   function showIntro() {
     var box = $("#introBox");
     if (!box) return;
     onboard.introSeen = true;
     saveOnboard();
     box.hidden = false;
-    var track = $("#introTrack");
-    if (track) track.scrollLeft = 0;
-    paintIntroDots();
+    document.body.classList.add("is-intro");
   }
 
   function hideIntro() {
     var box = $("#introBox");
     if (box) box.hidden = true;
+    document.body.classList.remove("is-intro");
     renderOnboard();
   }
 
@@ -3523,18 +3499,13 @@
     });
 
     $("#onboardSkip").addEventListener("click", function () {
-      /* 完成态下这颗按钮是「重看」：切换展开 */
-      if (onboardSteps().every(Boolean)) {
-        onboardOpen = !onboardOpen;
-        renderOnboard();
-        return;
-      }
+      /* 右上角的 X：收起这张卡；想再打开去「设置 → 数据 → 重看上手引导」 */
       onboard.cardDismissed = true;
       saveOnboard();
       renderOnboard();
     });
 
-    $("#introSkip").addEventListener("click", hideIntro);
+    $("#introClose").addEventListener("click", hideIntro);
     $("#introBrowse").addEventListener("click", hideIntro);
     $("#introStart").addEventListener("click", function () {
       hideIntro();
@@ -3543,14 +3514,6 @@
       goTo("today");
       var card = $("#onboardCard");
       if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-
-    $("#introTrack").addEventListener("scroll", function () {
-      if (introRaf) return;
-      introRaf = requestAnimationFrame(function () {
-        introRaf = 0;
-        paintIntroDots();
-      });
     });
 
     $("#btnReplayOnboard").addEventListener("click", function () {

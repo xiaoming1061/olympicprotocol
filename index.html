@@ -37,7 +37,7 @@
       }).catch(function () { /* 拿不到就算了，不影响页面 */ });
     })();
   </script>
-  <link rel="stylesheet" href="styles.css?v=20261108-0122" />
+  <link rel="stylesheet" href="styles.css?v=20261108-0141" />
 </head>
 <body>
   <!-- 背景层：一段 16 秒的视频循环（原片是个 4 分钟的长 mv，画面本身就是
@@ -73,8 +73,9 @@
         <article class="card onboard" id="onboardCard" hidden>
           <div class="card-head">
             <h3 data-i18n="onboard.title">三步开始用</h3>
-            <button type="button" class="btn btn-ghost btn-small" id="onboardSkip"
-              data-i18n="onboard.skip">跳过</button>
+            <button type="button" class="card-x" id="onboardSkip"
+              data-i18n-aria="onboard.close" data-i18n-title="onboard.close"
+              aria-label="关闭" title="关闭">×</button>
           </div>
           <ol class="onboard-list" id="onboardList"></ol>
         </article>
@@ -618,31 +619,36 @@
 
   <div class="toasts" id="toasts" aria-live="polite"></div>
 
-  <!-- 首次打开的三屏开场：可左右滑，右上角跳过；最后一屏给「开始设置 / 先随便看看」 -->
-  <div class="modal intro" id="introBox" hidden>
-    <div class="modal-card intro-card" role="dialog" aria-modal="true" aria-label="Olympic Protocol">
-      <button type="button" class="intro-skip" id="introSkip" data-i18n="intro.skip">跳过</button>
-      <div class="intro-track" id="introTrack">
-        <section class="intro-screen">
-          <h2 data-i18n="intro.s1.title">今天的课程</h2>
+  <!-- 首次打开的全屏开场：一屏放下全部要点，右上角 X 关闭 -->
+  <div class="intro" id="introBox" hidden>
+    <div class="intro-sheet" role="dialog" aria-modal="true" aria-label="Olympic Protocol">
+      <button type="button" class="intro-close" id="introClose"
+        data-i18n-aria="intro.close" data-i18n-title="intro.close"
+        aria-label="关闭" title="关闭">×</button>
+      <h1 class="intro-title">
+        <span class="intro-title-en">Olympic Protocol</span>
+        <span class="intro-title-cn">~中大穿梭协议</span>
+      </h1>
+      <ol class="intro-points">
+        <li class="intro-point">
+          <h2 data-i18n="intro.s1.title">「今天的课程」</h2>
           <p data-i18n="intro.s1.sub">距离与时间估算</p>
-        </section>
-        <section class="intro-screen">
-          <h2 data-i18n="intro.s2.title">穿梭在中大</h2>
+        </li>
+        <li class="intro-point">
+          <h2 data-i18n="intro.s2.title">「穿梭在中大」</h2>
           <p data-i18n="intro.s2.sub">查询乘车方式与步行路线</p>
-        </section>
-        <section class="intro-screen">
-          <h2 data-i18n="intro.s3.title">上传课表</h2>
+        </li>
+        <li class="intro-point">
+          <h2 data-i18n="intro.s3.title">「上传课表」</h2>
           <p data-i18n="intro.s3.sub">支持课表图渲染</p>
-          <div class="intro-actions">
-            <button type="button" class="btn btn-primary" id="introStart"
-              data-i18n="intro.start">开始设置</button>
-            <button type="button" class="btn btn-ghost" id="introBrowse"
-              data-i18n="intro.browse">先随便看看</button>
-          </div>
-        </section>
+        </li>
+      </ol>
+      <div class="intro-actions">
+        <button type="button" class="btn btn-primary" id="introStart"
+          data-i18n="intro.start">开始设置</button>
+        <button type="button" class="btn btn-ghost" id="introBrowse"
+          data-i18n="intro.browse">先随便看看</button>
       </div>
-      <div class="intro-dots" id="introDots"></div>
     </div>
   </div>
 
@@ -677,27 +683,27 @@
     </div>
   </div>
 
-  <script src="data/buildings.js?v=20261108-0122"></script>
-  <script src="data/dorms.js?v=20261108-0122"></script>
-  <script src="data/shuttle.js?v=20261108-0122"></script>
-  <script src="data/holidays.js?v=20261108-0122"></script>
-  <script src="data/defaults.js?v=20261108-0122"></script>
-  <script src="data/i18n.js?v=20261108-0122"></script>
-  <script src="js/i18n.js?v=20261108-0122"></script>
-  <script src="js/store.js?v=20261108-0122"></script>
-  <script src="js/zh.js?v=20261108-0122"></script>
-  <script src="js/dorm.js?v=20261108-0122"></script>
-  <script src="js/geo.js?v=20261108-0122"></script>
-  <script src="js/shuttle.js?v=20261108-0122"></script>
-  <script src="js/elevation.js?v=20261108-0122"></script>
-  <script src="js/speech.js?v=20261108-0122"></script>
-  <script src="js/planner.js?v=20261108-0122"></script>
-  <script src="js/map.js?v=20261108-0122"></script>
-  <script src="js/realmaps.js?v=20261108-0122"></script>
-  <script src="js/places.js?v=20261108-0122"></script>
-  <script src="js/ocr.js?v=20261108-0122"></script>
-  <script src="js/timetable.js?v=20261108-0122"></script>
-  <script src="js/exportimage.js?v=20261108-0122"></script>
-  <script src="js/app.js?v=20261108-0122"></script>
+  <script src="data/buildings.js?v=20261108-0141"></script>
+  <script src="data/dorms.js?v=20261108-0141"></script>
+  <script src="data/shuttle.js?v=20261108-0141"></script>
+  <script src="data/holidays.js?v=20261108-0141"></script>
+  <script src="data/defaults.js?v=20261108-0141"></script>
+  <script src="data/i18n.js?v=20261108-0141"></script>
+  <script src="js/i18n.js?v=20261108-0141"></script>
+  <script src="js/store.js?v=20261108-0141"></script>
+  <script src="js/zh.js?v=20261108-0141"></script>
+  <script src="js/dorm.js?v=20261108-0141"></script>
+  <script src="js/geo.js?v=20261108-0141"></script>
+  <script src="js/shuttle.js?v=20261108-0141"></script>
+  <script src="js/elevation.js?v=20261108-0141"></script>
+  <script src="js/speech.js?v=20261108-0141"></script>
+  <script src="js/planner.js?v=20261108-0141"></script>
+  <script src="js/map.js?v=20261108-0141"></script>
+  <script src="js/realmaps.js?v=20261108-0141"></script>
+  <script src="js/places.js?v=20261108-0141"></script>
+  <script src="js/ocr.js?v=20261108-0141"></script>
+  <script src="js/timetable.js?v=20261108-0141"></script>
+  <script src="js/exportimage.js?v=20261108-0141"></script>
+  <script src="js/app.js?v=20261108-0141"></script>
 </body>
 </html>

@@ -5947,7 +5947,8 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     "dormState", "customState", "pullState", "ocrStatus", "courseFormTitle", "imageHint",
     "todayLabel", "clock", "todaySummary", "nextMeta", "nextCountdown", "nextDistance",
     "nextWalk", "nextClimb", "nextLeave", "routeSummary", "buildingCount", "confirmText"];
-  const ENDONYMS = ["简体中文", "繁體中文", "English"];
+  /* 语言按钮上的 endonym + 开场里的中文品牌名（不跟着界面语言翻） */
+  const ENDONYMS = ["简体中文", "繁體中文", "English", "~中大穿梭协议"];
 
   const staleIds = DYNAMIC_IDS.filter((id) => pageHtml.indexOf('id="' + id + '"') === -1);
   check("动态文案的白名单没有过期条目", staleIds.length === 0, staleIds.join(" "));
@@ -6156,11 +6157,13 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     pageHtml.indexOf('id="introBox"') > 0 &&
     pageHtml.indexOf('id="onboardCard"') > 0 &&
     pageHtml.indexOf('id="btnReplayOnboard"') > 0 &&
-    (pageHtml.match(/class="intro-screen"/g) || []).length === 3);
+    pageHtml.indexOf('id="introClose"') > 0 &&
+    pageHtml.indexOf('class="intro-title"') > 0 &&
+    (pageHtml.match(/class="intro-point"/g) || []).length === 3);
   check("引导的三语文案齐全（开场 3×2 + 三步 3×3 + 完成态）",
     ["intro.s1.title", "intro.s1.sub", "intro.s2.title", "intro.s2.sub",
-      "intro.s3.title", "intro.s3.sub", "intro.start", "intro.browse", "intro.skip",
-      "onboard.title", "onboard.skip", "onboard.finished", "onboard.review",
+      "intro.s3.title", "intro.s3.sub", "intro.start", "intro.browse", "intro.close",
+      "onboard.title", "onboard.close", "onboard.finished",
       "onboard.geoDenied", "settings.onboard.replay",
       "onboard.s1.title", "onboard.s1.body", "onboard.s1.action",
       "onboard.s2.title", "onboard.s2.body", "onboard.s2.action",
