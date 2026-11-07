@@ -439,7 +439,7 @@ window.OP.I18N_TABLE = {
     "course.form.startDate": "开始日期（可留空）",
     "course.form.endDate": "结束日期（可留空）",
 
-    "course.empty": "还没有课程，点右上角「新增课程」开始",
+    "course.empty": "还没有课程，从下方导入课表或点击右上角「新增课程」",
     "course.edit": "编辑",
     "course.del": "删除",
     "course.notStarted": "未开始",
@@ -950,7 +950,7 @@ window.OP.I18N_TABLE = {
     "course.form.startDate": "開始日期（可留空）",
     "course.form.endDate": "結束日期（可留空）",
 
-    "course.empty": "還沒有課程，點右上角「新增課程」開始",
+    "course.empty": "還沒有課程，從下方匯入課表或點擊右上角「新增課程」",
     "course.edit": "編輯",
     "course.del": "刪除",
     "course.notStarted": "未開始",
@@ -1462,7 +1462,7 @@ window.OP.I18N_TABLE = {
     "course.form.startDate": "Start date (optional)",
     "course.form.endDate": "End date (optional)",
 
-    "course.empty": "No classes yet — tap Add class at the top right",
+    "course.empty": "No classes yet — import a timetable below, or tap Add class at the top right",
     "course.edit": "Edit",
     "course.del": "Delete",
     "course.notStarted": "Not started",

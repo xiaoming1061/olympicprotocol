@@ -21,8 +21,8 @@
   --text: #4a2b3a;
   --text-dim: #8c6a7c;
   --text-faint: #a98b9a;
-  /* 比原来的 #ff5fa2 略淡一档：大块填充（按钮、线路点、图钉）不再那么扎眼 */
-  --accent: #ff73ad;
+  /* 再淡一档（#ff5fa2 → #ff73ad → #ff8ab8）：大块填充更柔和 */
+  --accent: #ff8ab8;
   --accent-2: #b98cff;
 
   /* ---- 字体：两级，不再"一个字体走天下" ----
@@ -302,7 +302,13 @@ body {
 
 .views { padding: 16px 16px 8px; }
 .view { display: none; }
-.view.is-active { display: block; animation: fade var(--dur-panel) var(--ease-out); }
+.view.is-active { display: block; animation: view-in 460ms var(--ease-out) both; }
+
+/* 切页：从右侧滑入 + 渐显，比原来那条 260ms 的纯淡入慢一档 */
+@keyframes view-in {
+  from { opacity: 0; transform: translateX(18px); }
+  to { opacity: 1; transform: none; }
+}
 
 @keyframes fade {
   from { opacity: 0; transform: translateY(6px); }
@@ -2096,18 +2102,21 @@ html[lang="en"] .lang-btn[data-lang="en"] {
 
 .onboard-go {
   appearance: none;
-  border: 1px solid var(--accent-line-strong);
-  border-radius: var(--radius-pill);
-  background: var(--accent-soft);
+  /* 只留文字：不再画圆角框，跟署名链接同一套（下划线 + 主色深一档） */
+  border: 0;
+  background: none;
   color: var(--accent-ink);
   font-family: inherit;
   font-size: var(--text-sm);
   font-weight: 700;
-  padding: 7px 14px;
+  padding: 2px 0;
   cursor: pointer;
   white-space: nowrap;
+  text-decoration: underline;
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 4px;
 }
-.onboard-go:active { transform: translateY(1px); }
+.onboard-go:active { opacity: 0.55; }
 .onboard-step.is-done .onboard-go { display: none; }
 
 /* 三步都完成后：整张卡收成一行 */
@@ -2171,7 +2180,7 @@ body.is-intro .app { visibility: hidden; }
   margin: 0 0 clamp(20px, 4.5vh, 36px);
   line-height: 1.08;
   letter-spacing: -0.02em;
-  animation: intro-in 560ms var(--ease-out) both;
+  animation: intro-in 900ms var(--ease-out) both;
 }
 .intro-title-en {
   display: block;
@@ -2197,10 +2206,10 @@ body.is-intro .app { visibility: hidden; }
   gap: clamp(16px, 4.5vh, 32px);
 }
 
-.intro-point { animation: intro-in 560ms var(--ease-out) both; }
-.intro-point:nth-child(1) { animation-delay: 90ms; }
-.intro-point:nth-child(2) { animation-delay: 170ms; }
-.intro-point:nth-child(3) { animation-delay: 250ms; }
+.intro-point { animation: intro-in 900ms var(--ease-out) both; }
+.intro-point:nth-child(1) { animation-delay: 140ms; }
+.intro-point:nth-child(2) { animation-delay: 260ms; }
+.intro-point:nth-child(3) { animation-delay: 380ms; }
 
 .intro-point h2 {
   margin: 0;
@@ -2220,7 +2229,7 @@ body.is-intro .app { visibility: hidden; }
   display: flex;
   gap: 10px;
   margin-top: clamp(26px, 6vh, 46px);
-  animation: intro-in 560ms var(--ease-out) 330ms both;
+  animation: intro-in 900ms var(--ease-out) 500ms both;
 }
 .intro-actions .btn { flex: 1; }
 

@@ -3769,7 +3769,7 @@ console.log("\n[38] 主题、连堂课、停运折叠、地图连线");
 
   /* ---------- 日系可爱粉色主题 + 背景图 ---------- */
   check("配色换成了粉色系",
-    /--accent:\s*#ff73ad/i.test(css) && /--bg:\s*#fff/i.test(css) &&
+    /--accent:\s*#ff8ab8/i.test(css) && /--bg:\s*#fff/i.test(css) &&
     /--text:\s*#4a2b3a/i.test(css));
   check("声明了浅色页面（原生控件才不会跟着系统深色模式变黑）",
     /color-scheme:\s*light/.test(css));
