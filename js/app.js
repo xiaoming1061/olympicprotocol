@@ -37,6 +37,46 @@
     ocr: { courses: [], warnings: [], busy: false }
   };
 
+  /* ================= 新手引导 =================
+   * 存在自己的键里，不跟课表/设置混在一起——「恢复默认数据」不会把引导重新翻出来。
+   *   introSeen     三屏开场看过没有（看过就不再自动弹）
+   *   cardDismissed 用户点过三步卡的「跳过」，或者本来就是老用户
+   *   routeSeen     打开过一次路线页（第 3 步的完成判定）
+   *   cardOpen      完成态下点了「重看」，临时展开（不跨刷新）
+   */
+  var ONBOARD_KEY = "olympic-protocol.onboard.v1";
+
+  function loadOnboard() {
+    try {
+      var raw = window.localStorage.getItem(ONBOARD_KEY);
+      var obj = raw ? JSON.parse(raw) : null;
+      return {
+        introSeen: !!(obj && obj.introSeen),
+        cardDismissed: !!(obj && obj.cardDismissed),
+        routeSeen: !!(obj && obj.routeSeen)
+      };
+    } catch (e) {
+      return { introSeen: false, cardDismissed: false, routeSeen: false };
+    }
+  }
+
+  function saveOnboard() {
+    try { window.localStorage.setItem(ONBOARD_KEY, JSON.stringify(onboard)); } catch (e) { /* 存不了就算了 */ }
+  }
+
+  var onboard = loadOnboard();
+  /* 完成态下临时展开（只在本次会话里） */
+  var onboardOpen = false;
+
+  /* 三步的完成判定：看的是"真的做到了"，不是用户自己点完成 */
+  function onboardSteps() {
+    return [
+      (data.courses || []).length > 0,
+      !!(state.position || data.settings.simulate),
+      !!onboard.routeSeen
+    ];
+  }
+
   function $(sel) { return document.querySelector(sel); }
   function $$(sel) { return Array.prototype.slice.call(document.querySelectorAll(sel)); }
 
@@ -354,6 +394,107 @@
   }
 
   /* ================= 渲染：今日 ================= */
+
+  /* 今日页顶部的「三步开始用」卡片。
+     完成状态每帧重算：导入课表/开定位/看过路线之后自动打勾，不用用户手动确认。 */
+  function renderOnboard() {
+    var card = $("#onboardCard");
+    var list = $("#onboardList");
+    if (!card || !list) return;
+
+    var done = onboardSteps();
+    var allDone = done[0] && done[1] && done[2];
+
+    /* 开场开着的时候先别露出来，否则遮罩后面还压着一张同样的内容 */
+    var intro = $("#introBox");
+    if (intro && !intro.hidden) { card.hidden = true; return; }
+
+    if (onboard.cardDismissed) { card.hidden = true; return; }
+
+    var steps = ["onboard.s1", "onboard.s2", "onboard.s3"];
+    var doneKeys = ["onboard.done1", "onboard.done2", "onboard.done3"];
+
+    card.hidden = false;
+    card.classList.toggle("is-done", allDone);
+
+    var head = card.querySelector("h3");
+    if (head) head.textContent = allDone ? t("onboard.finished") + " ✓" : t("onboard.title");
+
+    var skip = $("#onboardSkip");
+    if (skip) skip.textContent = allDone ? t("onboard.review") : t("onboard.skip");
+
+    list.innerHTML = steps.map(function (key, i) {
+      var isDone = done[i];
+      return '<li class="onboard-step' + (isDone ? " is-done" : "") + '">' +
+        '<span class="onboard-no">' + (isDone ? "✓" : (i + 1)) + "</span>" +
+        '<div class="onboard-body">' +
+          '<div class="onboard-name">' +
+            esc(isDone ? t(doneKeys[i]) : t(key + ".title")) + "</div>" +
+          (isDone ? "" : '<div class="onboard-desc">' + esc(t(key + ".body")) + "</div>") +
+          /* 第 2 步失败时把原因写在原地，而不是再弹一条 toast */
+          (i === 1 && !isDone && state.geoError
+            ? '<div class="onboard-warn">' + esc(t("onboard.geoDenied")) + "</div>" : "") +
+        "</div>" +
+        (isDone ? "" :
+          '<button type="button" class="onboard-go" data-onboard-step="' + (i + 1) + '">' +
+            esc(t(key + ".action")) + "</button>") +
+      "</li>";
+    }).join("");
+
+    /* 全部完成后默认收起，点「重看」才展开那三行 ✓ */
+    list.hidden = allDone && !onboardOpen;
+  }
+
+  /* 开场三屏的圆点：滚动时跟着走 */
+  var introRaf = 0;
+  function paintIntroDots() {
+    var track = $("#introTrack");
+    var dots = $("#introDots");
+    if (!track || !dots) return;
+    if (!dots.children.length) {
+      for (var i = 0; i < track.children.length; i++) {
+        var dot = document.createElement("span");
+        dot.className = "intro-dot";
+        dots.appendChild(dot);
+      }
+    }
+    var w = track.clientWidth || 1;
+    var idx = Math.round(track.scrollLeft / w);
+    Array.prototype.forEach.call(dots.children, function (dot, i) {
+      dot.classList.toggle("is-active", i === idx);
+    });
+  }
+
+  function showIntro() {
+    var box = $("#introBox");
+    if (!box) return;
+    onboard.introSeen = true;
+    saveOnboard();
+    box.hidden = false;
+    var track = $("#introTrack");
+    if (track) track.scrollLeft = 0;
+    paintIntroDots();
+  }
+
+  function hideIntro() {
+    var box = $("#introBox");
+    if (box) box.hidden = true;
+    renderOnboard();
+  }
+
+  /* 开机判断：新用户才弹开场；已经有课表的老用户直接当作看过，不打扰 */
+  function initOnboard() {
+    if (!onboard.introSeen) {
+      if (!(data.courses || []).length) {
+        showIntro();
+      } else {
+        onboard.introSeen = true;
+        onboard.cardDismissed = true;
+        saveOnboard();
+      }
+    }
+    renderOnboard();
+  }
 
   function renderToday() {
     var info = nextInfo();
@@ -2548,6 +2689,8 @@
     autoOpenBusSteps();
     /* 刚被换下去的那条，分步导航收回去（跟上面同一拍，位移互相抵消） */
     collapseStaleBusSteps();
+    /* 三步卡的完成状态跟着这次的课表/定位一起刷新 */
+    renderOnboard();
     /* 内容变了，页尾留白要重新核对 */
     scheduleClearanceCheck();
   }
@@ -3341,14 +3484,82 @@
 
   /* ================= 事件绑定 ================= */
 
+  /* 切页：底栏、开场、上手卡都走这一处。
+     进过路线页就记一笔——上手卡第 3 步靠它判定"真的看过了"。 */
+  function goTo(view) {
+    state.view = view;
+    $$(".tab").forEach(function (b) { b.classList.toggle("is-active", b.dataset.tab === view); });
+    $$(".view").forEach(function (v) { v.classList.toggle("is-active", v.dataset.view === view); });
+    if (view === "route" && !onboard.routeSeen) {
+      onboard.routeSeen = true;
+      saveOnboard();
+    }
+    render();
+  }
+
   function bindEvents() {
     $$(".tab").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        state.view = btn.dataset.tab;
-        $$(".tab").forEach(function (b) { b.classList.toggle("is-active", b === btn); });
-        $$(".view").forEach(function (v) { v.classList.toggle("is-active", v.dataset.view === state.view); });
-        render();
+        goTo(btn.dataset.tab);
       });
+    });
+
+    /* --- 新手引导：三步卡 + 三屏开场 --- */
+    $("#onboardList").addEventListener("click", function (ev) {
+      var btn = ev.target.closest("[data-onboard-step]");
+      if (!btn) return;
+      var step = Number(btn.getAttribute("data-onboard-step"));
+      if (step === 1) {
+        goTo("course");
+        var nav = $("#importNav");
+        if (nav) nav.scrollIntoView({ behavior: "smooth", block: "center" });
+        var sid = $("#pullSid");
+        if (sid) sid.focus({ preventScroll: true });
+      } else if (step === 2) {
+        startLocate();
+      } else if (step === 3) {
+        goTo("route");
+      }
+    });
+
+    $("#onboardSkip").addEventListener("click", function () {
+      /* 完成态下这颗按钮是「重看」：切换展开 */
+      if (onboardSteps().every(Boolean)) {
+        onboardOpen = !onboardOpen;
+        renderOnboard();
+        return;
+      }
+      onboard.cardDismissed = true;
+      saveOnboard();
+      renderOnboard();
+    });
+
+    $("#introSkip").addEventListener("click", hideIntro);
+    $("#introBrowse").addEventListener("click", hideIntro);
+    $("#introStart").addEventListener("click", function () {
+      hideIntro();
+      onboard.cardDismissed = false;
+      saveOnboard();
+      goTo("today");
+      var card = $("#onboardCard");
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+
+    $("#introTrack").addEventListener("scroll", function () {
+      if (introRaf) return;
+      introRaf = requestAnimationFrame(function () {
+        introRaf = 0;
+        paintIntroDots();
+      });
+    });
+
+    $("#btnReplayOnboard").addEventListener("click", function () {
+      onboard.cardDismissed = false;
+      onboardOpen = true;
+      saveOnboard();
+      goTo("today");
+      var card = $("#onboardCard");
+      if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
     });
 
     /* --- 地图底图切换 --- */
@@ -4122,6 +4333,8 @@
     bindEvents();
     fillVoiceOptions();
     measureBottomSpace();
+    /* 新用户：先把三屏开场放出来（老用户直接标记看过，不打扰） */
+    initOnboard();
 
     /* 调试开关：把「地图取楼栋 / 校区楼栋」两张卡片放出来，见 SHOW_BUILDING_TOOLS */
     if (SHOW_BUILDING_TOOLS) {

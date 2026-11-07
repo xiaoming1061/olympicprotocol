@@ -3407,7 +3407,8 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /function collapseStaleBusSteps\(\)[\s\S]*?requestAnimationFrame/.test(appSrc));
   check("渲染完照旧把分步导航推开、把旧的收回去",
     /autoOpenBusSteps\(\);\s*\n\s*\/\* 刚被换下去的那条/.test(appSrc) &&
-    /collapseStaleBusSteps\(\);\s*\n\s*\/\* 内容变了/.test(appSrc));
+    /collapseStaleBusSteps\(\);/.test(appSrc) &&
+    /renderOnboard\(\);\s*\n\s*\/\* 内容变了/.test(appSrc));
   check("旧那条不重播入场动画（它本来就在屏幕上，只是要收回去）",
     /var cls = mode === "pending" \? " is-pending is-entering"/.test(appSrc) &&
     /\.bus-steps\.is-entering \.bus-steps-head \{/.test(css));
@@ -5934,7 +5935,7 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
   });
   /* 这些键是按序号/种类/错误码拼出来的，静态扫不到，单独放行。
      pull.err.* 与 shot.file* 另各有一条针对性检查（见下），拼错照样会红。 */
-  const dynamicPrefixes = ["week.long.", "week.short.", "bus.dest.", "pull.err.", "shot.file"];
+  const dynamicPrefixes = ["week.long.", "week.short.", "bus.dest.", "pull.err.", "shot.file", "onboard."];
   const dead = baseKeys.filter((k) =>
     !usedInHtml.has(k) && !usedInJs.has(k) &&
     !dynamicPrefixes.some((p) => k.indexOf(p) === 0));
@@ -6149,6 +6150,37 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     /\.bld-pin-body \{/.test(css) && /\.rm-dest-body \{/.test(css) &&
     /* 图钉的尖端要贴在坐标上：街道图那枚 anchor 落在图形底部 */
     /iconAnchor: \[15, 38\]/.test(realMapCode));
+
+  /* ---- 新手引导：三屏开场 + 三步上手卡 ---- */
+  check("三屏开场与三步卡都在页面上",
+    pageHtml.indexOf('id="introBox"') > 0 &&
+    pageHtml.indexOf('id="onboardCard"') > 0 &&
+    pageHtml.indexOf('id="btnReplayOnboard"') > 0 &&
+    (pageHtml.match(/class="intro-screen"/g) || []).length === 3);
+  check("引导的三语文案齐全（开场 3×2 + 三步 3×3 + 完成态）",
+    ["intro.s1.title", "intro.s1.sub", "intro.s2.title", "intro.s2.sub",
+      "intro.s3.title", "intro.s3.sub", "intro.start", "intro.browse", "intro.skip",
+      "onboard.title", "onboard.skip", "onboard.finished", "onboard.review",
+      "onboard.geoDenied", "settings.onboard.replay",
+      "onboard.s1.title", "onboard.s1.body", "onboard.s1.action",
+      "onboard.s2.title", "onboard.s2.body", "onboard.s2.action",
+      "onboard.s3.title", "onboard.s3.body", "onboard.s3.action",
+      "onboard.done1", "onboard.done2", "onboard.done3"]
+      .every(function (k) {
+        return ["zh-Hans", "zh-Hant", "en"].every(function (l) { return k in T[l]; });
+      }));
+  check("开场只在没课表的新设备上自动出现（老用户标记为看过）",
+    /if \(!\(data\.courses \|\| \[\]\)\.length\) \{\s*\n\s*showIntro\(\);/.test(appCode) &&
+    /onboard\.cardDismissed = true;\s*\n\s*saveOnboard\(\);/.test(appCode));
+  check("三步的完成判定是真做到了：课表 / 定位 / 进过路线页",
+    /return \[\s*\n\s*\(data\.courses \|\| \[\]\)\.length > 0,/.test(appCode) &&
+    /state\.position \|\| data\.settings\.simulate/.test(appCode) &&
+    /routeSeen:/.test(appCode) &&
+    /if \(view === "route" && !onboard\.routeSeen\)/.test(appCode));
+  check("引导状态存在自己的键里（恢复默认数据不会重新弹）",
+    /var ONBOARD_KEY = "olympic-protocol\.onboard\.v1";/.test(appCode) &&
+    appCode.indexOf("ONBOARD_KEY") > 0 &&
+    /var onboard = loadOnboard\(\);/.test(appCode));
 }
 
 console.log("\n" + (fail === 0 ? "全部通过" : "有失败项") + "：通过 " + pass + " 项，失败 " + fail + " 项\n");

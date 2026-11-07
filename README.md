@@ -17,7 +17,7 @@ node tools/serve.js          # 然后打开 http://localhost:5173
 想先跑一遍计算逻辑的自检：
 
 ```bash
-node tools/selftest.js             # 1228 项检查，不联网
+node tools/selftest.js             # 1233 项检查，不联网
 node tools/places-live.js          # 联网实测一次地图取点（默认查港中文一带）
 ```
 
@@ -1257,6 +1257,32 @@ English。文案表在 `data/i18n.js`，运行时在 `js/i18n.js`。
 endonym（简体中文 / 繁體中文 / English）保持原样。动态元素和 endonym 各有一份
 短白名单，白名单过期也会报错。
 
+### 第一次打开：三屏开场 + 三步上手卡
+
+新设备（**没有课表**）第一次打开时：
+
+1. **三屏开场**（横向滑动）：今天的课程 / 穿梭在中大 / 上传课表，最后一屏给
+   「开始设置」和「先随便看看」。
+2. 关掉开场后，今日页顶部是**三步上手卡**：导入课表 → 打开定位 → 看今天的路线。
+
+三步的完成判定是**真的做到了**，不是让用户自己点完成：
+
+| 步骤 | 完成条件 |
+|---|---|
+| 导入课表 | `data.courses.length > 0` |
+| 打开定位 | `state.position`（或开了模拟位置） |
+| 看今天的路线 | 打开过一次路线页（`routeSeen`） |
+
+三步都打勾后卡片自动收成一行「上手完成 ✓」，右边的「重看」把它再展开一次；
+点「跳过」就完全收起。想再找回来：**设置 → 数据 → 重看上手引导**。
+
+状态单独存在 `olympic-protocol.onboard.v1`，不跟课表/设置混在一起——
+所以「恢复默认数据」不会把引导重新翻出来。**已经有课表的老用户不会看到开场**，
+直接标记为看过。
+
+开场比三步卡先出现，而且开场开着时三步卡是藏起来的（否则遮罩后面还压着一张
+一样的内容）；`开始设置` 会把页面滚到三步卡并居中（固定顶栏会盖住 `block:start`）。
+
 ### 数据存在哪
 
 设置页「数据」卡片里能看到三个版本号，出问题时先看这三个：
@@ -1286,6 +1312,7 @@ endonym（简体中文 / 繁體中文 / English）保持原样。动态元素和
 | 设置 | `olympic-protocol.settings.v1` |
 | 已经播报过哪些提醒 | `olympic-protocol.fired.v1` |
 | 界面语言的选择 | `olympic-protocol.lang.v1` |
+| 新手引导看到哪一步 | `olympic-protocol.onboard.v1` |
 
 分开存的好处：
 
@@ -1768,7 +1795,7 @@ js/exportimage.js     课表导出成图片（排版是纯计算，画图在 can
 js/app.js             界面渲染与事件绑定
 tools/serve.js        本地静态服务器
 tools/bump.js         给 index.html 的本地资源换版本号（改完 js/css 提交前跑）
-tools/selftest.js     自检脚本，1228 项
+tools/selftest.js     自检脚本，1233 项
 tools/make-buildings.js  从导出的存档生成 data/buildings.js
 tools/make-dorms.js      从 OpenStreetMap 搜宿舍，生成 data/dorms.js（配 dorms-overpass.json）
 tools/make-zh.js         扫数据里的汉字，生成 js/zh.js（配 zh-source-pinyin / zh-source-tschar）

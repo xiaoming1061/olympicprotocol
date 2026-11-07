@@ -2061,6 +2061,122 @@ html[lang="en"] .lang-btn[data-lang="en"] {
 
 .modal[hidden] { display: none; }
 
+/* ---------- 新手引导 ---------- */
+
+/* 三步上手卡：每行 = 序号/勾 + 标题 + 说明 + 一颗按钮 */
+.onboard-list { margin: 12px 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+
+.onboard-step {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.onboard-no {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.onboard-step.is-done .onboard-no { background: var(--accent); color: var(--on-accent); }
+
+.onboard-body { min-width: 0; }
+.onboard-name { font-size: var(--text-md); font-weight: 700; color: var(--text); }
+.onboard-desc { font-size: var(--text-sm); color: var(--text-dim); line-height: 1.5; margin-top: 2px; }
+.onboard-step.is-done .onboard-name { color: var(--text-dim); }
+.onboard-step.is-done .onboard-desc { display: none; }
+
+.onboard-go {
+  appearance: none;
+  border: 1px solid var(--accent-line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  padding: 7px 14px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.onboard-go:active { transform: translateY(1px); }
+.onboard-step.is-done .onboard-go { display: none; }
+
+/* 三步都完成后：整张卡收成一行 */
+.onboard.is-done .onboard-list { margin-top: 8px; }
+.onboard.is-done .onboard-step { grid-template-columns: 26px minmax(0, 1fr); }
+
+/* 三屏开场：横向 scroll-snap，一次一屏 */
+.intro-card { width: min(92vw, 420px); overflow: hidden; position: relative; padding: 22px 20px 16px; }
+
+.intro-skip {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.intro-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.intro-track::-webkit-scrollbar { display: none; }
+
+.intro-screen {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  min-height: 168px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 34px 4px 6px;
+}
+
+.intro-screen h2 {
+  margin: 0;
+  font-size: 26px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--text);
+}
+
+.intro-screen p {
+  margin: 10px 0 0;
+  font-size: var(--text-md);
+  color: var(--text-dim);
+  line-height: 1.6;
+}
+
+.intro-actions { display: flex; gap: 8px; margin-top: 22px; }
+.intro-actions .btn { flex: 1; }
+
+.intro-dots { display: flex; justify-content: center; gap: 6px; padding-top: 10px; }
+.intro-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-line-strong);
+  transition: background var(--dur-hover) var(--ease-out), width var(--dur-hover) var(--ease-out);
+}
+.intro-dot.is-active { width: 16px; border-radius: var(--radius-pill); background: var(--accent); }
+
 .modal-card {
   width: min(92vw, 420px);
   max-height: 80vh;
