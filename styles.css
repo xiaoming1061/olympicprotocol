@@ -21,8 +21,8 @@
   --text: #4a2b3a;
   --text-dim: #8c6a7c;
   --text-faint: #a98b9a;
-  /* 再淡一档（#ff5fa2 → #ff73ad → #ff8ab8）：大块填充更柔和 */
-  --accent: #ff8ab8;
+  /* 在 #ff5fa2 → #ff8ab8 之间回调一点：#ff80b4，比上一版稍亮、稍实 */
+  --accent: #ff80b4;
   --accent-2: #b98cff;
 
   /* ---- 字体：两级，不再"一个字体走天下" ----
@@ -549,7 +549,8 @@ body {
   min-height: 44px;
   padding: 0 var(--space-md);
   white-space: nowrap;
-  border-radius: var(--radius-sm);
+  /* 按钮比输入框再圆一档（12 → 18），小按钮也不显得方 */
+  border-radius: var(--radius);
   cursor: pointer;
   transition: background var(--dur-hover) var(--ease-out),
     border-color var(--dur-hover) var(--ease-out),
@@ -663,7 +664,7 @@ body {
   font-family: inherit;
   font-size: 12px;
   padding: 5px 10px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   cursor: pointer;
 }
 
@@ -1394,7 +1395,7 @@ button.leg-bus-head::after,
   border: 1px solid var(--line);
   background: var(--card-2);
   padding: 7px 12px;
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
 }
 
 .nav-link:active { transform: translateY(1px); }
@@ -2034,7 +2035,7 @@ html[lang="en"] .lang-btn[data-lang="en"] {
   min-height: 36px;
   padding: 0 var(--space-sm);
   border: 1px solid var(--line);
-  border-radius: var(--radius-xs);
+  border-radius: var(--radius-sm);
   background: var(--surface-3);
   color: var(--text);
   font: inherit;
