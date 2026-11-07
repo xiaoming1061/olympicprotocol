@@ -216,6 +216,23 @@ window.OP = window.OP || {};
     return true;
   }
 
+  /**
+   * 这节课是不是属于当前学期。
+   *
+   * 以课程自己的起止日期为准；没有日期的课无法判断学期，保留为当前课程，
+   * 避免手动新增或截图导入的课被误收进折叠区。
+   */
+  function isCurrentTerm(course, date) {
+    var when = date || new Date();
+    var day = new Date(when.getFullYear(), when.getMonth(), when.getDate());
+    var from = parseDate(course && course.startDate);
+    var to = parseDate(course && course.endDate);
+    if (!from && !to) return true;
+    if (from && day.getTime() < from.getTime()) return false;
+    if (to && day.getTime() > to.getTime()) return false;
+    return true;
+  }
+
   /* "2026-09-07" / Date → 当天零点的 Date；解析不出来给 null */
   function parseDate(value) {
     if (value instanceof Date) return isNaN(value.getTime()) ? null : value;
@@ -646,6 +663,7 @@ window.OP = window.OP || {};
     filterBuildings: filterBuildings,
     courseById: courseById,
     courseOnDay: courseOnDay,
+    isCurrentTerm: isCurrentTerm,
     todayCourses: todayCourses,
     cancelledCourses: cancelledCourses,
     statusOf: statusOf,

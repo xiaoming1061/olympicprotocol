@@ -34,6 +34,8 @@
     /* 「现在停运的线路」那块是不是展开着。只记在内存里——
        它是临时翻看一下用的，不必跨刷新保留。 */
     busOffOpen: false,
+    /* 「非当前学期」课程默认收起；需要翻旧课时再展开。 */
+    courseOtherOpen: false,
     ocr: { courses: [], warnings: [], busy: false }
   };
 
@@ -2432,32 +2434,47 @@
       return;
     }
 
-    box.innerHTML = [1, 2, 3, 4, 5, 6, 7].map(function (day) {
-      var dayCourses = courses
-        .filter(function (c) { return (c.weekdays || []).indexOf(day) >= 0; })
-        .sort(function (a, b) { return P.hm(a.start) - P.hm(b.start); });
-      if (!dayCourses.length) return "";
+    function renderDays(list) {
+      return [1, 2, 3, 4, 5, 6, 7].map(function (day) {
+        var dayCourses = list
+          .filter(function (c) { return (c.weekdays || []).indexOf(day) >= 0; })
+          .sort(function (a, b) { return P.hm(a.start) - P.hm(b.start); });
+        if (!dayCourses.length) return "";
 
-      return '<div class="day-group"><p class="day-title">' + esc(P.WEEKDAYS[day]) + "</p>" +
-        dayCourses.map(function (c) {
-          var b = P.buildingById(data, c.buildingId);
-          return '<div class="course-item">' +
-            '<div class="ci-main">' +
-              '<div class="ci-title">' + esc(c.name) + "</div>" +
-              '<div class="ci-meta">' + esc(c.start) + " – " + esc(c.end) +
-                " · " + esc(P.placeText(c, b)) +
-                (c.teacher ? " · " + esc(c.teacher) : "") + "<br>" +
-                esc(P.weekText(c)) + "</div>" +
-            "</div>" +
-            '<div class="ci-actions">' +
-              '<button class="btn btn-small" data-edit-course="' + esc(c.id) + '">' +
-                esc(t("course.edit")) + "</button>" +
-              '<button class="btn btn-small btn-danger" data-del-course="' + esc(c.id) + '">' +
-                esc(t("course.del")) + "</button>" +
-            "</div>" +
-          "</div>";
-        }).join("") + "</div>";
-    }).join("");
+        return '<div class="day-group"><p class="day-title">' + esc(P.WEEKDAYS[day]) + "</p>" +
+          dayCourses.map(function (c) {
+            var b = P.buildingById(data, c.buildingId);
+            return '<div class="course-item">' +
+              '<div class="ci-main">' +
+                '<div class="ci-title">' + esc(c.name) + "</div>" +
+                '<div class="ci-meta">' + esc(c.start) + " – " + esc(c.end) +
+                  " · " + esc(P.placeText(c, b)) +
+                  (c.teacher ? " · " + esc(c.teacher) : "") + "<br>" +
+                  esc(P.weekText(c)) + "</div>" +
+              "</div>" +
+              '<div class="ci-actions">' +
+                '<button class="btn btn-small" data-edit-course="' + esc(c.id) + '">' +
+                  esc(t("course.edit")) + "</button>" +
+                '<button class="btn btn-small btn-danger" data-del-course="' + esc(c.id) + '">' +
+                  esc(t("course.del")) + "</button>" +
+              "</div>" +
+            "</div>";
+          }).join("") + "</div>";
+      }).join("");
+    }
+
+    var current = courses.filter(function (c) { return P.isCurrentTerm(c, state.now); });
+    var other = courses.filter(function (c) { return !P.isCurrentTerm(c, state.now); });
+    var html = renderDays(current);
+    if (other.length) {
+      html += '<div class="course-term' + (state.courseOtherOpen ? " is-open" : "") + '">' +
+        '<button type="button" class="course-term-head" aria-expanded="' +
+          (state.courseOtherOpen ? "true" : "false") + '">' +
+          esc(t("course.otherTerms", { n: other.length })) + "</button>" +
+        '<div class="course-term-body"><div class="course-term-inner">' +
+          renderDays(other) + "</div></div></div>";
+    }
+    box.innerHTML = html;
   }
 
   function buildWeekdayPicker() {
@@ -3654,13 +3671,13 @@
        （不用 <details> 是因为它展开是瞬间的，没法做平滑动画。） */
     document.addEventListener("click", function (ev) {
       if (!ev.target || !ev.target.closest) return;
-      var head = ev.target.closest(".leg-bus-head, .bus-steps-head, .bus-off-head");
+      var head = ev.target.closest(".leg-bus-head, .bus-steps-head, .bus-off-head, .course-term-head");
       if (!head) return;
 
       var box = head.parentElement;
       /* 「校巴模块没加载」「这段没有合适的班次」那两种提示没有可收放的身子，
          点了什么都不该发生 */
-      if (!box || !box.querySelector(".leg-bus-body, .bus-steps-body, .bus-off-body")) return;
+      if (!box || !box.querySelector(".leg-bus-body, .bus-steps-body, .bus-off-body, .course-term-body")) return;
 
       var open = box.classList.toggle("is-open");
       /* 还没滑出来就被点了：把 is-pending 摘掉，否则标题行仍按 0 高度画 */
@@ -3674,6 +3691,8 @@
       }
       /* 停运那块只记在内存：重渲染之后还要保持展开 */
       if (box.classList.contains("bus-off")) state.busOffOpen = open;
+      /* 非当前学期课程也只记在内存：切换语言或编辑课程后保持用户选择的展开态 */
+      if (box.classList.contains("course-term")) state.courseOtherOpen = open;
     });
 
     /* --- 点选校巴方案 ---

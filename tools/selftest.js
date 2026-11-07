@@ -3321,7 +3321,7 @@ console.log("\n[35] 校巴数据（路线、站序、站点坐标）");
     /busCollapsed: false/.test(defaultsSrc) &&
     /data\.settings\.busCollapsed = !open;/.test(appSrc));
   check("折叠状态记进设置，下次打开还是收着的；标题整行可点",
-    /closest\("\.leg-bus-head, \.bus-steps-head, \.bus-off-head"\)/.test(appSrc) &&
+    /closest\("\.leg-bus-head, \.bus-steps-head, \.bus-off-head, \.course-term-head"\)/.test(appSrc) &&
     /\.leg-bus-head,\s*\.bus-steps-head \{[\s\S]{0,320}cursor: pointer/.test(css) &&
     /\.bus-count \{/.test(css));
   /* 展开要有平滑动画：高度走 grid-template-rows 0fr↔1fr 过渡。
@@ -5083,6 +5083,18 @@ console.log("\n[50] 校历：假期不上课、校巴只剩假日线 H");
         OP.Planner.courseOnDay(outside, new Date(2026, 9, 6)) === false &&
         OP.Planner.courseOnDay(noDates, new Date(2026, 9, 6)) === true;
     })());
+  check("全部课程按起止日期判断是否属于当前学期（无日期的课保留）",
+    (function () {
+      const when = new Date(2026, 9, 6);
+      const current = { startDate: "2026-09-07", endDate: "2026-12-06" };
+      const past = { startDate: "2026-01-12", endDate: "2026-05-10" };
+      const future = { startDate: "2027-01-11", endDate: "2027-04-30" };
+      const noDates = {};
+      return OP.Planner.isCurrentTerm(current, when) === true &&
+        OP.Planner.isCurrentTerm(past, when) === false &&
+        OP.Planner.isCurrentTerm(future, when) === false &&
+        OP.Planner.isCurrentTerm(noDates, when) === true;
+    })());
 
   /* 模糊匹配给多个候选时，够像的都要能选到 */
   const buildings = OP.DEFAULT_DATA.campus.buildings;
@@ -5428,6 +5440,10 @@ console.log("\n[54] 从学校接口拉课表：页面接线");
     pageHtml.indexOf('id="pullPwd"') > 0 &&
     pageHtml.indexOf('id="btnPull"') > 0 &&
     pageHtml.indexOf('id="btnPullImport"') > 0);
+  check("拉取按钮铺满卡片，导入与放弃并排放在第二行",
+    /<div class="hero-actions pull-actions">[\s\S]{0,800}id="btnPull"[\s\S]{0,500}id="btnPullImport"[\s\S]{0,500}id="btnPullClear"/.test(pageHtml) &&
+    /\.pull-actions\s*\{[\s\S]{0,220}grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\)/.test(css) &&
+    /\.pull-actions #btnPull\s*\{[\s\S]{0,120}grid-column:\s*1 \/ span 2[\s\S]{0,80}width:\s*100%/.test(css));
   check("脚本里每颗按钮/输入框都绑上了（少一个就是开页面就报错）",
     ["#btnPull", "#btnPullImport", "#btnPullClear", "#pullSid", "#pullPwd"]
       .every((sel) => appCode.indexOf('$("' + sel + '")') > 0));
@@ -5495,6 +5511,11 @@ console.log("\n[54] 从学校接口拉课表：页面接线");
   check("代理那边的默认值也改成了 soap-aes",
     /const DEFAULT_MODE = "soap-aes";/.test(fs.readFileSync(path.join(root, "worker", "timetable-proxy.js"), "utf8")) &&
     /UPSTREAM_MODE = "soap-aes"/.test(fs.readFileSync(path.join(root, "worker", "wrangler.toml"), "utf8")));
+  check("全部课程把非当前学期单独收起，点标题后平滑展开",
+    /courses\.filter\(function \(c\) \{ return P\.isCurrentTerm\(c, state\.now\); \}\)/.test(appCode) &&
+    /class="course-term' \+ \(state\.courseOtherOpen \? " is-open" : ""\)/.test(appCode) &&
+    /state\.courseOtherOpen = open/.test(appCode) &&
+    /\.course-term:not\(\.is-open\) > \.course-term-body \{ grid-template-rows: 0fr; \}/.test(css));
 }
 
 console.log("\n[55] 课表导出成图片：排版（纯计算那半）");

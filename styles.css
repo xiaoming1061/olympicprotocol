@@ -535,6 +535,15 @@ body {
 
 .hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; position: relative; }
 
+/* 拉取课表：主按钮独占第一行并与卡片同宽，导入 / 放弃并排放在第二行。 */
+.pull-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+.pull-actions #btnPull { grid-column: 1 / span 2; width: 100%; }
+.pull-actions .btn { min-width: 0; }
+
 /* ---------- 按钮 ---------- */
 
 .btn {
@@ -1430,6 +1439,46 @@ button.leg-bus-head::after,
   margin: 0 0 8px;
   font-weight: 700;
 }
+
+/* 非当前学期：默认收起，保留向上翻旧课的入口。 */
+.course-term {
+  margin-top: 14px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.course-term-head {
+  appearance: none;
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+.course-term-head::after {
+  content: "▸";
+  font-size: 10px;
+  line-height: 1;
+  transition: transform var(--dur-panel) var(--ease-out);
+}
+.course-term.is-open > .course-term-head { margin-bottom: 10px; }
+.course-term.is-open > .course-term-head::after { transform: rotate(90deg); }
+
+.course-term-body {
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows var(--dur-panel) var(--ease-out);
+}
+.course-term-inner { overflow: hidden; min-height: 0; }
+.course-term:not(.is-open) > .course-term-body { grid-template-rows: 0fr; }
 
 /* ---------- 从学校接口拉课表：结果预览 ---------- */
 
