@@ -428,9 +428,6 @@
           '<div class="onboard-name">' +
             esc(isDone ? t(doneKeys[i]) : t(key + ".title")) + "</div>" +
           (isDone ? "" : '<div class="onboard-desc">' + esc(t(key + ".body")) + "</div>") +
-          /* 第 2 步失败时把原因写在原地，而不是再弹一条 toast */
-          (i === 1 && !isDone && state.geoError
-            ? '<div class="onboard-warn">' + esc(t("onboard.geoDenied")) + "</div>" : "") +
         "</div>" +
         (isDone ? "" :
           '<button type="button" class="onboard-go" data-onboard-step="' + (i + 1) + '">' +
@@ -3505,8 +3502,6 @@
       renderOnboard();
     });
 
-    $("#introClose").addEventListener("click", hideIntro);
-    $("#introBrowse").addEventListener("click", hideIntro);
     $("#introStart").addEventListener("click", function () {
       hideIntro();
       onboard.cardDismissed = false;

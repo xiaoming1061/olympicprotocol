@@ -3769,7 +3769,7 @@ console.log("\n[38] 主题、连堂课、停运折叠、地图连线");
 
   /* ---------- 日系可爱粉色主题 + 背景图 ---------- */
   check("配色换成了粉色系",
-    /--accent:\s*#ff5fa2/i.test(css) && /--bg:\s*#fff/i.test(css) &&
+    /--accent:\s*#ff73ad/i.test(css) && /--bg:\s*#fff/i.test(css) &&
     /--text:\s*#4a2b3a/i.test(css));
   check("声明了浅色页面（原生控件才不会跟着系统深色模式变黑）",
     /color-scheme:\s*light/.test(css));
@@ -6157,14 +6157,14 @@ console.log("\n[59] 多语言：三张表 + 静态骨架");
     pageHtml.indexOf('id="introBox"') > 0 &&
     pageHtml.indexOf('id="onboardCard"') > 0 &&
     pageHtml.indexOf('id="btnReplayOnboard"') > 0 &&
-    pageHtml.indexOf('id="introClose"') > 0 &&
+    pageHtml.indexOf('id="introStart"') > 0 &&
     pageHtml.indexOf('class="intro-title"') > 0 &&
     (pageHtml.match(/class="intro-point"/g) || []).length === 3);
   check("引导的三语文案齐全（开场 3×2 + 三步 3×3 + 完成态）",
     ["intro.s1.title", "intro.s1.sub", "intro.s2.title", "intro.s2.sub",
-      "intro.s3.title", "intro.s3.sub", "intro.start", "intro.browse", "intro.close",
+      "intro.s3.title", "intro.s3.sub", "intro.start",
       "onboard.title", "onboard.close", "onboard.finished",
-      "onboard.geoDenied", "settings.onboard.replay",
+      "settings.onboard.replay",
       "onboard.s1.title", "onboard.s1.body", "onboard.s1.action",
       "onboard.s2.title", "onboard.s2.body", "onboard.s2.action",
       "onboard.s3.title", "onboard.s3.body", "onboard.s3.action",

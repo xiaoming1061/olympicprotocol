@@ -21,7 +21,8 @@
   --text: #4a2b3a;
   --text-dim: #8c6a7c;
   --text-faint: #a98b9a;
-  --accent: #ff5fa2;
+  /* 比原来的 #ff5fa2 略淡一档：大块填充（按钮、线路点、图钉）不再那么扎眼 */
+  --accent: #ff73ad;
   --accent-2: #b98cff;
 
   /* ---- 字体：两级，不再"一个字体走天下" ----
@@ -2133,7 +2134,6 @@ html[lang="en"] .lang-btn[data-lang="en"] {
 /* 悬停只在真有指针的设备上生效 */
 @media (hover: hover) {
   .card-x:hover { color: var(--text); }
-  .intro-close:hover { border-color: var(--accent-line-strong); }
 }
 
 /* ---------- 首次打开的全屏开场 ----------
@@ -2147,11 +2147,11 @@ html[lang="en"] .lang-btn[data-lang="en"] {
   align-items: center;
   justify-content: flex-start;
   padding: clamp(26px, 6vh, 64px) clamp(22px, 7vw, 80px);
-  /* 背景视频还在下面透出来一点，但左侧要够亮，字才站得住 */
+  /* 背景视频透出来得多一点，左侧留够亮度让字站得住 */
   background: linear-gradient(112deg,
-    rgba(255, 253, 254, 0.97) 0%,
-    rgba(255, 241, 247, 0.94) 56%,
-    rgba(255, 236, 244, 0.72) 100%);
+    rgba(255, 253, 254, 0.88) 0%,
+    rgba(255, 241, 247, 0.78) 56%,
+    rgba(255, 236, 244, 0.46) 100%);
   /* 不再加一层毛玻璃：左侧本来就接近不透明，糊上去只是多一层开销 */
   overflow: auto;
 }
@@ -2165,26 +2165,6 @@ body.is-intro .app { visibility: hidden; }
   display: flex;
   flex-direction: column;
   padding-right: clamp(8px, 4vw, 48px);
-}
-
-.intro-close {
-  position: fixed;
-  top: max(16px, env(safe-area-inset-top));
-  right: max(16px, env(safe-area-inset-right));
-  appearance: none;
-  border: 1px solid var(--line);
-  background: var(--card-2);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 22px;
-  line-height: 1;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  animation: intro-in-right 420ms var(--ease-out) both;
 }
 
 .intro-title {
