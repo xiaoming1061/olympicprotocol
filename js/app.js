@@ -1263,6 +1263,14 @@
       ? OP.Shuttle.plan(start.point, target, start.at, metrics ? metrics.minutes : null, s)
       : null;
     var bus = collectBus(plan, start.point, target, null, "dorm");
+    /* 没有可乘班次 / 没有可用线路时仍要画出这段路。
+       否则地图上只剩「我的位置」和宿舍两个标记，看起来像地图坏了。
+       有校巴时保留原来的三段连线：走到站、坐车、走回宿舍。 */
+    if (!bus.busLinks.length &&
+        typeof start.point.lat === "number" && typeof start.point.lng === "number" &&
+        typeof target.lat === "number" && typeof target.lng === "number") {
+      bus.busLinks.push({ from: start.point, to: target, walk: true });
+    }
 
     return {
       stops: (start.fromClass ? [markOf(start.point, start.name, "起")] : [])

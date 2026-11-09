@@ -4628,6 +4628,8 @@ console.log("\n[46] 路线页三张卡片轮流显示 / 设置卡片默认藏起
     /function collectBus\(plan, fromPoint, toPoint, into, kind\)/.test(appCode) &&
     appCode.indexOf('collectBus(plan, start.point, target, null, "dorm")') > 0 &&
     appCode.indexOf('collectBus(plan, fromPoint, target, null, "custom")') > 0);
+  check("返回宿舍没有可乘校巴时仍画当前位置到宿舍的步行连线",
+    /if \(!bus\.busLinks\.length &&[\s\S]{0,260}bus\.busLinks\.push\(\{ from: start\.point, to: target, walk: true \}\)/.test(appCode));
   /* 简图没东西可画时，说法由调用方给（不同卡片不一样） */
   check("简图空状态的说法由调用方给",
     fs.readFileSync(path.join(root, "js", "map.js"), "utf8")
